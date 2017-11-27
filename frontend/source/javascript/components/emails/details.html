@@ -1,0 +1,75 @@
+<section class="md-whiteframe-2dp">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Email Details</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+
+    <md-table-container>
+        <table md-table class="vertical">
+            <tbody md-body>
+            <tr md-row>
+                <td md-cell>
+                    Timestamp:
+                </td>
+                <td md-cell>
+                    {{vm.email.timestamp | date : 'yyyy-MM-dd HH:mm:ss'}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Subsystem:
+                </td>
+                <td md-cell>
+                    {{vm.email.subsystem}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Sender
+                </td>
+                <td md-cell>
+                    {{vm.email.sender}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Recipients
+                </td>
+                <td md-cell>
+                    {{vm.email.recipients.join(", ")}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    UUID
+                </td>
+                <td md-cell>
+                    {{vm.email.uuid}}
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<section class="md-whiteframe-2dp">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Message</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    <md-content class="md-padding">
+        <pre ng-if="vm.email.messageHtml == undefined || vm.email.messageHtml.length == 0">{{vm.email.messageText}}</pre>
+        <div class="code-box" ng-if="vm.email.messageHtml != undefined && vm.email.messageHtml.length > 0" ng-bind-html="vm.email.messageHtml">&nbsp;</div>
+    </md-content>
+</section>
+
+<md-button class="md-raised md-accent md-hue-1" onclick="history.back()">Back</md-button>
+<md-button class="md-raised md-warn md-hue-2" ng-click="vm.resendMessage()">Resend Message</md-button>

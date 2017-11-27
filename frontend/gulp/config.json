@@ -1,0 +1,20 @@
+{
+    "app": "./source/javascript/app.js",
+    "javascript": [
+        "./source/javascript/*.js",
+        "./source/javascript/**/*.js",
+        "./source/javascript/components/**/*.js"
+    ],
+    "html": [
+        "./source/html/*.html",
+        "./source/html/**/*.html"
+    ],
+    "templates": [
+        "./source/javascript/components/**/*.html"
+    ],
+    "css": "./source/css/*.scss",
+    "libs": [
+        "./source/libs/*.js"
+    ],
+    "build": "./dist"
+}

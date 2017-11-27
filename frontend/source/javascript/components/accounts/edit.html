@@ -1,0 +1,61 @@
+<form name="accountEdit" ng-submit="vm.update()">
+    <section class="md-whiteframe-2dp padding">
+        <md-content class="md-padding">
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label for="accountName">Account Name</label>
+                    <input id="accountName" name="accountName" type="text" ng-model="vm.account.accountName" required />
+
+                    <div ng-messages="accountEdit.accountName.$error" role="alert" multiple>
+                        <div ng-message="required" class="my-message">You must provide a name for the account</div>
+                    </div>
+                </md-input-container>
+
+                <span style="width: 40px"></span>
+
+                <md-input-container class="md-block" flex>
+                    <label for="account_no">Account Number</label>
+                    <input id="account_no" name="account_no" type="text" ng-model="vm.account.accountNumber" string-to-number required ng-pattern="/^\d{12}$/" />
+
+                    <div ng-messages="accountEdit.account_no.$error" role="alert" multiple>
+                        <div ng-message="required" class="my-message">You must provide the account number</div>
+                        <div ng-message="pattern" class="my-message">Invalid formatted account number</div>
+                    </div>
+                </md-input-container>
+            </div>
+
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label for="contacts">Contacts</label>
+                    <md-chips id="contacts" ng-model="vm.account.contacts" required></md-chips>
+
+                    <div ng-messages="accountEdit.contacts.$error" role="alert">
+                        <div ng-message="required" class="my-message">You must provide one or more contact email addresses or slack channels</div>
+                    </div>
+                </md-input-container>
+
+                <span style="width: 40px"></span>
+
+                <md-input-container class="md-block md-input-has-value" flex>
+                    <label for="enabled">Enabled</label>
+                    <md-switch id="enabled" ng-model="vm.account.enabled" aria-label="Enabled" ng-true-value="true" ng-false-value="false" class="md-primary"></md-switch>
+                </md-input-container>
+            </div>
+
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex="50">
+                    <label for="adGroupBase">AD Group Base</label>
+                    <input id="adGroupBase" type="text" ng-model="vm.account.adGroupBase" />
+                </md-input-container>
+            </div>
+
+            <md-input-container class="md-block" flex>
+                <label for="requiredRoles">Required Roles</label>
+                <md-chips id="requiredRoles" ng-model="vm.account.requiredRoles" placeholder="Enter group" flex></md-chips>
+            </md-input-container>
+        </md-content>
+    </section>
+
+    <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!accountEdit.$valid">Update</md-button>
+    <md-button class="md-warn md-raised" onClick="history.back()">Cancel</md-button>
+</form>

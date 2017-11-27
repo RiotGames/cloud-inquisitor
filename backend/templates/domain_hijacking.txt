@@ -1,0 +1,9 @@
+{% if new_issues|length > 0 %}New Issues:{% for issue in new_issues %}
+{{"{0}:".format(issue['properties']['source']).ljust(maxlen)}} {{issue['properties']['description']}}{% endfor %}
+{% endif %}
+{% if existing_issues|length > 0 %}Existing Issues:{% for issue in existing_issues %}
+{{"{0}:".format(issue['properties']['source']).ljust(maxlen)}} {{issue['properties']['description']}}{% endfor %}
+{% endif %}
+{% if fixed_issues|length > 0 %}Fixed Issues:{% for issue in fixed_issues %}
+{{"{0}:".format(issue['properties']['source']).ljust(maxlen)}} {{issue['properties']['description']}}{% endfor %}
+{% endif %}

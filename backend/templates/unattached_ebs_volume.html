@@ -1,0 +1,57 @@
+<div>
+    <p>
+        The following EBS volumes are not attached to an instance.
+        Please consider deleting them to reduce cost and risks related to retaining old data.
+    </p>
+    <p>
+        If you are confident these unattached volumes should remain,
+        Using the AWS Console, you may add a tag with Key:
+        <span style="font-family: DejaVu Sans Mono, Courier, Monospace !important;">cinq:ignore</span>
+    </p>
+
+    <div>
+        <h2>Issues</h2>
+        <table style="border: 0px; border-spacing: 0px;">
+            <thead>
+            <tr>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">Instance</th>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 150px; text-align: left; padding: 4px;">Account</th>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 125px; text-align: left; padding: 4px;">Region</th>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">Created</th>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">Notes</th>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">Size</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for issue in issues|sort(attribute='volume.create_time')%}
+            <tr>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                    {{issue.volume.id}}
+                </td>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                    {{issue.volume.account.account_name}}
+                </td>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                    {{issue.volume.location}}
+                </td>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                    {{issue.volume.create_time}}
+                </td>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                    {% if issue.notes %}
+                    {% for note in issue.notes %}
+                    <p>{{note}}</p>
+                    {% endfor %}
+                    {% else %}
+                    <i>No Notes</i>
+                    {% endif %}
+                </td>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                    {{issue.volume.size}}GB
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

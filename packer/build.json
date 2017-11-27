@@ -1,0 +1,155 @@
+{
+    "variables": {
+        "aws_access_key":                           "{{env `AWS_ACCESS_KEY_ID`}}",
+        "aws_secret_key":                           "{{env `AWS_SECRET_ACCESS_KEY`}}",
+        "aws_session_token":                        "{{env `AWS_SESSION_TOKEN`}}",
+        "ec2_vpc_id":                               "vpc-xxxxxxxx",
+        "ec2_subnet_id":                            "subnet-xxxxxxxx",
+        "ec2_source_ami":                           "ami-xxxxxxxx",
+        "ec2_instance_type":                        "m4.large",
+        "ec2_region":                               "us-west-2",
+        "ec2_ssh_username":                         "ubuntu",
+        "ec2_security_groups":                      "sg-xxxxxxxx,sg-xxxxxxxx",
+
+        "git_branch":                               null,
+        "tmp_base":                                 "/tmp/packer",
+        "install_base":                             "/opt",
+        "pyenv_dir":                                "pyenv",
+        "frontend_dir":                             "cinq-frontend",
+        "backend_dir":                              "cinq-backend",
+
+        "app_apt_upgrade":                          "True",
+        "app_debug":                                "False",
+        "app_db_uri":                               "UNUSED",
+        "app_db_setup_local":                       "True",
+        "app_db_user":                              null,
+        "app_db_pw":                                null,
+        "app_ssl_enabled":                          "True",
+        "app_ssl_cert_data":                        "",
+        "app_ssl_key_data":                         "",
+        "app_use_user_data":                        null,
+        "app_kms_account_name":                     null,
+        "app_user_data_url":                        "http://169.254.169.254/latest/user-data",
+        "app_aws_api_access_key":                   "",
+        "app_aws_api_secret_key":                   "",
+        "app_instance_role_arn":                    ""
+    },
+    "builders": [
+        {
+            "type":                 "amazon-ebs",
+            "name":                 "ami",
+            "access_key":           "{{user `aws_access_key`}}",
+            "secret_key":           "{{user `aws_secret_key`}}",
+            "token":                "{{user `aws_session_token`}}",
+            "vpc_id":               "{{user `ec2_vpc_id`}}",
+            "subnet_id":            "{{user `ec2_subnet_id`}}",
+            "region":               "{{user `ec2_region`}}",
+            "instance_type":        "{{user `ec2_instance_type`}}",
+            "source_ami":           "{{user `ec2_source_ami`}}",
+            "associate_public_ip_address":  "{{user `ec2_public_ip_enable`}}",
+            "ssh_username":         "{{user `ec2_ssh_username`}}",
+            "ami_name":             "cloud-inquisitor @{{user `git_branch`}} {{isotime \"2006-01-02 15-04-05\"}}",
+            "security_group_ids":   "{{user `ec2_security_groups`}}",
+            "tags": {
+                "Owner":            "teamname@yourcompany.com",
+                "Accounting":       "yourteam.accounting.tag",
+                "Name":             "Cloud Inquisitor System Image",
+                "SourceAmi":        "{{user `ec2_source_ami`}}",
+                "GitBranch":        "{{user `git_branch`}}"
+            },
+            "run_tags": {
+                "Owner":            "teamname@yourcompany.com",
+                "Accounting":       "yourteam.accounting.tag",
+                "Name":             "Cloud Inquisitor Packer Instance",
+                "GitBranch":        "{{user `git_branch`}}"
+            }
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "inline": [
+                "mkdir -p {{user `tmp_base`}}"
+            ]
+        },
+        {
+            "type": "file",
+            "source": "../backend",
+            "destination": "{{user `tmp_base`}}/{{user `backend_dir`}}"
+        },
+        {
+            "type": "file",
+            "source": "../frontend",
+            "destination": "{{user `tmp_base`}}/{{user `frontend_dir`}}"
+        },
+        {
+            "type": "file",
+            "source": "files",
+            "destination": "{{user `tmp_base`}}"
+        },
+        {
+            "type": "file",
+            "source": "scripts",
+            "destination": "{{user `tmp_base`}}/scripts"
+        },
+        {
+            "type": "shell",
+            "script": "scripts/install_runtime_dependencies.sh",
+            "environment_vars": [
+                "APP_APT_UPGRADE={{user `app_apt_upgrade`}}"
+            ]
+        },
+        {
+            "type": "shell",
+            "script": "scripts/install.sh",
+            "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} stdbuf -e 0 -o 0 sudo -EH {{ .Path }}",
+            "environment_vars": [
+                "APP_TEMP_BASE={{user `tmp_base`}}",
+                "APP_PYENV_PATH={{user `install_base`}}/{{user `pyenv_dir`}}",
+                "APP_FRONTEND_BASE_PATH={{user `install_base`}}/{{user `frontend_dir`}}",
+                "APP_BACKEND_BASE_PATH={{user `install_base`}}/{{user `backend_dir`}}",
+                "APP_DEBUG={{user `app_debug`}}",
+                "APP_DB_URI={{user `app_db_uri`}}",
+                "APP_SSL_ENABLED={{user `app_ssl_enabled`}}",
+                "APP_SSL_CERT_DATA={{user `app_ssl_cert_data`}}",
+                "APP_SSL_KEY_DATA={{user `app_ssl_key_data`}}",
+                "APP_AWS_API_ACCESS_KEY={{user `app_aws_api_access_key`}}",
+                "APP_AWS_API_SECRET_KEY={{user `app_aws_api_secret_key`}}",
+                "APP_USE_USER_DATA={{user `app_use_user_data`}}",
+                "APP_KMS_ACCOUNT_NAME={{user `app_kms_account_name`}}",
+                "APP_USER_DATA_URL={{user `app_user_data_url`}}",
+                "APP_INSTANCE_ROLE_ARN={{user `app_instance_role_arn`}}"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "echo \"Touching coverage.xml before attempted download, in case it does not exist.\"",
+                "sudo touch {{user `install_base`}}/{{user `backend_dir`}}/coverage.xml"
+            ]
+        },
+        {
+            "type": "file",
+            "direction": "download",
+            "source": "{{user `install_base`}}/{{user `backend_dir`}}/coverage.xml",
+            "destination": "../backend/coverage.xml"
+        },
+        {
+            "type": "shell",
+            "execute_command": "if [ \"{{ user `app_db_setup_local` }}\" == \"True\" ]; then chmod +x {{ .Path }}; {{ .Vars }} sudo -EH {{ .Path }}; else exit 0; fi",
+            "script": "scripts/setup_db.sh",
+            "environment_vars": [
+                "APP_BACKEND_BASE_PATH={{user `install_base`}}/{{user `backend_dir`}}",
+                "APP_DB_USER={{user `app_db_user`}}",
+                "APP_DB_PW={{user `app_db_pw`}}",
+                "APP_PYENV_PATH={{user `install_base`}}/{{user `pyenv_dir`}}"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo rm -rf {{user `tmp_base`}}"
+            ]
+        }
+    ]
+}

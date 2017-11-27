@@ -1,0 +1,38 @@
+<div>
+    <p>
+        The following instances are now compliant with the
+        <a href="https://confluence.riotgames.com/display/tech/RFC+0026+-+AWS+Ownership+and+Cost+Attribution">RFC-0026</a>
+        tagging standards and are no longer subject to being stopped.
+    </p>
+
+    <div>
+        <h2>Fixed Issues</h2>
+        <table style="border: 0px; border-spacing: 0px;">
+            <thead>
+            <tr>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 400px; text-align: left; padding: 4px;">Instance</th>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 125px; text-align: left; padding: 4px;">Account</th>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 125px; text-align: left; padding: 4px;">Region</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for issue in fixed %}
+            <tr>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                    {{issue.instance.get_name_or_instance_id(True)}}
+                </td>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                    {{issue.instance.account.account_name}}
+                </td>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                    {{issue.instance.location}}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if tracking and tracking.enabled %}
+<img src="https://ssl.google-analytics.com/collect?v=1&t=event&tid={{tracking.id}}&cid={{tracking.client_id}}&ec={{tracking.category}}&ea={{tracking.action}}&el={{tracking.label}}&z={{tracking.z}}" style="height: 1px; width: 1px;" />
+{% endif %}

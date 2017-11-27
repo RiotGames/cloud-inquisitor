@@ -1,0 +1,95 @@
+{% if new_issues|length > 0 %}
+<div>
+    <font color="#f25252">
+        <h2>New issues</h2>
+    </font>
+    <table style="border: 0px">
+        <thead>
+        <tr>
+            <td style="font-weight: bold; width: 250px;">
+                Source
+            </td>
+            <td style="font-weight: bold;">
+                Problem
+            </td>
+        </tr>
+        </thead>
+        <tbody>
+        {% for issue in new_issues %}
+        <tr>
+            <td>
+                {{issue['properties']['source']}}
+            </td>
+            <td>
+                {{issue['properties']['description']}}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if existing_issues|length > 0 %}
+<div>
+    <font color="#987654">
+        <h2>Existing issues</h2>
+    </font>
+    <table style="border: 0px">
+        <thead>
+        <tr>
+            <td style="font-weight: bold; width: 250px;">
+                Source
+            </td>
+            <td style="font-weight: bold;">
+                Problem
+            </td>
+        </tr>
+        </thead>
+        <tbody>
+        {% for issue in existing_issues %}
+        <tr>
+            <td>
+                {{issue['properties']['source']}}
+            </td>
+            <td>
+                {{issue['properties']['description']}}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if fixed_issues|length > 0 %}
+<div>
+    <font color="#a2f252">
+        <h2>Fixed issues</h2>
+    </font>
+    <table style="border: 0px">
+        <thead>
+        <tr>
+            <td style="font-weight: bold; width: 250px;">
+                Source
+            </td>
+            <td style="font-weight: bold;">
+                Problem
+            </td>
+        </tr>
+        </thead>
+        <tbody>
+        {% for issue in fixed_issues %}
+        <tr>
+            <td>
+                {{issue['properties']['source']}}
+            </td>
+            <td>
+                {{issue['properties']['description']}}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}

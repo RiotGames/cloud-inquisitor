@@ -1,0 +1,23 @@
+<form name="userEdit" ng-submit="vm.update()">
+    <section class="md-whiteframe-2dp padding">
+        <md-content class="md-padding">
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label for="username">Username</label>
+                    <input id="username" type="text" ng-model="vm.user.username" disabled />
+                </md-input-container>
+            </div>
+
+            <div layout-gt-md="row" ng-repeat="(role, val) in vm.roles">
+                <md-input-container class="md-block md-input-has-value" flex>
+                    <md-switch id="role-{{role}}" aria-label="{{role}}" ng-model="vm.roles[role]" class="md-primary">
+                        {{role}}
+                    </md-switch>
+                </md-input-container>
+            </div>
+        </md-content>
+    </section>
+
+    <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!userEdit.$valid">Update</md-button>
+    <md-button class="md-warn md-raised" onClick="history.back()">Cancel</md-button>
+</form>

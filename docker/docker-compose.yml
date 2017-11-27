@@ -1,0 +1,50 @@
+version: '3'
+services:
+  db:
+    image: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=mypassword
+      - MYSQL_DATABASE=cinq
+      - MYSQL_USER=${DB_USER:-cinq}
+      - MYSQL_PASSWORD=${DB_PASS:-changeme}
+    volumes:
+      - "./database:/var/lib/mysql"
+
+  frontend:
+    build:
+      context: ./../
+      dockerfile: ./docker/frontend-Dockerfile
+    ports:
+      - "8000:80"
+    depends_on:
+      - api
+      
+  api:
+    build:
+      context: ./../
+      dockerfile: ./docker/api-Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - INQUISITOR_SETTINGS=/cloudinquisitor/settings/config.py
+      - DB_USER=${DB_USER:-cinq}
+      - DB_PASS=${DB_PASS:-changeme}
+      - DB_URL=${DB_URL:-db}
+      - DB_PORT=${DB_PORT:-3306}
+    depends_on:
+      - db
+
+  scheduler:
+    build:
+      context: ./../
+      dockerfile: ./docker/scheduler-Dockerfile
+    environment:
+      - INQUISITOR_SETTINGS=/cloudinquisitor/settings/config.py
+      - DB_USER=${DB_USER:-cinq}
+      - DB_PASS=${DB_PASS:-changeme}
+      - DB_URL=${DB_URL:-db}
+      - DB_PORT=${DB_PORT:-3306}
+    depends_on:
+      - db

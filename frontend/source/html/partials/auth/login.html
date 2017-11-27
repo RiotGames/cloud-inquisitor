@@ -1,0 +1,39 @@
+<div>
+    <md-toolbar class="md-primary md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>User Login</span>
+            </h2>
+        </div>
+    </md-toolbar>
+
+    <form name="userLogin" ng-submit="vm.login()">
+        <section class="md-whiteframe-2dp padding">
+            <md-content class="md-padding">
+                <div layout-gt-md="row">
+                    <md-input-container class="md-block" flex>
+                        <label>Username</label>
+                        <input name="username" type="text" ng-model="vm.form.username" required />
+
+                        <div ng-messages="userLogin.username.$error" role="alert" multiple>
+                            <div ng-message="required" class="my-message">Username is required</div>
+                        </div>
+                    </md-input-container>
+                </div>
+
+                <div layout-gt-md="row">
+                    <md-input-container class="md-block" flex>
+                        <label>Password</label>
+                        <input name="password" type="password" ng-model="vm.form.password" required />
+
+                        <div ng-messages="userLogin.password.$error" role="alert">
+                            <div ng-message="required" class="my-message">Password is required</div>
+                        </div>
+                    </md-input-container>
+                </div>
+            </md-content>
+        </section>
+
+        <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!userLogin.$valid">Login</md-button>
+    </form>
+</div>

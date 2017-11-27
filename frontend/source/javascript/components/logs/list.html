@@ -1,0 +1,48 @@
+<section class="md-whiteframe-2dp md-padding" ng-cloak>
+    <filters filters="vm.filters" on-update="vm.updateFilters" on-reset="vm.resetFilters"></filters>
+
+    <md-table-pagination
+            style="border: 0;"
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.logEventCount}}">
+    </md-table-pagination>
+
+    <md-table-container>
+        <table md-table class="striped hover">
+            <thead md-head>
+            <tr md-row>
+                <th md-column style="width: 150px;">Timestamp</th>
+                <th md-column style="width: 80px; text-align: center;">Level</th>
+                <th md-column>Message</th>
+                <th md-column style="width: 50px;">&nbsp;</th>
+            </tr>
+            </thead>
+            <tbody md-body>
+            <tr md-row ng-repeat="evt in vm.logEvents">
+                <td md-cell>{{evt.timestamp | date : 'yyyy-MM-dd HH:mm:ss'}}</td>
+                <td md-cell style="text-align: center;" ng-bind-html="{no: evt.levelno, txt: evt.level} | loglevel">&nbsp;</td>
+                <td md-cell>{{evt.message | limitTo : 100 }}{{evt.message.length > 100 ? "&hellip;" : ''}}</td>
+                <td md-cell>
+                    <md-button ng-click="vm.showDetails(evt.logEventId)" class="md-icon-button"><md-icon md-font-set="material-icons">info_outline</md-icon></md-button>
+                </td>
+            </tr>
+            <tr md-row ng-if="!vm.logEvents || vm.logEvents.length == 0">
+                <td md-cell colspan="7">No events found matching filters</td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+
+    <md-table-pagination
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.logEventCount}}">
+    </md-table-pagination>
+</section>

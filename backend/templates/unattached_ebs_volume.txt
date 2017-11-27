@@ -1,0 +1,12 @@
+The following EBS volumes are not attached to an instance. Please consider deleting them to reduce cost and risks related to retaining old data.
+
+If you are confident these volumes are required, using the AWS Console add a new tag to the volume with the Name `cinq:ignore` (the value does not matter)
+
+{% for issue in issues %}
+*Account:* `{{ issue.volume.account.account_name }}`
+*Region:* `{{ issue.volume.location }}`
+*Volume ID:* `{{ issue.volume.id }}`
+*Notes:* {{ issue.notes | slack_quote_join }}
+*Size:* `{{ issue.volume.size }}GB`
+
+{% endfor %}

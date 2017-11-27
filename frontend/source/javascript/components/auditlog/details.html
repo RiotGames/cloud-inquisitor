@@ -1,0 +1,51 @@
+<section class="md-whiteframe-2dp">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>AuditLog Event Details</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+
+    <md-table-container>
+        <table md-table class="vertical">
+            <tbody md-body>
+            <tr md-row>
+                <td md-cell>
+                    Timestamp
+                </td>
+                <td md-cell>
+                    {{vm.auditLogEvent.timestamp | date : 'yyyy-MM-dd HH:mm:ss'}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Event
+                </td>
+                <td md-cell>
+                    {{vm.auditLogEvent.event}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Actor
+                </td>
+                <td md-cell>
+                    {{vm.auditLogEvent.actor}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Data
+                </td>
+                <td md-cell>
+                    <div hljs source="vm.toPrettyJSON(vm.auditLogEvent.data)">&nbsp;</div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<md-button class="md-raised md-accent md-hue-1" onclick="history.back()">Back</md-button>

@@ -1,0 +1,91 @@
+<section class="md-whiteframe-2dp">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Volume Details</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+
+    <md-table-container>
+        <table md-table class="vertical">
+            <tbody md-body>
+            <tr md-row>
+                <td md-cell>
+                    Volume ID
+                </td>
+                <td md-cell>
+                    {{vm.volume.resourceId}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Volume Type
+                </td>
+                <td md-cell>
+                    {{vm.volume.properties.volumeType}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Create Date
+                </td>
+                <td md-cell>
+                    {{vm.volume.properties.createTime | date : 'yyyy-MM-dd HH:mm:ss'}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Account
+                </td>
+                <td md-cell>
+                    {{vm.volume.account.accountName}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Region
+                </td>
+                <td md-cell>
+                    {{vm.volume.location}}
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<section class="md-whiteframe-2dp" ng-if="vm.volume.tags && vm.volume.tags.length > 0">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Tags</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+
+    <md-table-container>
+        <table md-table class="vertical">
+            <thead md-head>
+            <tr md-row>
+                <th md-column>Key</th>
+                <th md-column>Value</th>
+            </tr>
+            </thead>
+            <tbody md-body>
+            <tr md-row ng-repeat="tag in vm.volume.tags | orderBy: 'key'">
+                <td md-cell>
+                    {{tag.key}}
+                </td>
+                <td md-cell>
+                    {{tag.value}}
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<md-button class="md-raised md-accent md-hue-1" onclick="history.back()">Back</md-button>

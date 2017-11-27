@@ -1,0 +1,30 @@
+{
+    "strict": {{ strict }},
+    "debug": {{ debug }},
+    "sp": {
+        "entityId": "{{ sp_entity_id }}",
+        "assertionConsumerService": {
+            "url": "{{ sp_acs }}",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+        },
+        "singleLogoutService": {
+            "url": "{{ sp_sls }}",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+        },
+        "NameIDFormat": "urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified",
+        "x509cert": "",
+        "privateKey": ""
+    },
+    "idp": {
+        "entityId": "{{ idp_entity_id }}",
+        "singleSignOnService": {
+            "url": "{{ idp_ssos }}",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+        },
+        "singleLogoutService": {
+            "url": "{{ idp_sls }}",
+            "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+        },
+        "x509cert": "{{ idp_x509cert }}"
+    }
+}

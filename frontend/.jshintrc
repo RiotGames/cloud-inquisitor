@@ -1,0 +1,14 @@
+{
+    "node": true,
+    "strict": "globals",
+    "esversion": 6,
+    "globals": {
+        "require": false,
+        "angular": false,
+        "$": false,
+        "document": false
+    },
+    "predef": [
+        "angular"
+    ]
+}

@@ -1,0 +1,42 @@
+<form name="userAdd" ng-submit="vm.create()">
+    <section class="md-whiteframe-2dp padding">
+        <md-content class="md-padding">
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label>Username</label>
+                    <input name="username" type="text" ng-model="vm.user.username" required />
+
+                    <div ng-messages="userAdd.username.$error" role="alert">
+                        <div ng-message="required">
+                            You must provide a username
+                        </div>
+                    </div>
+                </md-input-container>
+
+                <md-input-container class="md-block" flex>
+                    <label>Auth System</label>
+                    <md-select name="authSystem" ng-model="vm.user.authSystem" placeholder="Select auth system" required>
+                        <md-option ng-value="'{{authSys}}'" ng-repeat="(authSys, active) in vm.authSystems">{{active ? authSys + ' (active)' : authSys}}</md-option>
+                    </md-select>
+
+                    <div ng-messages="userAdd.authSystem.$error" role="alert">
+                        <div ng-message="required">
+                            You must select an auth system
+                        </div>
+                    </div>
+                </md-input-container>
+            </div>
+
+            <div layout-gt-md="row" ng-repeat="(role, val) in vm.roles">
+                <md-input-container class="md-block md-input-has-value" flex>
+                    <md-switch id="role-{{role}}" aria-label="{{role}}" ng-model="vm.roles[role]" class="md-primary">
+                        {{role}}
+                    </md-switch>
+                </md-input-container>
+            </div>
+        </md-content>
+    </section>
+
+    <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!userAdd.$valid">Create</md-button>
+    <md-button class="md-warn md-raised" onClick="history.back()">Cancel</md-button>
+</form>

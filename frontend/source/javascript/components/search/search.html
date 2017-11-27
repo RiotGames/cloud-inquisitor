@@ -1,0 +1,111 @@
+<section class="md-whiteframe-2dp md-padding">
+    <form name="frmSearch" ng-submit="vm.search()">
+        <div layout="column" layout-gt-md="row" id="filters">
+            <md-input-container flex="20">
+                <label for="keywords">
+                    Keywords
+                </label>
+                <input id="keywords" name="keywords" ng-model="vm.params.keywords" />
+                <md-icon class="md-accent md-hue-3 md-raised material-icons" ng-click="vm.showHelp($event)" style="cursor: pointer;">help_outline</md-icon>
+            </md-input-container>
+
+            <md-input-container>
+                <label>Partial Match</label>
+                <md-select ng-model="vm.params.partial" aria-label="Partial Match">
+                    <md-option ng-value="true">Yes</md-option>
+                    <md-option ng-value="false">No</md-option>
+                </md-select>
+            </md-input-container>
+
+            <md-input-container>
+                <label>Resource Types</label>
+                <md-select ng-model="vm.params.resourceTypes" aria-label="Resource Types" multiple>
+                    <md-option ng-value="id" ng-repeat="(name, id) in vm.resourceTypes">{{name}}</md-option>
+                </md-select>
+            </md-input-container>
+
+            <md-input-container>
+                <label>Accounts</label>
+                <md-select ng-model="vm.params.accounts" aria-label="Accounts" multiple>
+                    <md-option ng-value="account.accountId" ng-repeat="account in vm.accounts">
+                        {{account.accountName}}
+                    </md-option>
+                </md-select>
+            </md-input-container>
+
+            <md-input-container>
+                <label>Regions</label>
+                <md-select ng-model="vm.params.regions" aria-label="Regions" multiple>
+                    <md-option ng-value="region" ng-repeat="region in vm.regions">{{region}}</md-option>
+                </md-select>
+            </md-input-container>
+
+            <span flex></span>
+
+            <section layout="row">
+                <md-button class="md-raised md-icon-button" type="submit" aria-label="Search" ng-disabled="!vm.valid()">
+                    <md-tooltip>Update Filters</md-tooltip>
+                    <i class="material-icons">search</i>
+                </md-button>
+
+                <md-button class="md-raised md-icon-button md-warn" ng-click="vm.reset()" aria-label="Reset Search">
+                    <md-tooltip>Reset Search</md-tooltip>
+                    <i class="material-icons">cancel</i>
+                </md-button>
+            </section>
+        </div>
+    </form>
+
+    <div ng-if="vm.resources && vm.resources.length > 0">
+        <md-table-pagination
+                style="border: 0;"
+                md-on-paginate="vm.updatePath"
+                md-page="vm.params.page"
+                md-page-select
+                md-limit="vm.params.count"
+                md-limit-options="[25, 50, 100]"
+                md-total="{{vm.resourceCount}}">
+        </md-table-pagination>
+        <md-table-container>
+            <table md-table class="hover striped">
+                <thead md-head>
+                <tr md-row>
+                    <th md-column>Resource</th>
+                    <th md-column style="width: 150px;">Account</th>
+                    <th md-column style="width: 150px;">Location</th>
+                    <th md-column style="width: 100px;">Resource Type</th>
+                    <th md-column style="width: 80px;">&nbsp;</th>
+                </tr>
+                </thead>
+                <tbody md-body>
+                <tr ng-repeat="resource in vm.resources" md-row md-select="resource">
+                    <td md-cell>{{vm.getResourceName(resource)}}</td>
+                    <td md-cell>{{resource.account.accountName}}</td>
+                    <td md-cell>{{resource.location}}</td>
+                    <td md-cell>{{vm.getResourceType(resource.resourceType)}}</td>
+                    <td md-cell>
+                        <md-button ng-click="vm.showDetails(resource)" class="md-icon-button"><md-icon md-font-set="material-icons">info_outline</md-icon></md-button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </md-table-container>
+        <md-table-pagination
+                style="border: 0;"
+                md-on-paginate="vm.updatePath"
+                md-page="vm.params.page"
+                md-page-select
+                md-limit="vm.params.count"
+                md-limit-options="[25, 50, 100]"
+                md-total="{{vm.resourceCount}}">
+        </md-table-pagination>
+    </div>
+
+    <div ng-if="!vm.params.keywords || vm.params.keywords.length == 0">
+        No search terms
+    </div>
+
+    <div ng-if="vm.params.keywords && vm.params.keywords.length > 0 && (!vm.resources || vm.resources.length == 0)">
+        No results
+    </div>
+</section>
