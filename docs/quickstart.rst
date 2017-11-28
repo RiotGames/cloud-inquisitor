@@ -168,7 +168,7 @@ Sample screenshot of what you should see when creating the policy:
 
 * (Optional) For each account cinq is auditing you will need to setup a trust role for EACH target account (including the one you are running cinq from):
 
-On the target account, create an IAM role called ``cinq_role`` and attach the following policies: ::
+On the target account, create an IAM role called ``cinq_role`` and attach the `AWS managed ReadOnly policy <http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html#aws-managed-policies>`_ along with the following custom policy: ::
 
     {
         "Statement": [
