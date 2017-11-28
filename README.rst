@@ -42,7 +42,7 @@ Please see the `Resources`_ section below for further information.
 Contact
 =======
 
-Any questions or comments regarding this project can be made via the project's `Slack Chat Room <https://cloud-inquisitor.slack.com>`_.
+Any questions or comments regarding this project can be made via the project's `Slack Chat Room <https://cloud-inquisitor.slack.com>`_. If you're not a member of the room, you can auto-join `here <https://join.slack.com/t/cloud-inquisitor/shared_invite/enQtMjc1NTY5MTQ2MTAxLTA4MTM2NDBmNmY4ODRlMmNhNWQ4Yjk2ZWZhMmIyNWVkMDMzNjU5NWFhYzQ1YTZjNDNmY2M5MGI3OTdkNGE4Nzc>`_.
 
 =========
 Resources
