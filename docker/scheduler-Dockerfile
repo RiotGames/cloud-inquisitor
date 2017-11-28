@@ -1,5 +1,5 @@
 FROM python:3.5 as builder
-COPY ./backend/requirements.txt ./backend/riot-plugins.txt /tmp/
+COPY ./backend/requirements.txt /tmp/
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive \
     apt-get install -y libxmlsec1-dev
 WORKDIR /cloudinquisitor
