@@ -235,7 +235,7 @@ Note: Ensure you have the correct source AWS Account ID (that is running CINQ) a
          "Effect": "Allow",
          "Principal": {
          "AWS": [
-             "arn:aws:iam::<accountid-running-cinq>:role/<instanceprofilename>
+             "arn:aws:iam::<accountid-running-cinq>:role/<instanceprofilename>"
              ],
              "Service": "ec2.amazonaws.com"
          },
