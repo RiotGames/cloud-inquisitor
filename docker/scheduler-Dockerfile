@@ -16,8 +16,7 @@ RUN cd ./settings/ssl \
 RUN . ./env/bin/activate \
     && PBR_VERSION=1.7.0 python3 setup.py install
 RUN . ./env/bin/activate \
-    && pip3 install -r /tmp/requirements.txt \
-    && pip3 install -r /tmp/riot-plugins.txt 
+    && pip3 install -r /tmp/requirements.txt
 
 FROM python:3.5
 COPY --from=builder /cloudinquisitor /cloudinquisitor
