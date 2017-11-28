@@ -249,8 +249,8 @@ You can now launch this ``AMI`` within the ``EC2`` (Launch Instance) section of 
 
     1. Ensure you use the Instance Profile to launch your cinq instance
     2. Configure your Security Groups should be open on ``22/443`` so that you can connect to both the ``Cloud Inquisitor`` UI and the instance itself for troubleshooting.
-    3. ssh into the instance and grab the admin credentials from ``/var/log/supervisor/cinq-api-stdout---supervisor-*****.log``
-    4. Connect to https://<yourinstanceip> and login!
+    3. ssh into the instance and grab the password from ``/var/log/supervisor/cinq-api-stdout---supervisor-*****.log``
+    4. Connect to https://<yourinstanceip> and login (username :: **admin**)!
 
 
 You can now add new accounts under the **Accounts** tab in the ``Cloud Inquisitor`` UI. Please check out the `user guide <user_guide.rst>`_ for further details on how to use the UI, review results and update configuration.
