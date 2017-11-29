@@ -69,7 +69,8 @@ class DeleteAccount(BaseCommand):
             if acct:
                 cfm = 'Are you absolutely sure you wish to delete the account named {}'.format(acct.account_name)
                 if confirm(cfm):
-                    acct.delete()
+                    db.session.delete(acct)
+                    db.session.commit()
                     self.log.info('Account {0} has been deleted'.format(kwargs['account_name']))
                 else:
                     self.log.info('Failed to verify account name, not deleting')
