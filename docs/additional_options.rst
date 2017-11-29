@@ -2,6 +2,8 @@
 Databases
 ---------
 
+cinq is currently designed to run with MySQL Version 5.7.17. We recommend you stick to this version.
+
 If you do not wish to use a local MySQL DB that the cinq install gives you, in your variables file, simply set the following in your variables before you run the packer build to disable
 the install and setup of the local DB and point to the database you'd like to use ::
 
