@@ -121,7 +121,7 @@ class Setup(BaseCommand):
                         type='choice',
                         description='Enabled authentication module'
                     ),
-                    ConfigOption('scheduler', 'SQSScheduler', 'string', 'Default scheduler module'),
+                    ConfigOption('scheduler', 'StandaloneScheduler', 'string', 'Default scheduler module'),
                     ConfigOption('jwt_key_file_path', 'ssl/private.key', 'string',
                                  'Path to the private key used to encrypt JWT session tokens. Can be relative to the '
                                  'folder containing the configuration file, or absolute path')
