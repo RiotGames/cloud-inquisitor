@@ -81,7 +81,7 @@ Tagging
 Cloud Inquisitor `audits <https://github.com/RiotGames/cinq-auditor-required-tags>`_ EC2 instances for **tagging compliance** 
 and shutdowns or terminates instances if they are not brought into compliance after a pre-defined amount of time.
 
-More information such as configuration options `here <https://github.com/RiotGames/cinq-auditor-iam/blob/master/README.rst>`_.
+More information such as configuration options `here <https://github.com/RiotGames/cinq-auditor-required-tags/blob/master/README.rst>`_.
 
 **Note:** This is currently being extended to include all taggable AWS objects.
 
