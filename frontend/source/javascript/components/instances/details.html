@@ -94,7 +94,7 @@
             <tbody md-body>
             <tr md-row ng-repeat="volume in vm.instance.volumes | orderBy: 'volumeId'">
                 <td md-cell>
-                    <a href="#" ui-sref="ebs.details({volumeId: volume.volumeId})">{{volume.volumeId}}</a>
+                    <a href="https://console.aws.amazon.com/ec2/v2/?region={{vm.instance.location}}#Volumes:search={{volume.volumeId}}" ui-sref="ebs.details({volumeId: volume.volumeId})">{{volume.volumeId}}</a>
                 </td>
                 <td md-cell>
                     {{volume.size}}
