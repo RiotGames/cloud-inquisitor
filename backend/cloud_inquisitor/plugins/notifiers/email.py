@@ -190,11 +190,14 @@ def __send_smtp_email(sender, recipients, subject, html_body, text_body):
     msg['To'] = ','.join(recipients)
     msg['From'] = sender
 
-    text_part = MIMEText(text_body, 'plain')
-    html_part = MIMEText(html_body, 'html')
-
-    msg.attach(text_part)
-    msg.attach(html_part)
+    # Check body types to avoid exceptions
+    if html_body:
+        html_part = MIMEText(html_body, 'html')
+        msg.attach(html_part)
+    if text_body:
+        text_part = MIMEText(text_body, 'plain')
+        msg.attach(text_part)
+    
 
     # TLS if needed
     if dbconfig.get('smtp_tls', NS_EMAIL, False):
