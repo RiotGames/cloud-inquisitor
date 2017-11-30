@@ -30,6 +30,9 @@ Build Requirements
 
 * `AWS Credentials <https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html>`_ - API Keys or an AWS instance role with `appropriate permissions <https://www.packer.io/docs/builders/amazon.html>`_.
 
+* An existing VPC and subnet for the packer build instance and eventually the cinq instance to live (can be the same if you wish).
+  TL;DR: *cinq will not create the vpcs/subnets for you*
+
 ^^^^^^^^^^^^^
 1. Setting Up
 ^^^^^^^^^^^^^
