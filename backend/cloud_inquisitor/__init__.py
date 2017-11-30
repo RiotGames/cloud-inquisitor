@@ -268,7 +268,7 @@ def get_aws_regions():
     region_file = os.path.join(app.config.get('BASE_CFG_PATH'), 'aws_regions.json')
     if os.path.exists(region_file) and os.path.getsize(region_file) > 0:
         data = json.load(open(region_file, 'r'))
-        if parse_date(data['created']) < datetime.now() + timedelta(weeks=1):
+        if data['regions'] and parse_date(data['created']) > datetime.now() - timedelta(weeks=1):
             return data['regions']
 
     data = requests.get('https://ip-ranges.amazonaws.com/ip-ranges.json').json()
