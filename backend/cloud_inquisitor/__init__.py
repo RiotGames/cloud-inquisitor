@@ -259,14 +259,14 @@ def get_aws_session(account):
     return sess
 
 def get_aws_regions():
-    """Load a list of AWS regions from file, provided the file exists and is fresh (less than one week old). If the file
+    """Load a list of AWS regions from file, provided the file exists, is not empty and is current (less than one week old). If the file
     doesn't exist or is out of date, load a new copy from the AWS static data.
 
     Returns:
         :obj:`list` of `str`
     """
     region_file = os.path.join(app.config.get('BASE_CFG_PATH'), 'aws_regions.json')
-    if os.path.exists(region_file):
+    if os.path.exists(region_file) and os.path.getsize(region_file) > 0:
         data = json.load(open(region_file, 'r'))
         if parse_date(data['created']) < datetime.now() + timedelta(weeks=1):
             return data['regions']
