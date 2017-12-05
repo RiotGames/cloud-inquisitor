@@ -183,7 +183,7 @@ setuptools.setup(
     ],
 
     # Metadata
-    description='Cloud Inquisitor - tool to enforce ownership and data security within AWS Edit',
+    description='Tool to enforce ownership and data security within cloud environments',
     long_description=open('../README.rst', 'r').read(),
     author='Riot Games Security',
     author_email='security@riotgames.com',
