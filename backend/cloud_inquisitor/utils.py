@@ -6,6 +6,7 @@ import random
 import re
 import string
 import time
+import pkg_resources
 from datetime import datetime
 
 import jwt
@@ -133,10 +134,7 @@ def get_template(template):
     Returns:
         A Jinja2 Template object
     """
-    # Local import to prevent app startup failures
-    from cloud_inquisitor import app
-
-    tmplpath = os.path.join(app.config.get('BASE_PATH'), 'templates')
+    tmplpath = os.path.join(pkg_resources.resource_filename('cloud_inquisitor', 'data'), 'templates')
     tmplenv = Environment(loader=FileSystemLoader(tmplpath), autoescape=True)
     tmplenv.filters['json_loads'] = json.loads
     tmplenv.filters['slack_quote_join'] = lambda data: ", ".join(list('`{}`'.format(x) for x in data))
