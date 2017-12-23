@@ -1279,3 +1279,82 @@ class DNSRecord(BaseResource):
         updated = self.set_property('value', data['value'])
 
         return updated
+
+
+class VPC(BaseResource):
+    """VPC Object"""
+    resource_type = 'aws_vpc'
+    resource_name = 'VPC'
+
+    # region Object properties
+    @property
+    def cidr_v4(self):
+        """ Returns the IPv4 CIDR block associated with the VPC
+
+        Returns:
+            `str`
+
+        """
+        return self.get_property('cidr_v4').value
+
+    @property
+    def state(self):
+        """ Returns the current state of the VPC (pending/available)
+
+        Returns:
+            `str`
+
+        """
+        return self.get_property('state').value
+
+    @property
+    def vpc_flow_logs_status(self):
+        """ Returns the configured state of VPC Flow Logs
+
+        Returns:
+            `str`
+
+        """
+        return self.get_property('vpc_flow_logs_status').value
+
+    def vpc_flow_logs_log_group(self):
+        """ Returns the CloudWatch Log Group associated with the VPC Flow Logs
+
+        Returns:
+            `str`
+
+        """
+        return self.get_property('vpc_flow_logs_log_stream').value
+
+    # end of region
+
+    def update(self, data, client_data):
+        """Updates the object information based on live data, if there were any changes made. Any changes will be
+        automatically applied to the object, but will not be automatically persisted. You must manually call
+        `db.session.add(vpc)` on the object.
+
+        Args:
+            data (bunch): Data fetched from AWS API
+
+        Returns:
+            True if there were any changes to the object, else false
+        """
+
+        updated = self.set_property('cidr_v4', data.cidr_block)
+        updated |= self.set_property('state', data.state)
+        updated |= self.set_property('vpc_flow_logs_status', client_data['vpc_flow_logs_status'])
+        updated |= self.set_property('vpc_flow_logs_log_stream', client_data['vpc_flow_logs_log_group'])
+
+        tags = {x['Key']: x['Value'] for x in data.tags or {}}
+        existing_tags = {x.key: x for x in self.tags}
+
+        # Check for new tags
+        for key, value in list(tags.items()):
+            updated |= self.set_tag(key, value)
+
+        # Check for updated or removed tags
+        for key in list(existing_tags.keys()):
+            if key not in tags:
+                updated |= self.delete_tag(key)
+
+        return updated
