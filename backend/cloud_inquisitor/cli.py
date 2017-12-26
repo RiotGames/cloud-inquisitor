@@ -31,7 +31,6 @@ for ep in iter_entry_points('cloud_inquisitor.plugins.commands'):
     cls = ep.load()
     manager.add_command(ep.name, cls)
 
-if __name__ == '__main__':
+def cli():
     setup_logging()
-
     manager.run()

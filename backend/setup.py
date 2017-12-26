@@ -7,6 +7,9 @@ setuptools.setup(
     },
 
     entry_points={
+        'console_scripts': [
+            'cloud-inquisitor = cloud_inquisitor.cli:cli'
+        ],
         'cloud_inquisitor.plugins.commands': [
             'add_account = cloud_inquisitor.plugins.commands.accounts:AddAccount',
             'delete_account = cloud_inquisitor.plugins.commands.accounts:DeleteAccount',
