@@ -187,7 +187,7 @@ setuptools.setup(
 
     # Metadata
     description='Tool to enforce ownership and data security within cloud environments',
-    long_description=open('../README.rst', 'r').read(),
+    long_description='Please see https://github.com/RiotGames/cloud-inquisitor for more information',
     author='Riot Games Security',
     author_email='security@riotgames.com',
     url='https://github.com/RiotGames/cloud-inquisitor',
