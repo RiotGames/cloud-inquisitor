@@ -33,6 +33,3 @@
         </table>
     </div>
 </div>
-{% if tracking and tracking.enabled %}
-<img src="https://ssl.google-analytics.com/collect?v=1&t=event&tid={{tracking.id}}&cid={{tracking.client_id}}&ec={{tracking.category}}&ea={{tracking.action}}&el={{tracking.label}}&z={{tracking.z}}" style="height: 1px; width: 1px;" />
-{% endif %}
