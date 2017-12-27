@@ -1328,13 +1328,14 @@ class VPC(BaseResource):
 
     # end of region
 
-    def update(self, data, client_data):
+    def update(self, data, properties):
         """Updates the object information based on live data, if there were any changes made. Any changes will be
         automatically applied to the object, but will not be automatically persisted. You must manually call
         `db.session.add(vpc)` on the object.
 
         Args:
             data (bunch): Data fetched from AWS API
+            properties (bunch): Properties of the VPC and CloudWatch Log Group as fetched from AWS API
 
         Returns:
             True if there were any changes to the object, else false
@@ -1342,8 +1343,8 @@ class VPC(BaseResource):
 
         updated = self.set_property('cidr_v4', data.cidr_block)
         updated |= self.set_property('state', data.state)
-        updated |= self.set_property('vpc_flow_logs_status', client_data['vpc_flow_logs_status'])
-        updated |= self.set_property('vpc_flow_logs_log_stream', client_data['vpc_flow_logs_log_group'])
+        updated |= self.set_property('vpc_flow_logs_status', properties['vpc_flow_logs_status'])
+        updated |= self.set_property('vpc_flow_logs_log_stream', properties['vpc_flow_logs_log_group'])
 
         tags = {x['Key']: x['Value'] for x in data.tags or {}}
         existing_tags = {x.key: x for x in self.tags}
