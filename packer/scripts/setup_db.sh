@@ -7,10 +7,10 @@ setup_db() {
                 source $APP_PYENV_PATH/bin/activate
                 export INQUISITOR_SETTINGS=$APP_BACKEND_BASE_PATH/settings/production.py
                 cd $APP_BACKEND_BASE_PATH
-                python3 manage.py db upgrade
+                $APP_PYENV_PATH/bin/cloud-inquisitor db upgrade
                 echo ''
                 echo \"Ignore line above about 'Failed loading configuration from database.' It was buffered before creating DB\"
-                python3 manage.py setup --headless
+                $APP_PYENV_PATH/bin/cloud-inquisitor setup --headless
                 sudo -E chown -R www-data:www-data /opt/
 }
 

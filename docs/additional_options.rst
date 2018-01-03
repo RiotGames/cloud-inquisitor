@@ -16,7 +16,7 @@ Once the AMI is created and you've logged in you'll need to initialize the datab
 # source /path/to/pyenv/bin/activate
 # export INQUISITOR_SETTINGS=/path/to/cinq-backend/settings/production.py
 # cd /path/to/cinq-backend
-# python3 manage.py db upgrade
+# cloud-inquisitor db upgrade
 # python3 manage.py setup --headless
 
 You may receive some warnings but these commands should succeed. Then if you restart supervisor you should be good to go ::
@@ -62,13 +62,13 @@ Edit your ``/path/to/cinq-backend/settings/settings.json`` file and provide the 
 
  # source /path/to/pyvenv/bin/activate
  # cd /path/to/cinq-backend
- # python3 manage.py auth -a OneLoginSAML
+ # cloud-inquisitor auth -a OneLoginSAML
    cloud_inquisitor.plugins.commands.auth Disabled Local Authentication
    cloud_inquisitor.plugins.commands.auth Enabled OneLoginSAML
 
 Verify that your configuration is correct and the active system ::
 
- # python3 manage.py auth -l
+ # cloud-inquisitor auth -l
 
  cloud_inquisitor.plugins.commands.auth --- List of available auth systems ---
  cloud_inquisitor.plugins.commands.auth Local Authentication
@@ -78,7 +78,7 @@ Verify that your configuration is correct and the active system ::
 
 To switch back to local Auth simply execute ::
 
-# python3 manage.py auth -a "Local Authentication"
+# cloud-inquisitor auth -a "Local Authentication"
 
 
 ------------------------
