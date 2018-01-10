@@ -29,16 +29,15 @@ install_backend() {
     pip=${APP_PYENV_PATH}/bin/pip3
 
     echo "Installing backend"
-    mkdir -p ${APP_BACKEND_BASE_PATH}
-    cp -a ${APP_TEMP_BASE}/cinq-backend/* ${APP_BACKEND_BASE_PATH}
+    mkdir -p ${APP_BACKEND_BASE_PATH}/settings/ssl
 
     # setup.py to prepare for dynamic module reloading.
     # TODO: Remove PBR_VERSION once we are building CInq as a package
     (
         cd ${APP_BACKEND_BASE_PATH}
-        PBR_VERSION=1.7.0 $python setup.py install
 
-        $pip install --upgrade -r ${APP_BACKEND_BASE_PATH}/requirements.txt
+        $pip install cloud-inquisitor --extra-index-url https://pypi.security.riotgames.com
+        $pip install --upgrade -r ${APP_TEMP_BASE}/cinq-backend/requirements.txt --extra-index-url https://pypi.security.riotgames.com
 
         # Create log folders for the application and allow the backend user to write to them
         mkdir -p logs
@@ -78,6 +77,8 @@ configure_application() {
         -e "s|APP_AWS_API_ACCESS_KEY|${APP_AWS_API_ACCESS_KEY}|" \
         -e "s|APP_AWS_API_SECRET_KEY|${APP_AWS_API_SECRET_KEY}|" \
         files/backend-settings.py > ${APP_BACKEND_BASE_PATH}/settings/production.py
+
+    cp files/logging.json ${APP_BACKEND_BASE_PATH}/settings/logging.json
 }
 
 install_certs() {

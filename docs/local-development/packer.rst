@@ -8,17 +8,17 @@ Local Development - Starting cinq-backend
 Nginx should already be configured to serve the front-end and forward backend requests to flask.
 (``cat /etc/nginx/sites-enabled/cinq.conf``)
 
-You can run ``python3 manage.py`` to see a list of project tasks (e.g., runserver, db reload, auth config).
+You can run ``cloud-inquisitor`` to see a list of project tasks (e.g., runserver, db reload, auth config).
 
 1. Start the Cloud Inquisitor *cinq* ``runserver`` target for development mode (auto-load python changes.) ``run_api_server`` is the production target.
 ::
 
-    python3 manage.py runserver
+    cloud-inquisitor runserver
 
 2. Start scheduler to fetch aws data and other scheduled tasks.
 ::
 
-    python3 manage.py run_scheduler
+    cloud-inquisitor run_scheduler
 
 3. (Alternative) Run using supervisor.
 ::
@@ -124,8 +124,8 @@ Connect to new instance and upgrade DB
     sudo supervisorctl stop all
     cd /opt/cloudinquisitor-backend/
     export CINQ_SETTINGS=/opt/cinq-backend/settings/production.py
-    sudo -u www-data -E python3 manage.py db upgrade
-    sudo -u www-data -E python3 manage.py setup --headless
+    sudo -u www-data -E cloud-inquisitor db upgrade
+    sudo -u www-data -E cloud-inquisitor setup --headless
     sudo supervisorctl start all
     # You can review the logs in /var/log/inquisitor-backend/logs
     # Browse to the Cloud Inquisitor UI and update the config to enable new features.
