@@ -15,7 +15,13 @@ const deps = Object.keys(pkg.dependencies);
 
 gulp.task('build.javascript.dev', function () {
     return browserify(config.app)
-        .transform("babelify", {presets: ['es2015']})
+        .transform("babelify", {
+            presets: [['env', {
+                "targets": {
+                    "chrome": "60"
+                }
+            }]]
+        })
         .external(deps)
         .bundle()
         .pipe(source('bundle.js'))
