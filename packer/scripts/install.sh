@@ -36,8 +36,8 @@ install_backend() {
     (
         cd ${APP_BACKEND_BASE_PATH}
 
-        $pip install cloud-inquisitor --extra-index-url https://pypi.security.riotgames.com
-        $pip install --upgrade -r ${APP_TEMP_BASE}/cinq-backend/requirements.txt --extra-index-url https://pypi.security.riotgames.com
+        $pip install cloud-inquisitor
+        $pip install --upgrade -r ${APP_TEMP_BASE}/cinq-backend/requirements.txt
 
         # Create log folders for the application and allow the backend user to write to them
         mkdir -p logs
