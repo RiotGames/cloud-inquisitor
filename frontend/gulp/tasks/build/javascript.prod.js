@@ -18,11 +18,11 @@ const deps = Object.keys(pkg.dependencies);
 gulp.task('build.javascript.prod', function () {
     return browserify(config.app)
         .transform("babelify", {
-            presets: ['env', {
+            presets: [['env', {
                 "targets": {
                     "chrome": "60"
                 }
-            }]
+            }]]
         })
         .external(deps)
         .bundle()
