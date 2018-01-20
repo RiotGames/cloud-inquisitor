@@ -41,7 +41,7 @@ install_backend() {
 
         # Create log folders for the application and allow the backend user to write to them
         mkdir -p logs
-        chown -R www-data:www-data logs
+        chown -R www-data:www-data logs settings
     )
 }
 
