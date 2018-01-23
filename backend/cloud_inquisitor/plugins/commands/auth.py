@@ -1,8 +1,8 @@
-from flask_script import Option
-from pkg_resources import iter_entry_points
+from copy import deepcopy
 
-from cloud_inquisitor import app
-from cloud_inquisitor.constants import PLUGIN_NAMESPACES
+from flask_script import Option
+
+from cloud_inquisitor.config import dbconfig, DBCChoice
 from cloud_inquisitor.plugins.commands import BaseCommand
 
 
@@ -25,32 +25,26 @@ class Auth(BaseCommand):
     )
 
     def run(self, **kwargs):
-        plugins = {}
-        namespaces = PLUGIN_NAMESPACES['auth']
-        for ns in namespaces:
-            for ep in iter_entry_points(ns):
-                cls = ep.load()
-                plugins[cls.name] = cls
-                app.register_auth_system(cls)
+        auth_config = dbconfig.get('auth_system', 'default')
 
         if kwargs['list']:
             self.log.info('--- List of available auth systems ---')
-            for name, authsys in list(plugins.items()):
-                if app.active_auth_system == authsys:
-                    self.log.info('{} (active)'.format(name))
+            for authsys in sorted(auth_config['available']):
+                if authsys in auth_config['enabled']:
+                    self.log.info('{} (active)'.format(authsys))
                 else:
-                    self.log.info(name)
+                    self.log.info(authsys)
             self.log.info('--- End list of Auth Systems ---')
 
         elif kwargs['authsys']:
-            if kwargs['authsys'] in plugins:
-                if app.active_auth_system and kwargs['authsys'] == app.active_auth_system.name:
+            if kwargs['authsys'] in auth_config['available']:
+                if kwargs['authsys'] in auth_config['enabled']:
                     self.log.info('{} is already the active auth system'.format(kwargs['authsys']))
                 else:
-                    for name, authsys in list(plugins.items()):
-                        state = (name == kwargs['authsys'])
-                        self.dbconfig.set(authsys.ns, 'enabled', state)
-                        self.log.info('{} {}'.format('Enabled' if state else 'Disabled', name))
+                    itm = deepcopy(auth_config)
+                    itm['enabled'] = [kwargs['authsys']]
+                    self.dbconfig.set('default', 'auth_system', DBCChoice(itm))
+                    self.log.info('{} has been set as the active auth system'.format(kwargs['authsys']))
             else:
                 self.log.error('Invalid auth system: {}'.format(kwargs['authsys']))
 
