@@ -106,6 +106,10 @@
                 "database"
             ]
         },
+        "parso": {
+            "level": "WARNING",
+            "propagate": "false"
+        },
         "git": {
             "level": 100,
             "propagate": "false"
