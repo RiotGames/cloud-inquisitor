@@ -16,6 +16,7 @@ setuptools.setup(
             'api_server = cloud_inquisitor.plugins.commands.apiserver:APIServer',
             'list_plugins = cloud_inquisitor.plugins.commands.plugins:ListPlugins',
             'scheduler = cloud_inquisitor.plugins.commands.scheduler:Scheduler',
+            'import-saml = cloud_inquisitor.plugins.commands.saml:ImportSAML',
             'worker = cloud_inquisitor.plugins.commands.scheduler:Worker',
             'userdata = cloud_inquisitor.plugins.commands.userdata:UserData',
             'setup = cloud_inquisitor.plugins.commands.setup:Setup',
