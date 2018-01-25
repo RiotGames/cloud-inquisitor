@@ -16,11 +16,11 @@ It's highly recommended you first use the quickstart to build Cloud Inquisitor. 
 Installing Cloud Inquisitor
 ===========================
 
-Getting Cloud Inquisitor (cinq) up and running involves the following steps
+Getting Cloud Inquisitor (cinq) up and running involves the following steps:
 
 1. Configure AWS credentials and variables for cinq.
-2. Packer build your cinq AMI.
-3. Launch your AMI, login, and add accounts!
+2. Use `Packer` to build your *cinq* AMI.
+3. Launch your AMI, login, and add your accounts!
 
 ------------------
 Build Requirements
@@ -37,7 +37,7 @@ Build Requirements
 1. Setting Up
 ^^^^^^^^^^^^^
 
-* Export your AWS key credentials into the local terminal that you intend to execute packer from. You can also add them to the variables file but this isn't recommeded.
+* Export your AWS key credentials into the local terminal that you intend to execute *packer* from.
 
 Unix-based Systems ::
 
@@ -62,7 +62,7 @@ Windows ::
 
 The example file ``variables/variables.json.sample`` provides sample variables needed to configure cinq. A full list of parameters is available in the build.json file. For detailed build information please see `additional options <./additional_options.rst>`_.
 
-NOTE : You will need to change some of these items as they are environnment-specific.
+**NOTE:** You will need to change some of these items as they are environnment-specific.
 
 * The easiest way to get cinq up and running is to ensure you've properly configured all of the values in the sample file and most importantly the app_db_setup_local is set to True. The will install a local mysql-server on the instance itself and get the database setup for you. ::
 
@@ -87,6 +87,11 @@ NOTE : You will need to change some of these items as they are environnment-spec
     }
 
 * Save this file!
+
+For more advanced and secure options, please see the additional options `documentation <https://github.com/RiotGames/cloud-inquisitor/blob/quickstart-doc/docs/additional_options.rst>`_. For example:
+
+- If you want to use a remote database as opposed to the local database provided by *cinq*, check out the `databases <https://github.com/RiotGames/cloud-inquisitor/blob/quickstart-doc/docs/additional_options.rst#databases>`_ section
+- If you don't wish to keep database credentials in flat configuration files on the instance, you may use `KMS <https://aws.amazon.com/kms/>`_ to encrypt these variables and pass them to the `cinq` instance via AWS userdata `databases <https://github.com/RiotGames/cloud-inquisitor/blob/quickstart-doc/docs/additional_options.rst#databases>`_ section
 
 ^^^^^^^^^^^^^^^^^^^^
 2. Building an Image
