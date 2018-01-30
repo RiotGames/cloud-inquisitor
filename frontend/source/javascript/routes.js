@@ -717,6 +717,38 @@ function config($stateProvider, $urlServiceProvider) {
     ;
     //endregion
 
+    // region VPCs
+    $stateProvider
+        .state('vpc', {
+            abstract: true,
+            parent: 'main',
+            template: '<ui-view/>'
+        })
+        .state('vpc.list', {
+            url: '/vpc/list?{page:int}&{count:int}&{accounts:string}&{regions:string}&{vpcId:string}&' +
+            '{cidrV4:string}&{vpcFlowLogsStatus:string}',
+            params: {
+                page: 1,
+                count: 100,
+                accounts: [],
+                regions: [],
+                vpcId: undefined,
+                cidrV4: undefined,
+                vpcFlowLogsStatus: undefined
+            },
+            component: 'vpcList',
+            resolve: {
+                params: $transition$ => {
+                    return stateParams($transition$);
+                },
+                result: (VPC, Utils, $transition$) => {
+                    return VPC.query(stateParams($transition$));
+                }
+            }
+        })
+    ;
+    //endregion
+
     //region AuditLog
     $stateProvider
         .state('auditlog', {

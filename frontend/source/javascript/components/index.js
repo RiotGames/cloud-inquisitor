@@ -21,3 +21,4 @@ require('./roles');
 require('./search');
 require('./users');
 require('./volumeaudit');
+require('./vpc');

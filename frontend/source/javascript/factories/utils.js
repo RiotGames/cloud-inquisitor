@@ -395,6 +395,7 @@ function Utils($injector, $window, Session) {
             // case 'EBS Snapshot':
             // case 'Elastic BeanStalk':
             // case 'S3 Bucket':
+            // case 'AWS VPC':
         }
     }
 
