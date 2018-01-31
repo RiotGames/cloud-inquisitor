@@ -71,7 +71,7 @@ function vpcListController(MetadataService, Utils) {
                 multiple: false,
                 values: {
                     'active' : 'ACTIVE',
-                    'inactive' : ''
+                    'inactive' : 'UNDEFINED'
                 },
                 selected: vm.params.vpcFlowLogsStatus
             }
