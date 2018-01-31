@@ -1,6 +1,6 @@
 {
     "name": "cloud-inquisitor",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "repository": "https://github.com/CloudInquisitor/cloud-inquisitor",
     "description": "Cloud Inquisitor Frontend",
     "main": "index.js",
