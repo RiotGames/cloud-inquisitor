@@ -71,8 +71,7 @@ function vpcListController(MetadataService, Utils) {
                 multiple: false,
                 values: {
                     'active' : 'ACTIVE',
-                    'inactive' : '',
-                    'any' : undefined
+                    'inactive' : ''
                 },
                 selected: vm.params.vpcFlowLogsStatus
             }
@@ -89,9 +88,7 @@ function vpcListController(MetadataService, Utils) {
             regions: [],
             vpcId: undefined,
             cidrV4: undefined,
-            vpcFlowLogsStatus: undefined,
-            vpcFlowLogsLogGroup: undefined,
-            state: undefined
+            vpcFlowLogsStatus: undefined
 
         };
         vm.updatePath();
