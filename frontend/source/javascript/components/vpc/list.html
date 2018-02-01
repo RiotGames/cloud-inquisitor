@@ -1,0 +1,50 @@
+<section class="md-whiteframe-2dp md-padding">
+    <filters filters="vm.filters" on-update="vm.updateFilters" on-reset="vm.resetFilters"></filters>
+
+    <md-table-pagination
+            style="border: 0;"
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.vpcCount}}">
+    </md-table-pagination>
+
+    <md-table-container>
+        <table md-table class="striped hover">
+            <thead md-head>
+            <tr md-row>
+                <th md-column style="width: 150px;">Account</th>
+                <th md-column style="width: 150px;">Region</th>
+                <th md-column style="width: 150px;">VPC ID</th>
+                <th md-column style="width: 150px;">CIDR_V4</th>
+                <th md-column style="width: 150px;">Flow Logs Status</th>
+                <th md-column style="width: 150px;">CloudWatch Log Group</th>
+                <th md-column style="width: 150px;">Status</th>
+            </tr>
+            </thead>
+            <tbody md-body>
+            <tr md-auto-select md-row ng-repeat="vpc in vm.vpcs">
+                <td md-cell>{{vpc.account.accountName}}</td>
+                <td md-cell>{{vpc.location}}</td>
+                <td md-cell>{{vpc.properties.vpcId}}</td>
+                <td md-cell>{{vpc.properties.cidrV4}}</td>
+                <td md-cell>{{vpc.properties.vpcFlowLogsStatus}}</td>
+                <td md-cell>{{vpc.properties.vpcFlowLogsLogGroup}}</td>
+                <td md-cell>{{vpc.properties.state}}</td>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+
+    <md-table-pagination
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.vpcCount}}">
+    </md-table-pagination>
+</section>

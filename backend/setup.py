@@ -38,6 +38,7 @@ setuptools.setup(
             'ami_type = cloud_inquisitor.plugins.types.resources:AMI',
             'dnszone_type = cloud_inquisitor.plugins.types.resources:DNSZone',
             'dnsrecord_type = cloud_inquisitor.plugins.types.resources:DNSRecord',
+            'vpc_type = cloud_inquisitor.plugins.types.resources:VPC'
         ],
 
         'cloud_inquisitor.plugins.schedulers': [],
