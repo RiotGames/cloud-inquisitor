@@ -10,6 +10,9 @@
         "ec2_region":                               "us-west-2",
         "ec2_ssh_username":                         "ubuntu",
         "ec2_security_groups":                      "sg-xxxxxxxx,sg-xxxxxxxx",
+        "ec2_tag_owner":                            "teamname@yourcompany.com",
+        "ec2_tag_accounting":                       "yourteam.accounting.tag",
+        "ec2_tag_name":                             "Cloud Inquisitor System Image",
 
         "git_branch":                               null,
         "tmp_base":                                 "/tmp/packer",
@@ -51,16 +54,16 @@
             "ami_name":             "cloud-inquisitor @{{user `git_branch`}} {{isotime \"2006-01-02 15-04-05\"}}",
             "security_group_ids":   "{{user `ec2_security_groups`}}",
             "tags": {
-                "Owner":            "teamname@yourcompany.com",
-                "Accounting":       "yourteam.accounting.tag",
-                "Name":             "Cloud Inquisitor System Image",
+                "Owner":            "{{user `ec2_tag_owner`}}",
+                "Accounting":       "{{user `ec2_tag_accounting`}}",
+                "Name":             "{{user `ec2_tag_name`}}",
                 "SourceAmi":        "{{user `ec2_source_ami`}}",
                 "GitBranch":        "{{user `git_branch`}}"
             },
             "run_tags": {
-                "Owner":            "teamname@yourcompany.com",
-                "Accounting":       "yourteam.accounting.tag",
-                "Name":             "Cloud Inquisitor Packer Instance",
+                "Owner":            "{{user `ec2_tag_owner`}}",
+                "Accounting":       "{{user `ec2_tag_accounting`}}",
+                "Name":             "Packer Build - {{user `ec2_tag_name`}}",
                 "GitBranch":        "{{user `git_branch`}}"
             }
         }
