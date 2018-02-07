@@ -1,4 +1,5 @@
-Cloud Inquisitor
-================
+.. raw:: html
 
-Please see https://cloud-inquisitor.readthedocs.io/en/latest/ for more information
+    <img src="https://cloud-inquisitor.readthedocs.io/en/latest/_images/cloud-inquisitor_logo.png" height="100px">
+
+Please see the official docs `here <https://cloud-inquisitor.readthedocs.io/en/latest/>`_ for more information.
