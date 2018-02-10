@@ -6,7 +6,7 @@ validate_environment() {
     if [ -z "${APP_DEBUG}" ]; then echo "Missing APP_DEBUG environment variable" && exit -1; fi
     if [ -z "${APP_PYENV_PATH}" ]; then echo "Missing APP_PYENV_PATH environment variable" && exit -1; fi
     if [ -z "${APP_FRONTEND_BASE_PATH}" ]; then echo "Missing APP_FRONTEND_BASE_PATH environment variable" && exit -1; fi
-    if [ -z "${APP_BACKEND_BASE_PATH}" ]; then echo "Missing APP_BACKEND_BASE_PATH environment variable" && exit -1; fi
+    if [ -z "${APP_CONFIG_BASE_PATH}" ]; then echo "Missing APP_CONFIG_BASE_PATH environment variable" && exit -1; fi
     if [ -z "${APP_DB_URI}" ]; then echo "Missing APP_DB_URI environment variable" && exit -1; fi
     if [ -z "${APP_SSL_ENABLED}" ]; then echo "Missing APP_SSL_ENABLED environment variable" && exit -1; fi
     if [ -z "${APP_USE_USER_DATA}" ]; then echo "Missing APP_USE_USER_DATA environment variable" && exit -1; fi
@@ -29,42 +29,20 @@ install_backend() {
     pip=${APP_PYENV_PATH}/bin/pip3
 
     echo "Installing backend"
-    mkdir -p ${APP_BACKEND_BASE_PATH}/settings/ssl
+    mkdir -p ${APP_CONFIG_BASE_PATH}/ssl
+    mkdir -p /var/log/cloud-inquisitor
+    chown www-data:www-data -R /var/log/cloud-inquisitor
 
-    # setup.py to prepare for dynamic module reloading.
-    # TODO: Remove PBR_VERSION once we are building CInq as a package
-    (
-        cd ${APP_BACKEND_BASE_PATH}
-
-        $pip install cloud-inquisitor
-        $pip install --upgrade -r ${APP_TEMP_BASE}/cinq-backend/requirements.txt
-
-        # Create log folders for the application and allow the backend user to write to them
-        mkdir -p logs
-        chown -R www-data:www-data logs settings
-    )
+    $pip install cloud-inquisitor
 }
 
 install_frontend() {
-    FRONTEND_TEMP_BASE=${APP_TEMP_BASE}/cinq-frontend
-    pushd ${FRONTEND_TEMP_BASE}
-        # Delete node_modules and dist if they exist to prevent
-        # bad versions being used
-        if [ -d node_modules ]; then rm -rf node_modules; fi
-        if [ -d dist ]; then rm -rf dist; fi
-
-        echo "Installing NPM modules"
-        npm i --quiet
-
-        echo "Building frontend application"
-        ./node_modules/.bin/gulp build.prod
-    popd
-
     mkdir -p ${APP_FRONTEND_BASE_PATH}
-    cp -a ${FRONTEND_TEMP_BASE}/dist/* ${APP_FRONTEND_BASE_PATH}
+    curl -L http://releases.cloud-inquisitor.io/cinq-frontend-latest.tar.gz | tar -C ${APP_FRONTEND_BASE_PATH} -xzf -
 }
 
 configure_application() {
+    mkdir -p /usr/local/etc/cloud-inquisitor
     echo "Configuring backend"
     SECRET_KEY=$(openssl rand -hex 32)
     sed -e "s|APP_DEBUG|${APP_DEBUG}|" \
@@ -76,9 +54,9 @@ configure_application() {
         -e "s|APP_INSTANCE_ROLE_ARN|${APP_INSTANCE_ROLE_ARN}|" \
         -e "s|APP_AWS_API_ACCESS_KEY|${APP_AWS_API_ACCESS_KEY}|" \
         -e "s|APP_AWS_API_SECRET_KEY|${APP_AWS_API_SECRET_KEY}|" \
-        files/backend-settings.py > ${APP_BACKEND_BASE_PATH}/settings/production.py
+        files/backend-settings.py > ${APP_CONFIG_BASE_PATH}/production.py
 
-    cp files/logging.json ${APP_BACKEND_BASE_PATH}/settings/logging.json
+    cp files/logging.json ${APP_CONFIG_BASE_PATH}/logging.json
 }
 
 install_certs() {
@@ -90,21 +68,21 @@ install_certs() {
         CERTDATA=$(echo "$APP_SSL_CERT_DATA" | base64 -d)
         KEYDATA=$(echo "$APP_SSL_KEY_DATA" | base64 -d)
 
-        echo "$CERTDATA" > $APP_BACKEND_BASE_PATH/settings/ssl/cinq-frontend.crt
-        echo "$KEYDATA" > $APP_BACKEND_BASE_PATH/settings/ssl/cinq-frontend.key
+        echo "$CERTDATA" > $APP_CONFIG_BASE_PATH/ssl/cinq-frontend.crt
+        echo "$KEYDATA" > $APP_CONFIG_BASE_PATH/ssl/cinq-frontend.key
     fi
 }
 
 function generate_jwt_key() {
     echo "Generating JWT private key"
-    openssl genrsa -out ${APP_BACKEND_BASE_PATH}/settings/ssl/private.key 2048
+    openssl genrsa -out ${APP_CONFIG_BASE_PATH}/ssl/private.key 2048
 }
 
 generate_self_signed_certs() {
     CERTINFO="/C=US/ST=CA/O=Your Company/localityName=Your City/commonName=localhost/organizationalUnitName=Operations/emailAddress=someone@example.com"
     openssl req -x509 -subj "$CERTINFO" -days 3650 -newkey rsa:2048 -nodes \
-        -keyout ${APP_BACKEND_BASE_PATH}/settings/ssl/cinq-frontend.key \
-        -out ${APP_BACKEND_BASE_PATH}/settings/ssl/cinq-frontend.crt
+        -keyout ${APP_CONFIG_BASE_PATH}/ssl/cinq-frontend.key \
+        -out ${APP_CONFIG_BASE_PATH}/ssl/cinq-frontend.crt
 }
 
 configure_nginx() {
@@ -117,7 +95,7 @@ configure_nginx() {
     fi
 
     sed -e "s|APP_FRONTEND_BASE_PATH|${APP_FRONTEND_BASE_PATH}|g" \
-        -e "s|APP_BACKEND_BASE_PATH|${APP_BACKEND_BASE_PATH}|g" \
+        -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" \
         files/${NGINX_CFG} > /etc/nginx/sites-available/cinq.conf
 
     rm -f /etc/nginx/sites-enabled/default;
@@ -128,7 +106,7 @@ configure_nginx() {
 
 configure_supervisor() {
     echo "Configuring supervisor"
-    sed -e "s|APP_BACKEND_BASE_PATH|${APP_BACKEND_BASE_PATH}|g" \
+    sed -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" \
         -e "s|APP_PYENV_PATH|${APP_PYENV_PATH}|g" \
         files/supervisor.conf > /etc/supervisor/conf.d/cinq.conf
 

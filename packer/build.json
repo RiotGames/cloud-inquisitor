@@ -19,10 +19,10 @@
         "install_base":                             "/opt",
         "pyenv_dir":                                "pyenv",
         "frontend_dir":                             "cinq-frontend",
-        "backend_dir":                              "cinq-backend",
 
         "app_apt_upgrade":                          "True",
         "app_debug":                                "False",
+        "app_config_path":                          "/usr/local/etc/cloud-inquisitor",
         "app_db_uri":                               "UNUSED",
         "app_db_setup_local":                       "True",
         "app_db_user":                              null,
@@ -77,16 +77,6 @@
         },
         {
             "type": "file",
-            "source": "../backend",
-            "destination": "{{user `tmp_base`}}/{{user `backend_dir`}}"
-        },
-        {
-            "type": "file",
-            "source": "../frontend",
-            "destination": "{{user `tmp_base`}}/{{user `frontend_dir`}}"
-        },
-        {
-            "type": "file",
             "source": "files",
             "destination": "{{user `tmp_base`}}"
         },
@@ -110,7 +100,7 @@
                 "APP_TEMP_BASE={{user `tmp_base`}}",
                 "APP_PYENV_PATH={{user `install_base`}}/{{user `pyenv_dir`}}",
                 "APP_FRONTEND_BASE_PATH={{user `install_base`}}/{{user `frontend_dir`}}",
-                "APP_BACKEND_BASE_PATH={{user `install_base`}}/{{user `backend_dir`}}",
+                "APP_CONFIG_BASE_PATH={{user `app_config_path`}}",
                 "APP_DEBUG={{user `app_debug`}}",
                 "APP_DB_URI={{user `app_db_uri`}}",
                 "APP_SSL_ENABLED={{user `app_ssl_enabled`}}",
@@ -126,23 +116,10 @@
         },
         {
             "type": "shell",
-            "inline": [
-                "echo \"Touching coverage.xml before attempted download, in case it does not exist.\"",
-                "sudo touch {{user `install_base`}}/{{user `backend_dir`}}/coverage.xml"
-            ]
-        },
-        {
-            "type": "file",
-            "direction": "download",
-            "source": "{{user `install_base`}}/{{user `backend_dir`}}/coverage.xml",
-            "destination": "../backend/coverage.xml"
-        },
-        {
-            "type": "shell",
             "execute_command": "if [ \"{{ user `app_db_setup_local` }}\" == \"True\" ]; then chmod +x {{ .Path }}; {{ .Vars }} sudo -EH {{ .Path }}; else exit 0; fi",
             "script": "scripts/setup_db.sh",
             "environment_vars": [
-                "APP_BACKEND_BASE_PATH={{user `install_base`}}/{{user `backend_dir`}}",
+                "APP_CONFIG_BASE_PATH={{user `app_config_path`}}",
                 "APP_DB_USER={{user `app_db_user`}}",
                 "APP_DB_PW={{user `app_db_pw`}}",
                 "APP_PYENV_PATH={{user `install_base`}}/{{user `pyenv_dir`}}"
