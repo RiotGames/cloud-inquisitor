@@ -272,7 +272,7 @@ def get_aws_regions():
             return data['regions']
 
     data = requests.get('https://ip-ranges.amazonaws.com/ip-ranges.json').json()
-    rgx = re.compile(dbconfig.get('ignored_aws_regions_regexp', default=''), re.I)
+    rgx = re.compile(dbconfig.get('ignored_aws_regions_regexp', default='(^cn-|GLOBAL|-gov)'), re.I)
     regions = sorted(list(set(
         x['region'] for x in data['prefixes'] if not rgx.search(x['region'])
     )))

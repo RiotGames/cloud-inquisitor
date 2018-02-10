@@ -31,7 +31,13 @@ install_backend() {
     echo "Installing backend"
     mkdir -p ${APP_CONFIG_BASE_PATH}/ssl
     mkdir -p /var/log/cloud-inquisitor
-    chown www-data:www-data -R /var/log/cloud-inquisitor
+    touch /var/log/cloud-inquisitor/apiserver.log \
+          /var/log/cloud-inquisitor/default.log \
+          /var/log/cloud-inquisitor/scheduler.log \
+          ${APP_CONFIG_BASE_PATH}/aws_regions.json
+
+    chown www-data:www-data -R /var/log/cloud-inquisitor \
+                               ${APP_CONFIG_BASE_PATH}/aws_regions.json
 
     $pip install cloud-inquisitor
 }
