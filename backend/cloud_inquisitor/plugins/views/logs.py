@@ -31,7 +31,7 @@ class Logs(BaseView):
     @rollback
     @check_auth(ROLE_ADMIN)
     def get(self):
-        self.reqparse.add_argument('limit', type=int, default=100)
+        self.reqparse.add_argument('count', type=int, default=100)
         self.reqparse.add_argument('page', type=int, default=0)
         self.reqparse.add_argument('levelno', type=int, default=0)
         args = self.reqparse.parse_args()
@@ -44,17 +44,17 @@ class Logs(BaseView):
             qry = (LogEvent.query
                 .filter(LogEvent.levelno >= args['levelno'])
                 .order_by(desc(LogEvent.timestamp))
-                .limit(args['limit'])
+                .limit(args['count'])
             )
         else:
             total_events = db.session.query(func.count(LogEvent.log_event_id)).first()[0]
             qry = (LogEvent.query
                 .order_by(desc(LogEvent.timestamp))
-                .limit(args['limit'])
+                .limit(args['count'])
             )
 
         if (args['page'] - 1) > 0:
-            offset = (args['page'] - 1) * args['limit']
+            offset = (args['page'] - 1) * args['count']
             qry = qry.offset(offset)
 
         events = qry.all()
