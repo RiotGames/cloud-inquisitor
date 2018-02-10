@@ -28,7 +28,7 @@
             "filters": ["standard"]
         },
         "file": {
-            "filename": "logs/default.log",
+            "filename": "/var/log/cloud-inquisitor/default.log",
             "class": "logging.handlers.TimedRotatingFileHandler",
             "when": "midnight",
             "backupCount": 7,
@@ -36,7 +36,7 @@
             "filters": ["standard"]
         },
         "file.http": {
-            "filename": "logs/apiserver.log",
+            "filename": "/var/log/cloud-inquisitor/apiserver.log",
             "class": "logging.handlers.TimedRotatingFileHandler",
             "when": "midnight",
             "backupCount": 7,
@@ -44,7 +44,7 @@
             "filters": ["standard"]
         },
         "file.scheduler": {
-            "filename": "logs/scheduler.log",
+            "filename": "/var/log/cloud-inquisitor/scheduler.log",
             "class": "logging.handlers.TimedRotatingFileHandler",
             "when": "midnight",
             "backupCount": 7,

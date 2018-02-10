@@ -87,15 +87,11 @@ class LogLevelFilter(logging.Filter):
 
 
 def setup_logging():
-    """Utility function to setup the logging systems based on the `settings/logging.json` configuration file"""
+    """Utility function to setup the logging systems based on the `logging.json` configuration file"""
 
-    base_path = app.config.get('BASE_PATH')
-    log_dir = os.path.join(base_path, 'logs')
+    base_path = app.config.get('BASE_CFG_PATH')
 
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir, 0o700)
-
-    config = json.load(open(os.path.join(base_path, 'settings', 'logging.json')))
+    config = json.load(open(os.path.join(base_path, 'logging.json')))
     if not dbconfig.get('enable_syslog_forwarding', NS_LOG, False):
         config['handlers']['pipeline'] = {
             'class': 'logging.NullHandler',
