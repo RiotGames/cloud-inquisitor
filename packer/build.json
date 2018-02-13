@@ -35,7 +35,8 @@
         "app_user_data_url":                        "http://169.254.169.254/latest/user-data",
         "app_aws_api_access_key":                   "",
         "app_aws_api_secret_key":                   "",
-        "app_instance_role_arn":                    ""
+        "app_instance_role_arn":                    "",
+        "app_worker_procs":                         "2"
     },
     "builders": [
         {
@@ -103,6 +104,7 @@
                 "APP_CONFIG_BASE_PATH={{user `app_config_path`}}",
                 "APP_DEBUG={{user `app_debug`}}",
                 "APP_DB_URI={{user `app_db_uri`}}",
+                "APP_WORKER_PROCS={{user `app_worker_procs`}}",
                 "APP_SSL_ENABLED={{user `app_ssl_enabled`}}",
                 "APP_SSL_CERT_DATA={{user `app_ssl_cert_data`}}",
                 "APP_SSL_KEY_DATA={{user `app_ssl_key_data`}}",

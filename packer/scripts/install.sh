@@ -12,6 +12,7 @@ validate_environment() {
     if [ -z "${APP_USE_USER_DATA}" ]; then echo "Missing APP_USE_USER_DATA environment variable" && exit -1; fi
     if [ -z "${APP_KMS_ACCOUNT_NAME}" ]; then echo "Missing APP_KMS_ACCOUNT_NAME environment variable" && exit -1; fi
     if [ -z "${APP_USER_DATA_URL}" ]; then echo "Missing APP_USER_DATA_URL environment variable" && exit -1; fi
+    if [ -z "${APP_WORKER_PROCS}" ]; then echo "Missing APP_WORKER_PROCS environment variable" && exit -1; fi
 }
 
 create_virtualenv() {
@@ -114,6 +115,7 @@ configure_supervisor() {
     echo "Configuring supervisor"
     sed -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" \
         -e "s|APP_PYENV_PATH|${APP_PYENV_PATH}|g" \
+        -e "s|APP_WORKER_PROCS|${APP_WORKER_PROCS}|g" \
         files/supervisor.conf > /etc/supervisor/conf.d/cinq.conf
 
     # If running on a systemd enabled system, ensure the service is enabled and running
