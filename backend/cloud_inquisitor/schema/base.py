@@ -10,6 +10,7 @@ from sqlalchemy.orm.attributes import QueryableAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 
 from cloud_inquisitor import db
+from cloud_inquisitor.db import Model
 from cloud_inquisitor.constants import ROLE_ADMIN, SchedulerStatus, AccountTypes
 from cloud_inquisitor.exceptions import SchedulerError
 from cloud_inquisitor.utils import isoformat, to_camelcase
@@ -21,7 +22,7 @@ TinyInt = mysql.TINYINT
 
 @as_declarative()
 class BaseModelMixin(object):
-    """Mixin class for db.Model object's to expose some common functionality"""
+    """Mixin class for Model object's to expose some common functionality"""
     @classmethod
     @declared_attr
     def __tablename__(cls):
@@ -44,12 +45,12 @@ class BaseModelMixin(object):
             value_class = type(value)
 
             if issubclass(type(attr), QueryableAttribute):
-                # List of db.Model, BaseModelMixin objects (one-to-many relationship)
+                # List of Model, BaseModelMixin objects (one-to-many relationship)
                 if issubclass(value_class, InstrumentedList):
                     output[to_camelcase(attrName)] = [x.to_json() for x in value]
 
-                # db.Model, BaseModelMixin object (one-to-one relationship)
-                elif issubclass(value_class, db.Model):
+                # Model, BaseModelMixin object (one-to-one relationship)
+                elif issubclass(value_class, Model):
                     output[to_camelcase(attrName)] = value.to_json()
 
                 # Datetime object
@@ -66,7 +67,7 @@ class BaseModelMixin(object):
         return output
 
 
-class Account(db.Model, BaseModelMixin):
+class Account(Model, BaseModelMixin):
     """Account object class
 
     Attributes:
@@ -170,10 +171,14 @@ class Account(db.Model, BaseModelMixin):
             Account object or None if not found
         """
         if isinstance(account, str):
-            return cls.query.filter_by(account_name=account).first()
+            return getattr(db, cls.__name__).find_one(
+                Account.account_name == account
+            )
 
         elif isinstance(account, int):
-            return cls.query.filter_by(account_number=account).first()
+            return getattr(db, cls.__name__).find_one(
+                Account.account_number == account
+            )
 
         elif isinstance(account, cls):
             return account
@@ -191,10 +196,12 @@ class Account(db.Model, BaseModelMixin):
         Returns:
             :obj:`Account`
         """
-        return cls.query.filter_by(account_id=account_id).first()
+        return getattr(db, cls.__name__).find_one({
+            'account_id': account_id
+        })
 
 
-class Tag(db.Model, BaseModelMixin):
+class Tag(Model, BaseModelMixin):
     """Tag object
 
     Attributes:
@@ -234,7 +241,7 @@ class Tag(db.Model, BaseModelMixin):
         )
 
 
-class LogEvent(db.Model, BaseModelMixin):
+class LogEvent(Model, BaseModelMixin):
     """Log Event object
 
     Attributes:
@@ -267,7 +274,7 @@ class LogEvent(db.Model, BaseModelMixin):
     stacktrace = Column(Text, nullable=True)
 
 
-class Email(db.Model, BaseModelMixin):
+class Email(Model, BaseModelMixin):
     """Email object
 
     Attributes:
@@ -322,7 +329,7 @@ class Email(db.Model, BaseModelMixin):
         return message
 
 
-class ConfigNamespace(db.Model, BaseModelMixin):
+class ConfigNamespace(Model, BaseModelMixin):
     """Configuration Namespace object
 
     Attributes:
@@ -344,7 +351,7 @@ class ConfigNamespace(db.Model, BaseModelMixin):
     )
 
 
-class ConfigItem(db.Model, BaseModelMixin):
+class ConfigItem(Model, BaseModelMixin):
     """Configuration Item object
 
     Attributes:
@@ -383,14 +390,13 @@ class ConfigItem(db.Model, BaseModelMixin):
         Returns:
             :obj:`Configitem`: Returns config item object if found, else `None`
         """
-        return (cls.query
-            .filter(ConfigItem.namespace_prefix == ns)
-            .filter(ConfigItem.key == key)
-            .first()
+        return getattr(db, cls.__name__).find_one(
+            ConfigItem.namespace_prefix == ns,
+            ConfigItem.key == key
         )
 
 
-class Role(db.Model, BaseModelMixin):
+class Role(Model, BaseModelMixin):
     """User role object
 
     Attributes:
@@ -431,7 +437,7 @@ class Role(db.Model, BaseModelMixin):
         Returns:
             `Role`,`None`
         """
-        return Role.query.filter_by(name=name).first()
+        return db.Role.find_one(Role.name == name)
 
     @classmethod
     def from_json(cls, data):
@@ -452,7 +458,7 @@ class Role(db.Model, BaseModelMixin):
         return role
 
 
-class User(db.Model, BaseModelMixin):
+class User(Model, BaseModelMixin):
     """User object
 
     Attributes:
@@ -477,17 +483,6 @@ class User(db.Model, BaseModelMixin):
         lazy='joined',
         secondary='user_roles',
         order_by=Role.role_id)
-
-    def get_accounts(self):
-        """Get a list of accounts the user has access to
-
-        Returns:
-            `list` of :obj:`Account`: List of accounts the user has access to
-        """
-        accounts = Account.query.all()
-
-        if 'Admin' in self.roles:
-            return accounts
 
     def __str__(self):
         return '<User username={}, AuthSystem: {}, Roles: {}>'.format(
@@ -548,7 +543,7 @@ class User(db.Model, BaseModelMixin):
         }
 
 
-class UserRole(db.Model, BaseModelMixin):
+class UserRole(Model, BaseModelMixin):
     """User to role mapping object
 
     Warnings:
@@ -566,7 +561,7 @@ class UserRole(db.Model, BaseModelMixin):
     role_id = Column(Integer, ForeignKey(Role.role_id, name='fk_user_role_role', ondelete='CASCADE'))
 
 
-class AuditLog(db.Model, BaseModelMixin):
+class AuditLog(Model, BaseModelMixin):
     """Audit Log Event
 
     Attributes:
@@ -610,7 +605,7 @@ class AuditLog(db.Model, BaseModelMixin):
             db.session.rollback()
 
 
-class SchedulerBatch(db.Model, BaseModelMixin):
+class SchedulerBatch(Model, BaseModelMixin):
     __tablename__ = 'scheduler_batches'
 
     batch_id = Column(String(36), primary_key=True)
@@ -640,10 +635,10 @@ class SchedulerBatch(db.Model, BaseModelMixin):
 
     @staticmethod
     def get(batch_id):
-        return SchedulerBatch.query.filter_by(batch_id=batch_id).first()
+        return db.SchedulerBatch.find_one(SchedulerBatch.batch_id == batch_id)
 
 
-class SchedulerJob(db.Model, BaseModelMixin):
+class SchedulerJob(Model, BaseModelMixin):
     __tablename__ = 'scheduler_jobs'
 
     job_id = Column(String(36), primary_key=True)
@@ -669,4 +664,4 @@ class SchedulerJob(db.Model, BaseModelMixin):
 
     @staticmethod
     def get(job_id):
-        return SchedulerJob.query.filter_by(job_id=job_id).first()
+        return db.SchedulerJob.find_one(SchedulerJob.job_id == job_id)

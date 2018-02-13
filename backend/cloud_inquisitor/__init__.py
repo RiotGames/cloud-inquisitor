@@ -27,6 +27,7 @@ from flask_sqlalchemy import SQLAlchemy
 from pkg_resources import iter_entry_points
 from sqlalchemy.exc import SQLAlchemyError
 
+from cloud_inquisitor.db import get_db_connection
 from cloud_inquisitor.utils import parse_date
 
 # Setup app wide variables
@@ -63,7 +64,8 @@ if app.config.get('USE_USER_DATA', True):
         print(res.status_code)
         raise RuntimeError('Failed loading user-data, cannot continue')
 
-db = SQLAlchemy(app)
+#db = SQLAlchemy(app)
+db = get_db_connection()
 api = Api(app)
 
 # Must be imported after we initialized the db instance
@@ -257,6 +259,7 @@ def get_aws_session(account):
     )
 
     return sess
+
 
 def get_aws_regions():
     """Load a list of AWS regions from file, provided the file exists, is not empty and is current (less than one week old). If the file

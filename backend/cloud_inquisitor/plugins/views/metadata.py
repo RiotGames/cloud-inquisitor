@@ -2,7 +2,7 @@ import copy
 
 from flask import session, current_app
 
-from cloud_inquisitor import AWS_REGIONS
+from cloud_inquisitor import AWS_REGIONS, db
 from cloud_inquisitor.constants import ROLE_ADMIN, ROLE_USER
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import Account
@@ -16,10 +16,8 @@ class MetaData(BaseView):
     @rollback
     @check_auth(ROLE_USER)
     def get(self):
-        accts = (Account.query
-            .order_by('account_name')
-            .filter(Account.account_id.in_(session['accounts']))
-            .all()
+        accts = db.Account.order_by('account_name').find(
+            Account.account_id.in_(session['accounts'])
         )
 
         accounts = [acct.to_json(is_admin=ROLE_ADMIN in session['user'].roles) for acct in accts]

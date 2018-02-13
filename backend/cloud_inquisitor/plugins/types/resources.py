@@ -188,7 +188,7 @@ class BaseResource(ABC):
         Returns:
             list of resource objects
         """
-        qry = Resource.query.filter(
+        qry = db.Resource.filter(
             Resource.resource_type_id == ResourceType.get(cls.resource_type).resource_type_id
         )
 
@@ -224,7 +224,7 @@ class BaseResource(ABC):
         Returns:
             `list` of `Resource`, `sqlalchemy.orm.Query`
         """
-        qry = Resource.query.order_by(Resource.resource_id).filter(
+        qry = db.Resource.order_by(Resource.resource_id).filter(
             Resource.resource_type_id == ResourceType.get(cls.resource_type).resource_type_id
         )
 
@@ -542,7 +542,7 @@ class EC2Instance(BaseResource):
             `list` of `EBSVolume`
         """
         return [
-            EBSVolume(res) for res in Resource.query.join(
+            EBSVolume(res) for res in db.Resource.join(
                 ResourceProperty, Resource.resource_id == ResourceProperty.resource_id
             ).filter(
                 Resource.resource_type_id == ResourceType.get('aws_ebs_volume').resource_type_id,

@@ -1,5 +1,5 @@
 from flask import session
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, distinct
 
 from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
@@ -36,8 +36,8 @@ class EmailList(BaseView):
         self.reqparse.add_argument('subsystems', type=str, default=None, action='append')
 
         args = self.reqparse.parse_args()
-        total_qry = db.session.query(func.count(Email.email_id))
-        qry = Email.query.order_by(desc(Email.timestamp))
+        total_qry = db.query(func.count(Email.email_id))
+        qry = db.Email.order_by(desc(Email.timestamp))
 
         if args['subsystems']:
             authsystems = [x for x in map(lambda x: x.lower(), args['subsystems'])]
@@ -56,7 +56,7 @@ class EmailList(BaseView):
             'message': None,
             'emailCount': total_emails,
             'emails': emails,
-            'subsystems': [x[0] for x in db.session.query(Email.subsystem.distinct()).all()]
+            'subsystems': [x[0] for x in db.query(distinct(Email.subsystem)).all()]
         })
 
 
@@ -66,7 +66,7 @@ class EmailGet(BaseView):
     @rollback
     @check_auth(ROLE_ADMIN)
     def get(self, emailId):
-        email = Email.query.filter(Email.email_id == emailId).first()
+        email = db.Email.find_one(Email.email_id == emailId)
 
         if not email:
             return self.make_response({
@@ -83,7 +83,7 @@ class EmailGet(BaseView):
     def put(self, emailId):
         AuditLog.log('email.resend', session['user'].username, {'emailId': emailId})
 
-        email = Email.query.filter(Email.email_id == emailId).first()
+        email = db.Email.find_one(Email.email_id == emailId)
         if not email:
             return self.make_response({
                 'message': 'Email not found',

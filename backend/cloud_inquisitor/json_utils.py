@@ -10,6 +10,7 @@ from werkzeug.http import parse_date
 
 import cloud_inquisitor.schema
 from cloud_inquisitor import db
+from cloud_inquisitor.db import Model
 
 log = logging.getLogger('JSON')
 
@@ -39,7 +40,7 @@ class InquisitorJSONEncoder(JSONEncoder):
         to_json = getattr(obj, 'to_json', None)
         if to_json:
             out = obj.to_json()
-            if issubclass(obj.__class__, db.Model):
+            if issubclass(obj.__class__, Model):
                 out.update({'__type': obj.__class__.__name__})
 
             return out

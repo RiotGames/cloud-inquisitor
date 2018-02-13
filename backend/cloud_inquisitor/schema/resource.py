@@ -3,10 +3,11 @@ from sqlalchemy.dialects.mysql import INTEGER as Integer, JSON
 from sqlalchemy.orm import foreign, relationship
 
 from cloud_inquisitor import db
+from cloud_inquisitor.schema import Model
 from cloud_inquisitor.schema.base import Tag, BaseModelMixin, Account
 
 
-class ResourceType(db.Model, BaseModelMixin):
+class ResourceType(Model, BaseModelMixin):
     """Resource type object
 
     Attributes:
@@ -30,10 +31,10 @@ class ResourceType(db.Model, BaseModelMixin):
             :obj:`ResourceType`
         """
         if isinstance(resource_type, str):
-            obj = cls.query.filter_by(resource_type=resource_type).first()
+            obj = getattr(db, cls.__name__).find_one(cls.resource_type == resource_type)
 
         elif isinstance(resource_type, int):
-            obj = cls.query.filter_by(resource_type_id=resource_type).first()
+            obj = getattr(db, cls.__name__).find_one(cls.resource_type_id == resource_type)
 
         elif isinstance(resource_type, cls):
             return resource_type
@@ -51,7 +52,7 @@ class ResourceType(db.Model, BaseModelMixin):
         return obj
 
 
-class ResourceProperty(db.Model, BaseModelMixin):
+class ResourceProperty(Model, BaseModelMixin):
     """Resource Property object"""
     __tablename__ = 'resource_properties'
 
@@ -73,7 +74,7 @@ class ResourceProperty(db.Model, BaseModelMixin):
         )
 
 
-class Resource(db.Model, BaseModelMixin):
+class Resource(Model, BaseModelMixin):
     """Resource object
 
     Attributes:
@@ -133,12 +134,12 @@ class Resource(db.Model, BaseModelMixin):
         Returns:
             :obj:`Resource`: Returns Resource object if found, else None
         """
-        return Resource.query.filter(
+        return db.Resource.find_one(
             Resource.resource_id == resource_id
-        ).first()
+        )
 
 
-class ResourceMapping(db.Model, BaseModelMixin):
+class ResourceMapping(Model, BaseModelMixin):
     """Mapping resource relationships (parent/child)
 
     Warnings:

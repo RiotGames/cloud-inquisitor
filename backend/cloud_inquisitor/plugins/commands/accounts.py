@@ -28,7 +28,7 @@ class AddAccount(BaseCommand):
             if not kwargs['contacts']:
                 kwargs['contacts'] = prompt('Contacts')
 
-            acct = Account.query.filter_by(account_name=kwargs['account_name']).first()
+            acct = db.Account.find_one(Account.account_name == kwargs['account_name'])
             if acct:
                 if kwargs['update']:
                     acct.contacts = kwargs['contacts'].split(',')
@@ -65,7 +65,7 @@ class DeleteAccount(BaseCommand):
 
     def run(self, **kwargs):
         try:
-            acct = Account.query.filter_by(account_name=kwargs['account_name']).first()
+            acct = db.Account.find_one(Account.account_name == kwargs['account_name'])
             if acct:
                 cfm = 'Are you absolutely sure you wish to delete the account named {}'.format(acct.account_name)
                 if confirm(cfm):

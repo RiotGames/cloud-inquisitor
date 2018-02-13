@@ -5,6 +5,7 @@ from flask import current_app
 from sqlalchemy import func, and_, or_
 from sqlalchemy.orm import aliased
 
+from cloud_inquisitor import db
 from cloud_inquisitor.constants import RGX_TAG, ROLE_USER, RGX_PROPERTY
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import Tag, Resource, ResourceProperty
@@ -84,7 +85,7 @@ class Search(BaseView):
                 else:
                     resource_ids.append(keyword)
 
-        qry = Resource.query.order_by(Resource.resource_type_id)
+        qry = db.Resource.order_by(Resource.resource_type_id)
 
         if args['resourceTypes']:
             qry = qry.filter(Resource.resource_type_id.in_(args['resourceTypes']))

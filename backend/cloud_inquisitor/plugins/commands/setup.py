@@ -47,7 +47,7 @@ class Setup(BaseCommand):
         self.log.info('Account has been added')
 
     def get_config_namespace(self, prefix, name, sort_order=2):
-        nsobj = ConfigNamespace.query.filter(ConfigNamespace.namespace_prefix == prefix).first()
+        nsobj = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == prefix)
         if not nsobj:
             self.log.info('Adding namespace {}'.format(name))
             nsobj = ConfigNamespace()
@@ -180,6 +180,6 @@ class Setup(BaseCommand):
         self.add_default_roles()
 
         # If there are no accounts created, ask the user if he/she wants to create one now
-        if not kwargs['headless_mode'] and not Account.query.first():
+        if not kwargs['headless_mode'] and not db.Account.find_one():
             if confirm('You have no accounts defined, do you wish to add the first account now?'):
                 self.init_account()

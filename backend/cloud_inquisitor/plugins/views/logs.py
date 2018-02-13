@@ -37,18 +37,18 @@ class Logs(BaseView):
         args = self.reqparse.parse_args()
 
         if args['levelno'] > 0:
-            total_events = db.session.query(
+            total_events = db.query(
                 func.count(LogEvent.log_event_id)
             ).filter(LogEvent.levelno >= args['levelno']).first()[0]
 
-            qry = (LogEvent.query
+            qry = (db.LogEvent
                 .filter(LogEvent.levelno >= args['levelno'])
                 .order_by(desc(LogEvent.timestamp))
                 .limit(args['count'])
             )
         else:
-            total_events = db.session.query(func.count(LogEvent.log_event_id)).first()[0]
-            qry = (LogEvent.query
+            total_events = db.query(func.count(LogEvent.log_event_id)).first()[0]
+            qry = (db.LogEvent
                 .order_by(desc(LogEvent.timestamp))
                 .limit(args['count'])
             )
@@ -70,7 +70,7 @@ class Logs(BaseView):
         args = self.reqparse.parse_args()
         AuditLog.log('logs.prune', session['user'].username, args)
 
-        LogEvent.query.filter(
+        db.LogEvent.filter(
             func.datesub(
                 LogEvent.timestamp < datetime.now() - timedelta(days=args['maxAge'])
             )
@@ -85,6 +85,6 @@ class LogDetails(BaseView):
     @rollback
     @check_auth(ROLE_ADMIN)
     def get(self, logEventId):
-        evt = LogEvent.query.filter(LogEvent.log_event_id == logEventId).first()
+        evt = db.LogEvent.find_one(LogEvent.log_event_id == logEventId)
 
         return self.make_response({'logEvent': evt})

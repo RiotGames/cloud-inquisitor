@@ -172,7 +172,7 @@ class BaseIssue(ABC):
         Returns:
             list of issue objects
         """
-        qry = Issue.query.filter(
+        qry = db.Issue.find(
             Issue.issue_type_id == IssueType.get(cls.issue_type).issue_type_id
         )
 
@@ -194,7 +194,7 @@ class BaseIssue(ABC):
         Returns:
             `list` of `Issue`, `sqlalchemy.orm.Query`
         """
-        qry = Issue.query.order_by(Issue.issue_id).filter(
+        qry = db.Issue.order_by(Issue.issue_id).filter(
             Issue.issue_type_id == IssueType.get(cls.issue_type).issue_type_id
         )
 
