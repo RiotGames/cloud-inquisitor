@@ -113,6 +113,7 @@ setuptools.setup(
         'flake8-quotes~=0.9',
         'flake8~=3.3',
         'gunicorn~=19.7',
+        'ipython~=6.2',
         'munch~=2.1',
         'mysqlclient~=1.3',
         'pyexcel-io==0.3.4.1',
