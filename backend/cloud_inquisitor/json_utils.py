@@ -9,7 +9,6 @@ from markupsafe import Markup
 from werkzeug.http import parse_date
 
 import cloud_inquisitor.schema
-from cloud_inquisitor import db
 from cloud_inquisitor.db import Model
 
 log = logging.getLogger('JSON')

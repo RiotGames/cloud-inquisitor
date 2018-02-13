@@ -5,7 +5,6 @@ from enum import Enum
 
 from munch import munchify
 
-
 # region Plugin namespaces
 PLUGIN_NAMESPACES = munchify({
     'auditor': ['cloud_inquisitor.plugins.auditors'],

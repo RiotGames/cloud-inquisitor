@@ -1,12 +1,12 @@
 import os
-import pkg_resources
 
+import pkg_resources
 from click import confirm
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 from pkg_resources import iter_entry_points
 
-from cloud_inquisitor import app, db, ServerWrapper
+from cloud_inquisitor import app, ServerWrapper
 from cloud_inquisitor.log import setup_logging
 from cloud_inquisitor.schema.resource import *
 

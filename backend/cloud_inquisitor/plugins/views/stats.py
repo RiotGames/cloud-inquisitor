@@ -1,4 +1,5 @@
 from collections import defaultdict
+
 from flask import session
 from sqlalchemy import not_
 from sqlalchemy.orm import aliased
@@ -12,7 +13,6 @@ from cloud_inquisitor.plugins.types.resources import EC2Instance
 from cloud_inquisitor.schema import Account, Resource, ResourceType, ResourceProperty, IssueProperty, Issue, IssueType
 from cloud_inquisitor.utils import MenuItem
 from cloud_inquisitor.wrappers import check_auth, rollback
-
 
 reqtag_type_id = IssueType.get(RequiredTagsIssue.issue_type).issue_type_id
 ec2_type_id = ResourceType.get(EC2Instance.resource_type).resource_type_id

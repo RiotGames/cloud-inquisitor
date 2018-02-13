@@ -1,5 +1,5 @@
-import time
 import threading
+import time
 
 from flask_script import Option
 from pkg_resources import iter_entry_points

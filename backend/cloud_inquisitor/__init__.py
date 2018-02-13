@@ -23,7 +23,6 @@ from flask import Flask, request, session, abort
 from flask_compress import Compress
 from flask_restful import Api
 from flask_script import Server
-from flask_sqlalchemy import SQLAlchemy
 from pkg_resources import iter_entry_points
 from sqlalchemy.exc import SQLAlchemyError
 

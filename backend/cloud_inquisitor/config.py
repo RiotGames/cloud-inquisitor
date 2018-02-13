@@ -3,7 +3,7 @@ from collections import namedtuple
 from sqlalchemy.exc import SQLAlchemyError
 
 from cloud_inquisitor import db
-from cloud_inquisitor.schema import ConfigItem, ConfigNamespace
+from cloud_inquisitor.schema import ConfigItem
 
 
 class DBCChoice(dict):

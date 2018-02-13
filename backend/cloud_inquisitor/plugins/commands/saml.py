@@ -3,8 +3,8 @@ import xml.etree.ElementTree as etree
 from flask_script import Option
 from pkg_resources import iter_entry_points
 
-from cloud_inquisitor.constants import PLUGIN_NAMESPACES
 from cloud_inquisitor.config import dbconfig, DBCString
+from cloud_inquisitor.constants import PLUGIN_NAMESPACES
 from cloud_inquisitor.plugins.commands import BaseCommand
 
 
