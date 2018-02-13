@@ -6,11 +6,11 @@ import random
 import re
 import string
 import time
-from argon2 import PasswordHasher
 from datetime import datetime
 
 import jwt
 import pkg_resources
+from argon2 import PasswordHasher
 from dateutil import parser
 from jinja2 import Environment, FileSystemLoader
 

@@ -1,5 +1,6 @@
-from flask import session
 from sqlalchemy import desc, func, distinct
+
+from flask import session
 
 from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP

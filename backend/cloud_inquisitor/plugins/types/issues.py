@@ -1,8 +1,8 @@
 import logging
 from abc import abstractmethod, ABC
 from datetime import datetime
-
 from sqlalchemy import or_, and_
+
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import aliased
 

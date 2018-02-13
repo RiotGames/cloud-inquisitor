@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
+from sqlalchemy import func, desc
 
 from flask import session
-from sqlalchemy import func, desc
 
 from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN

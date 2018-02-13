@@ -1,8 +1,8 @@
 import re
 import shlex
+from sqlalchemy import func, and_, or_
 
 from flask import current_app
-from sqlalchemy import func, and_, or_
 from sqlalchemy.orm import aliased
 
 from cloud_inquisitor import db

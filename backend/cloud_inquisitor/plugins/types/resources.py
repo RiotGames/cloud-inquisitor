@@ -3,11 +3,11 @@ import re
 from abc import abstractmethod, ABC
 from contextlib import suppress
 from datetime import datetime, timedelta
+from sqlalchemy import func, or_, and_, cast, DATETIME
 
 from botocore.exceptions import ClientError
 from dateutil import parser
 from flask import session
-from sqlalchemy import func, or_, and_, cast, DATETIME
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import aliased
 

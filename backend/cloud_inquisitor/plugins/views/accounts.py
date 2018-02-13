@@ -1,7 +1,7 @@
 import json
+from sqlalchemy import desc
 
 from flask import session
-from sqlalchemy import desc
 
 from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP, ROLE_USER

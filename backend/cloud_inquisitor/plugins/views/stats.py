@@ -1,7 +1,7 @@
 from collections import defaultdict
+from sqlalchemy import not_
 
 from flask import session
-from sqlalchemy import not_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func, and_
 
