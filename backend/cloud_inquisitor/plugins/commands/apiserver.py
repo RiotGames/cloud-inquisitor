@@ -1,7 +1,7 @@
 from flask_script import Option
 from gunicorn.app.base import Application
 
-from cloud_inquisitor import app, register_views
+from cloud_inquisitor.app import create_app
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_API
 from cloud_inquisitor.plugins.commands import BaseCommand
@@ -20,7 +20,6 @@ class APIServer(BaseCommand):
     def run(self, **kwargs):
         workers = kwargs['workers']
         address = '{0}:{1}'.format(kwargs['address'], kwargs['port'])
-        register_views()
 
         class FlaskApplication(Application):
             def init(self, parser, opts, args):
@@ -33,6 +32,8 @@ class APIServer(BaseCommand):
                 return opts
 
             def load(self):
+                app, api = create_app()
+
                 return app
 
         FlaskApplication().run()

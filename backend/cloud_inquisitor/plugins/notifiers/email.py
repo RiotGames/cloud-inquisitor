@@ -7,9 +7,10 @@ from email.mime.text import MIMEText
 
 import boto3.session
 
-from cloud_inquisitor import app, db, app_config
+from cloud_inquisitor import app_config
 from cloud_inquisitor.config import dbconfig, ConfigOption
 from cloud_inquisitor.constants import NS_EMAIL
+from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import EmailSendError
 from cloud_inquisitor.plugins.notifiers import BaseNotifier
 from cloud_inquisitor.schema import Email

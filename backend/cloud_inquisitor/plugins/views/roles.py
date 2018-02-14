@@ -1,7 +1,7 @@
 from flask import session
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import Role, AuditLog
 from cloud_inquisitor.utils import MenuItem

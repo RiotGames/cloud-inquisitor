@@ -3,16 +3,16 @@ import re
 from abc import abstractmethod, ABC
 from contextlib import suppress
 from datetime import datetime, timedelta
-from sqlalchemy import func, or_, and_, cast, DATETIME
 
 from botocore.exceptions import ClientError
 from dateutil import parser
 from flask import session
+from sqlalchemy import func, or_, and_, cast, DATETIME
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import aliased
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN
+from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import ResourceException
 from cloud_inquisitor.schema import Tag, Account, Resource, ResourceType, ResourceProperty
 from cloud_inquisitor.utils import to_utc_date, is_truthy, to_camelcase

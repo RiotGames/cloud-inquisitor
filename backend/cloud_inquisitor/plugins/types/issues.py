@@ -1,12 +1,12 @@
 import logging
 from abc import abstractmethod, ABC
 from datetime import datetime
-from sqlalchemy import or_, and_
 
+from sqlalchemy import or_, and_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import aliased
 
-from cloud_inquisitor import db
+from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import IssueException
 from cloud_inquisitor.plugins.types.resources import EC2Instance, EBSVolume
 from cloud_inquisitor.schema import IssueProperty, Issue, IssueType

@@ -1,12 +1,12 @@
 import re
 import shlex
-from sqlalchemy import func, and_, or_
 
 from flask import current_app
+from sqlalchemy import func, and_, or_
 from sqlalchemy.orm import aliased
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import RGX_TAG, ROLE_USER, RGX_PROPERTY
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import Tag, Resource, ResourceProperty
 from cloud_inquisitor.utils import is_truthy, MenuItem

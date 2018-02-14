@@ -1,12 +1,12 @@
 from collections import defaultdict
-from sqlalchemy import not_
 
 from flask import session
+from sqlalchemy import not_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func, and_
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_USER, AccountTypes
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.plugins.types.issues import RequiredTagsIssue
 from cloud_inquisitor.plugins.types.resources import EC2Instance

@@ -6,7 +6,8 @@ import os
 import traceback
 from datetime import datetime
 
-from cloud_inquisitor import db, app_config, config_path
+from cloud_inquisitor import app_config, config_path
+from cloud_inquisitor.database import db
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_LOG
 from cloud_inquisitor.schema import LogEvent
@@ -74,16 +75,8 @@ class SyslogPipelineHandler(logging.handlers.SysLogHandler):
 
 class LogLevelFilter(logging.Filter):
     """Simply logging.Filter class to exclude certain log levels from the database logging tables"""
-
-    def __init__(self):
-        super().__init__()
-        self.log_level = dbconfig.get('log_level', NS_LOG, default='WARNING')
-
     def filter(self, record):
-        if app_config.log_level == 'DEBUG':
-            return True
-
-        return record.levelno >= logging.getLevelName(self.log_level)
+        return app_config.log_level == 'DEBUG' or record.levelno >= logging.getLevelName(app_config.log_level)
 
 
 def setup_logging():

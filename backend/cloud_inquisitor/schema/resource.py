@@ -2,7 +2,7 @@ from sqlalchemy import Column, String
 from sqlalchemy.dialects.mysql import INTEGER as Integer, JSON
 from sqlalchemy.orm import foreign, relationship
 
-from cloud_inquisitor import db
+from cloud_inquisitor.database import db
 from cloud_inquisitor.schema import Model
 from cloud_inquisitor.schema.base import Tag, BaseModelMixin, Account
 

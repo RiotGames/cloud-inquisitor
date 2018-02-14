@@ -1,7 +1,7 @@
 from sqlalchemy import distinct
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import AuditLog
 from cloud_inquisitor.utils import MenuItem

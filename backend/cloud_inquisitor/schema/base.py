@@ -9,9 +9,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.attributes import QueryableAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 
-from cloud_inquisitor import db
+from cloud_inquisitor.database import db
 from cloud_inquisitor.constants import ROLE_ADMIN, SchedulerStatus, AccountTypes
-from cloud_inquisitor.db import Model
+from cloud_inquisitor.database import Model
 from cloud_inquisitor.exceptions import SchedulerError
 from cloud_inquisitor.utils import isoformat, to_camelcase
 

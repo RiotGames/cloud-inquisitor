@@ -1,7 +1,7 @@
 from click import confirm, prompt
 from flask_script import Option
 
-from cloud_inquisitor import db
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins.commands import BaseCommand
 from cloud_inquisitor.schema import Account
 

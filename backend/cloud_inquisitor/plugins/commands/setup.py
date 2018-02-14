@@ -4,9 +4,9 @@ from click import confirm, prompt
 from flask_script import Option
 from pkg_resources import iter_entry_points
 
-from cloud_inquisitor import db
 from cloud_inquisitor.config import ConfigOption
 from cloud_inquisitor.constants import PLUGIN_NAMESPACES
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins.commands import BaseCommand
 from cloud_inquisitor.schema import ConfigNamespace, ConfigItem, Account, Role
 

@@ -1,10 +1,10 @@
 import json
-from sqlalchemy import desc
 
 from flask import session
+from sqlalchemy import desc
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP, ROLE_USER
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import Account, AuditLog
 from cloud_inquisitor.utils import validate_email, MenuItem
