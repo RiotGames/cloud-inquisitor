@@ -1,8 +1,4 @@
-"""Email based notification system
-
-
-
-"""
+"""Email based notification system"""
 import smtplib
 import uuid
 from datetime import datetime
@@ -11,7 +7,7 @@ from email.mime.text import MIMEText
 
 import boto3.session
 
-from cloud_inquisitor import app, db
+from cloud_inquisitor import app, db, app_config
 from cloud_inquisitor.config import dbconfig, ConfigOption
 from cloud_inquisitor.constants import NS_EMAIL
 from cloud_inquisitor.exceptions import EmailSendError
@@ -113,8 +109,8 @@ def __send_ses_email(sender, recipients, subject, html_body, text_body):
     Returns:
         `None`
     """
-    access_key = app.config.get('AWS_API_ACCESS_KEY')
-    secret_key = app.config.get('AWS_API_SECRET_KEY')
+    access_key = app_config.aws_api.access_key
+    secret_key = app_config.aws_api.secret_key
     source_arn = dbconfig.get('source_arn', NS_EMAIL)
     return_arn = dbconfig.get('return_path_arn', NS_EMAIL)
 

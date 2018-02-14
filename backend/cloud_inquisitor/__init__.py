@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from gzip import zlib
 
 import boto3.session
+import munch
 import requests
 from flask import Flask, request, session, abort
 from flask_compress import Compress
@@ -25,21 +26,65 @@ from flask_restful import Api
 from flask_script import Server
 from pkg_resources import iter_entry_points
 from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.local import LocalProxy
 
 from cloud_inquisitor.db import get_db_connection
 from cloud_inquisitor.utils import parse_date
 
+CONFIG_FILE_PATHS = (
+    os.path.expanduser('~/.cinq/config.json'),
+    os.path.join(os.getcwd(), 'config.json'),
+    '/usr/local/etc/cloud-inquisitor/config.json',
+)
+
+DEFAULT_CONFIG = {
+    'log_level': 'INFO',
+    'use_user_data': True,
+    'kms_account_name': None,
+    'kms_region': 'us-west-2',
+    'user_data_url': 'http://169.254.269.254/latest/user-data',
+
+    'aws_api': {
+        'access_key': None,
+        'secret_key': None,
+        'instance_role_arn': None,
+    },
+
+    'database_uri': 'mysql://cinq:secretpass@localhost:3306/inquisitor',
+
+    'flask': {
+        'secret_key': 'verysecretkey',
+        'json_sort_keys': False,
+    }
+}
+
+def read_config():
+    config = munch.munchify(DEFAULT_CONFIG)
+
+    for fpath in CONFIG_FILE_PATHS:
+        if os.path.exists(fpath):
+            config.update(json.load(open(fpath, 'r')))
+            return os.path.dirname(fpath), config
+
+    raise FileNotFoundError('Configuration file not found')
+
 # Setup app wide variables
+config_path, app_config = LocalProxy(read_config)
+
 AWS_REGIONS = []
 app = Flask(__name__)
 Compress(app)
-app.config.from_envvar('INQUISITOR_SETTINGS')
-api_access_key = app.config.get('AWS_API_ACCESS_KEY')
-api_secret_key = app.config.get('AWS_API_SECRET_KEY')
-api_role = app.config.get('AWS_API_INSTANCE_ROLE_ARN')
 
-if app.config.get('USE_USER_DATA', True):
-    kms_region = app.config.get('KMS_REGION', 'us-west-2')
+app.config['DEBUG'] = app_config.log_level == 'DEBUG'
+app.config['SECRET_KEY'] = app_config.flask.secret_key
+
+api_access_key = app_config.aws_api.access_key
+api_secret_key = app_config.aws_api.secret_key
+api_role = app_config.aws_api.instance_role_arn
+
+if app_config.use_user_data:
+    kms_region = app_config.kms_region
+
     if api_access_key and api_secret_key:
         sts = boto3.session.Session(api_access_key, api_secret_key).client('sts')
         audit_role = sts.assume_role(RoleArn=api_role, RoleSessionName='cloud_inquisitor')
@@ -51,19 +96,18 @@ if app.config.get('USE_USER_DATA', True):
     else:
         kms = boto3.session.Session().client('kms', region_name=kms_region)
 
-    user_data_url = app.config.get('USER_DATA_URL')
+    user_data_url = app_config.user_data_url
     res = requests.get(user_data_url)
 
     if res.status_code == 200:
         data = kms.decrypt(CiphertextBlob=b64decode(res.content))
         kms_config = json.loads(zlib.decompress(data['Plaintext']).decode('utf-8'))
 
-        app.config['SQLALCHEMY_DATABASE_URI'] = kms_config['db_uri']
+        app_config.database_uri = kms_config['db_uri']
     else:
         print(res.status_code)
         raise RuntimeError('Failed loading user-data, cannot continue')
 
-#db = SQLAlchemy(app)
 db = get_db_connection()
 api = Api(app)
 
@@ -203,6 +247,8 @@ def before_request():
                 logger.info('CSRF Token is missing or incorrect, sending user to login page')
                 abort(403)
 
+    #request.db = get_db_connection()
+
 
 @app.after_request
 def after_request(response):
@@ -267,7 +313,7 @@ def get_aws_regions():
     Returns:
         :obj:`list` of `str`
     """
-    region_file = os.path.join(app.config.get('BASE_CFG_PATH'), 'aws_regions.json')
+    region_file = os.path.join(config_path, 'aws_regions.json')
     if os.path.exists(region_file) and os.path.getsize(region_file) > 0:
         data = json.load(open(region_file, 'r'))
         if data['regions'] and parse_date(data['created']) > datetime.now() - timedelta(weeks=1):

@@ -1,7 +1,10 @@
 from logging.config import fileConfig
 
 from alembic import context
+from flask import current_app
 from sqlalchemy import engine_from_config, pool
+
+from cloud_inquisitor import app_config
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,8 +18,7 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from flask import current_app
-config.set_main_option('sqlalchemy.url', current_app.config.get('SQLALCHEMY_DATABASE_URI'))
+config.set_main_option('sqlalchemy.url', config.database_uri)
 target_metadata = current_app.extensions['migrate'].db.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -72,4 +74,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

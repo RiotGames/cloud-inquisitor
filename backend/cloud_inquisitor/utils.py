@@ -264,12 +264,12 @@ def get_jwt_key_data():
     if __jwt_data:
         return __jwt_data
 
-    from cloud_inquisitor import app
+    from cloud_inquisitor import config_path
     from cloud_inquisitor.config import dbconfig
 
     jwt_key_file = dbconfig.get('jwt_key_file_path', default='ssl/private.key')
     if not os.path.isabs(jwt_key_file):
-        jwt_key_file = os.path.join(app.config.get('BASE_CFG_PATH'), jwt_key_file)
+        jwt_key_file = os.path.join(config_path, jwt_key_file)
 
     with open(os.path.join(jwt_key_file), 'r') as f:
         __jwt_data = f.read()

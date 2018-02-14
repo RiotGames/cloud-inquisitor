@@ -6,6 +6,7 @@ from cloud_inquisitor import db
 from cloud_inquisitor.schema import ConfigItem
 
 
+# region Config type classes
 class DBCChoice(dict):
     """Utility class for Choice for `DBConfig`"""
 
@@ -28,7 +29,7 @@ class DBCJSON(dict):
 
 class DBCArray(list):
     """Utility class for Array values for `DBConfig`"""
-
+# endregion
 
 class DBConfig(object):
     """Database backed configuration object.

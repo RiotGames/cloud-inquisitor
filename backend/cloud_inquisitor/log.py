@@ -6,7 +6,7 @@ import os
 import traceback
 from datetime import datetime
 
-from cloud_inquisitor import app, db
+from cloud_inquisitor import db, app_config, config_path
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_LOG
 from cloud_inquisitor.schema import LogEvent
@@ -80,7 +80,7 @@ class LogLevelFilter(logging.Filter):
         self.log_level = dbconfig.get('log_level', NS_LOG, default='WARNING')
 
     def filter(self, record):
-        if app.config.get('DEBUG', False):
+        if app_config.log_level == 'DEBUG':
             return True
 
         return record.levelno >= logging.getLevelName(self.log_level)
@@ -89,9 +89,7 @@ class LogLevelFilter(logging.Filter):
 def setup_logging():
     """Utility function to setup the logging systems based on the `logging.json` configuration file"""
 
-    base_path = app.config.get('BASE_CFG_PATH')
-
-    config = json.load(open(os.path.join(base_path, 'logging.json')))
+    config = json.load(open(os.path.join(config_path, 'logging.json')))
     if not dbconfig.get('enable_syslog_forwarding', NS_LOG, False):
         config['handlers']['pipeline'] = {
             'class': 'logging.NullHandler',
