@@ -6,10 +6,14 @@ import random
 import re
 import string
 import time
+import zlib
+from base64 import b64decode
 from datetime import datetime
 
+import boto3
 import jwt
 import pkg_resources
+import requests
 from argon2 import PasswordHasher
 from dateutil import parser
 from jinja2 import Environment, FileSystemLoader
@@ -404,3 +408,36 @@ def parse_date(date_string):
         return parser.parse(date_string)
     except TypeError:
         return None
+
+def get_user_data_configuration(app_config):
+    """Retrieve and update the application configuration with information from the user-data
+
+    Args:
+        app_config (`munch.Munch`): Application configuration object
+
+    Returns:
+        `None`
+    """
+    kms_region = app_config.kms_region
+
+    if app_config.aws_api.access_key and app_config.aws_api.secret_key:
+        sts = boto3.session.Session(app_config.aws_api.access_key, app_config.aws_api.secret_key).client('sts')
+        audit_role = sts.assume_role(RoleArn=app_config.aws_api.instance_role_arn, RoleSessionName='cloud_inquisitor')
+        kms = boto3.session.Session(
+            audit_role['Credentials']['AccessKeyId'],
+            audit_role['Credentials']['SecretAccessKey'],
+            audit_role['Credentials']['SessionToken'],
+        ).client('kms', region_name=kms_region)
+    else:
+        kms = boto3.session.Session().client('kms', region_name=kms_region)
+
+    user_data_url = app_config.user_data_url
+    res = requests.get(user_data_url)
+
+    if res.status_code == 200:
+        data = kms.decrypt(CiphertextBlob=b64decode(res.content))
+        kms_config = json.loads(zlib.decompress(data['Plaintext']).decode('utf-8'))
+
+        app_config.database_uri = kms_config['db_uri']
+    else:
+        raise RuntimeError('Failed loading user-data, cannot continue: {}: {}'.format(res.status_code, res.content))
