@@ -8,6 +8,7 @@ from cloud_inquisitor.plugins.commands import BaseCommand
 
 ListPluginType = namedtuple('ListPluginType', ('cls', 'module'))
 
+
 class ListPlugins(BaseCommand):
     """List the plugins currently installed on the system"""
     ns = 'command_plugins'

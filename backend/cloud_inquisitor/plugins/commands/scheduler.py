@@ -75,6 +75,7 @@ class Scheduler(BaseSchedulerCommand):
         scheduler = self.scheduler_plugins[self.active_scheduler]()
         scheduler.execute_scheduler()
 
+
 class Worker(BaseSchedulerCommand):
     """Execute the selected worker"""
     name = 'Worker'

@@ -142,7 +142,7 @@ def get_template(template):
     tmplpath = os.path.join(pkg_resources.resource_filename('cloud_inquisitor', 'data'), 'templates')
     tmplenv = Environment(loader=FileSystemLoader(tmplpath), autoescape=True)
     tmplenv.filters['json_loads'] = json.loads
-    tmplenv.filters['slack_quote_join'] = lambda data: ", ".join(list('`{}`'.format(x) for x in data))
+    tmplenv.filters['slack_quote_join'] = lambda data: ', '.join('`{}`'.format(x) for x in data)
 
     return tmplenv.get_template(template)
 
@@ -258,6 +258,7 @@ def generate_jwt_token(user, authsys, **kwargs):
 
     enc = jwt.encode(token, get_jwt_key_data(), algorithm='HS512')
     return enc.decode()
+
 
 def get_jwt_key_data():
     """Returns the data for the JWT private key used for encrypting the user login token as a string object
@@ -390,7 +391,7 @@ def get_resource_id(prefix, *data):
     """
     return '{}-{}'.format(
         prefix,
-        get_hash("-".join(str(x) for x in data))[-16:]
+        get_hash('-'.join(str(x) for x in data))[-16:]
     )
 
 
@@ -410,6 +411,7 @@ def parse_date(date_string):
         return parser.parse(date_string)
     except TypeError:
         return None
+
 
 def get_user_data_configuration(app_config):
     """Retrieve and update the application configuration with information from the user-data

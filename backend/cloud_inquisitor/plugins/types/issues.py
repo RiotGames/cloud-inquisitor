@@ -23,7 +23,7 @@ class BaseIssue(ABC):
         return self.get_property(item)
 
     def __str__(self):
-        return "<{} issue_id={}>".format(self.__class__.__name__, self.id)
+        return '<{} issue_id={}>'.format(self.__class__.__name__, self.id)
 
     def get_property(self, item):
         for prop in self.issue.properties:
@@ -211,7 +211,7 @@ class BaseIssue(ABC):
                         and_(
                             alias.name == prop_name,
                             or_(*where_clause)
-                         ).self_group()
+                        ).self_group()
                     )
                 else:
                     qry = qry.filter(

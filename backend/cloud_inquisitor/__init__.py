@@ -5,15 +5,14 @@ import boto3.session
 import requests
 from werkzeug.local import LocalProxy
 
-from cloud_inquisitor.constants import CONFIG_FILE_PATHS, DEFAULT_CONFIG
-from cloud_inquisitor.utils import get_user_data_configuration, parse_date, read_config
+from cloud_inquisitor.utils import get_user_data_configuration, read_config
 
 logger = logging.getLogger(__name__)
 
 # Setup app wide variables
 config_path, app_config = LocalProxy(read_config)
 
-# Check if the user has opted to use UserData based configuration for DB, and load it if needed
+# Check if the user has opted to use userdata based configuration for DB, and load it if needed
 if app_config.use_user_data:
     get_user_data_configuration(app_config)
 
@@ -73,9 +72,7 @@ def get_aws_regions():
 
     data = requests.get('https://ip-ranges.amazonaws.com/ip-ranges.json').json()
     rgx = re.compile(dbconfig.get('ignored_aws_regions_regexp', default='(^cn-|GLOBAL|-gov)'), re.I)
-    regions = sorted(list(set(
-        x['region'] for x in data['prefixes'] if not rgx.search(x['region'])
-    )))
+    regions = sorted(list({x['region'] for x in data['prefixes'] if not rgx.search(x['region'])}))
 
     return regions
 

@@ -2,9 +2,10 @@ from sqlalchemy import Column, String
 from sqlalchemy.dialects.mysql import INTEGER as Integer, JSON
 from sqlalchemy.orm import foreign, relationship
 
-from cloud_inquisitor.database import db
-from cloud_inquisitor.schema import Model
+from cloud_inquisitor.database import db, Model
 from cloud_inquisitor.schema.base import BaseModelMixin
+
+__all__ = ('IssueType', 'IssueProperty', 'Issue')
 
 
 class IssueType(Model, BaseModelMixin):
@@ -31,7 +32,7 @@ class IssueType(Model, BaseModelMixin):
             :obj:`IssueType`
         """
         if isinstance(issue_type, str):
-            obj = getattr(db, cls.__name__).find_one(cls.issue_type==issue_type)
+            obj = getattr(db, cls.__name__).find_one(cls.issue_type == issue_type)
 
         elif isinstance(issue_type, int):
             obj = getattr(db, cls.__name__).find_one(cls.issue_type_id == issue_type)

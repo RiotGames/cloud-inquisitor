@@ -28,7 +28,7 @@ class BaseResource(ABC):
         return self.get_property(item)
 
     def __str__(self):
-        return "<{} resource_id={}>".format(self.__class__.__name__, self.id)
+        return '<{} resource_id={}>'.format(self.__class__.__name__, self.id)
 
     # region Object properties
     @property
@@ -652,7 +652,8 @@ class EC2Instance(BaseResource):
         )
 
         age_alias = aliased(ResourceProperty)
-        qry = (qry.join(age_alias, Resource.resource_id == age_alias.resource_id)
+        qry = (
+            qry.join(age_alias, Resource.resource_id == age_alias.resource_id)
             .filter(
                 age_alias.name == 'launch_date',
                 cast(func.JSON_UNQUOTE(age_alias.value), DATETIME) < datetime.now() - timedelta(days=age)
@@ -1085,7 +1086,7 @@ class AMI(BaseResource):
             `str`
         """
         return self.get_property('state').value
-    #endregion
+    # endregion
 
     def update(self, data):
         """Updates the object information based on live data, if there were any changes made. Any changes will be

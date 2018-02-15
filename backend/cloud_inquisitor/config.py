@@ -31,6 +31,7 @@ class DBCArray(list):
     """Utility class for Array values for `DBConfig`"""
 # endregion
 
+
 class DBConfig(object):
     """Database backed configuration object.
 

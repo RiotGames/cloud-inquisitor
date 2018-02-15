@@ -77,14 +77,14 @@ class SlackNotifier(BaseNotifier):
 
     @staticmethod
     def send_message(contacts, message):
-        """List of contacts the send the message to. You can send messages either to channels and private groups by using
-        the following formats
+        """List of contacts the send the message to. You can send messages either to channels and private groups by
+        using the following formats
 
         #channel-name
         @username-direct-message
 
-        If the channel is the name of a private group / channel, you must first invite the bot to the channel to ensure it
-        is allowed to send messages to the group.
+        If the channel is the name of a private group / channel, you must first invite the bot to the channel to ensure
+        it is allowed to send messages to the group.
 
         Returns true if the message was sent, else `False`
 

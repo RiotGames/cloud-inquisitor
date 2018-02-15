@@ -7,9 +7,9 @@ import traceback
 from datetime import datetime
 
 from cloud_inquisitor import app_config, config_path
-from cloud_inquisitor.database import db
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_LOG
+from cloud_inquisitor.database import db
 from cloud_inquisitor.schema import LogEvent
 
 
@@ -89,16 +89,16 @@ def setup_logging():
         }
 
     config['formatters']['syslog'] = {'format': json.dumps({
-            'jsonEvent': 'cloud-inquisitor',
-            'Event': {
-                'meta': {
-                    "host": dbconfig.get('instance_name', default='local')
-                },
-                'record': {
-                    'time': '%(asctime)s',
-                    'name': '%(name)s',
-                    'message': '%(message)s'
-                }
+        'jsonEvent': 'cloud-inquisitor',
+        'Event': {
+            'meta': {
+                'host': dbconfig.get('instance_name', default='local')
+            },
+            'record': {
+                'time': '%(asctime)s',
+                'name': '%(name)s',
+                'message': '%(message)s'
             }
+        }
     })}
     logging.config.dictConfig(config)

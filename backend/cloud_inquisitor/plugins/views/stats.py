@@ -17,6 +17,7 @@ from cloud_inquisitor.wrappers import check_auth, rollback
 reqtag_type_id = IssueType.get(RequiredTagsIssue.issue_type).issue_type_id
 ec2_type_id = ResourceType.get(EC2Instance.resource_type).resource_type_id
 
+
 class StatsGet(BaseView):
     URLS = ['/api/v1/stats']
     MENU_ITEMS = [
@@ -34,7 +35,7 @@ class StatsGet(BaseView):
     def get(self):
         rfc26 = []
         accounts = db.Account.find(
-            Account.enabled == True,
+            Account.enabled == True, # NOQA
             Account.account_id.in_(session['accounts'])
         )
 
@@ -79,7 +80,8 @@ class StatsGet(BaseView):
     def _get_issues_by_account(self):
         acct_alias = aliased(IssueProperty)
 
-        issues = (db.query(func.count(Issue.issue_id), Account.account_name)
+        issues = (
+            db.query(func.count(Issue.issue_id), Account.account_name)
             .join(acct_alias, Issue.issue_id == acct_alias.issue_id)
             .join(Account, acct_alias.value == Account.account_id)
             .filter(
@@ -95,7 +97,8 @@ class StatsGet(BaseView):
         return defaultdict(int, map(reversed, issues))
 
     def _get_instances_by_account(self):
-        instances = (db.query(func.count(Resource.resource_id), Account.account_name)
+        instances = (
+            db.query(func.count(Resource.resource_id), Account.account_name)
             .join(Account, Resource.account_id == Account.account_id)
             .filter(
                 Resource.resource_type_id == ec2_type_id,
@@ -109,7 +112,8 @@ class StatsGet(BaseView):
         return defaultdict(int, map(reversed, instances))
 
     def _get_public_ip_instances(self):
-        return (db.query(func.count(ResourceProperty.resource_id))
+        return (
+            db.query(func.count(ResourceProperty.resource_id))
             .join(Resource, ResourceProperty.resource_id == Resource.resource_id)
             .join(Account, Resource.account_id == Account.account_id)
             .filter(
@@ -123,7 +127,8 @@ class StatsGet(BaseView):
         )
 
     def _get_instances_by_state(self):
-        return (db.query(ResourceProperty.value, func.count(ResourceProperty.value))
+        return (
+            db.query(ResourceProperty.value, func.count(ResourceProperty.value))
             .join(Resource, ResourceProperty.resource_id == Resource.resource_id)
             .join(Account, Resource.account_id == Account.account_id)
             .filter(
@@ -135,7 +140,8 @@ class StatsGet(BaseView):
         )
 
     def _get_instance_counts(self):
-        return (db.query(func.count(Resource.resource_id))
+        return (
+            db.query(func.count(Resource.resource_id))
             .join(Account, Resource.account_id == Account.account_id)
             .filter(
                 Account.account_id.in_(session['accounts']),

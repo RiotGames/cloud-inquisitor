@@ -17,6 +17,7 @@ from cloud_inquisitor.schema import ResourceType
 
 logger = logging.getLogger(__name__.split('.')[0])
 
+
 class CINQFlask(Flask):
     json_encoder = InquisitorJSONEncoder
     json_decoder = InquisitorJSONDecoder

@@ -41,14 +41,16 @@ class Logs(BaseView):
                 func.count(LogEvent.log_event_id)
             ).filter(LogEvent.levelno >= args['levelno']).first()[0]
 
-            qry = (db.LogEvent
+            qry = (
+                db.LogEvent
                 .filter(LogEvent.levelno >= args['levelno'])
                 .order_by(desc(LogEvent.timestamp))
                 .limit(args['count'])
             )
         else:
             total_events = db.query(func.count(LogEvent.log_event_id)).first()[0]
-            qry = (db.LogEvent
+            qry = (
+                db.LogEvent
                 .order_by(desc(LogEvent.timestamp))
                 .limit(args['count'])
             )

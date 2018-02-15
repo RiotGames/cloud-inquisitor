@@ -23,7 +23,7 @@ class MetaData(BaseView):
 
         accounts = [acct.to_json(is_admin=ROLE_ADMIN in session['user'].roles) for acct in accts]
 
-        menuItems = dict()
+        menuItems = {}
         groups = sorted(current_app.menu_items, key=lambda x: (
             current_app.menu_items[x]['order'], current_app.menu_items[x]['name']
         ))
