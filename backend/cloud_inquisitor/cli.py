@@ -15,7 +15,7 @@ MIGRATIONS_PATH = os.path.join(
     'migrations'
 )
 
-app, api = create_app()
+app = create_app()
 manager = Manager(app)
 migrate = Migrate(app, db, directory=MIGRATIONS_PATH)
 

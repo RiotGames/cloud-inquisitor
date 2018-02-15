@@ -166,4 +166,4 @@ def create_app():
 
     Compress(app)
 
-    return app, app.api
+    return app

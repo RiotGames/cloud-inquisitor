@@ -32,7 +32,7 @@ class APIServer(BaseCommand):
                 return opts
 
             def load(self):
-                app, api = create_app()
+                app = create_app()
 
                 return app
 
