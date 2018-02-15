@@ -8,6 +8,7 @@ from werkzeug.local import LocalProxy
 from cloud_inquisitor.utils import get_user_data_configuration, read_config
 
 logger = logging.getLogger(__name__)
+__regions = None
 
 # Setup app wide variables
 config_path, app_config = LocalProxy(read_config)
@@ -62,19 +63,25 @@ def get_aws_session(account):
     return sess
 
 
-def get_aws_regions():
+def get_aws_regions(*, force=False):
     """Load a list of AWS regions from the AWS static data.
+
+    Args:
+        force (`bool`): Force fetch list of regions even if we already have a cached version
 
     Returns:
         :obj:`list` of `str`
     """
     from cloud_inquisitor.config import dbconfig
+    global __regions
 
-    data = requests.get('https://ip-ranges.amazonaws.com/ip-ranges.json').json()
-    rgx = re.compile(dbconfig.get('ignored_aws_regions_regexp', default='(^cn-|GLOBAL|-gov)'), re.I)
-    regions = sorted(list({x['region'] for x in data['prefixes'] if not rgx.search(x['region'])}))
+    if force or not __regions:
+        logger.debug('Loading list of AWS regions from static data')
+        data = requests.get('https://ip-ranges.amazonaws.com/ip-ranges.json').json()
+        rgx = re.compile(dbconfig.get('ignored_aws_regions_regexp', default='(^cn-|GLOBAL|-gov)'), re.I)
+        __regions = sorted(list({x['region'] for x in data['prefixes'] if not rgx.search(x['region'])}))
 
-    return regions
+    return __regions
 
 
 AWS_REGIONS = LocalProxy(get_aws_regions)

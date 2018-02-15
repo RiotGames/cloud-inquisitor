@@ -36,7 +36,7 @@ class MetaData(BaseView):
 
         return self.make_response({
             'accounts': accounts,
-            'regions': AWS_REGIONS,
+            'regions': list(AWS_REGIONS),
             'menuItems': menuItems,
             'resourceTypes': {v.resource_name: k for k, v in current_app.types.items()},
             'currentUser': session['user'].to_json()
