@@ -2,8 +2,8 @@ import enum
 from datetime import datetime
 from logging import getLogger
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, SmallInteger, Text, UniqueConstraint, text, func
-from sqlalchemy.dialects import mysql
+from sqlalchemy import Column, String, ForeignKey, SmallInteger, UniqueConstraint, text, func
+from sqlalchemy.dialects.mysql import INTEGER as Integer, JSON, TINYINT as TinyInt, DATETIME as DateTime, TEXT as Text
 from sqlalchemy.ext.declarative import as_declarative, declared_attr
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.attributes import QueryableAttribute
@@ -21,9 +21,6 @@ __all__ = (
 )
 
 log = getLogger(__name__)
-Integer = mysql.INTEGER
-JSON = mysql.JSON
-TinyInt = mysql.TINYINT
 
 
 @as_declarative()
@@ -91,10 +88,10 @@ class Account(Model, BaseModelMixin):
     account_name = Column(String(64), nullable=False, unique=True)
     account_number = Column(String(12), nullable=False, unique=True)
     account_type = Column(String(50), nullable=False, server_default=AccountTypes.AWS)
-    contacts = Column(mysql.JSON, nullable=False)
+    contacts = Column(JSON, nullable=False)
     ad_group_base = Column(String(64), nullable=True)
     enabled = Column(SmallInteger, nullable=False, default=1)
-    required_roles = Column(mysql.JSON, nullable=True)
+    required_roles = Column(JSON, nullable=True)
 
     def __init__(self, name=None, account_number=None, contacts=None, enabled=True, ad_group_base=None):
         """
@@ -297,14 +294,14 @@ class Email(Model, BaseModelMixin):
     __tablename__ = 'emails'
 
     email_id = Column(Integer, autoincrement=True, primary_key=True)
-    timestamp = Column(mysql.DATETIME, nullable=False, index=True)
+    timestamp = Column(DateTime, nullable=False, index=True)
     subsystem = Column(String(64), nullable=False, index=True)
     subject = Column(String(256), nullable=False)
     sender = Column(String(256), nullable=False)
-    recipients = Column(mysql.JSON, nullable=False)
+    recipients = Column(JSON, nullable=False)
     uuid = Column(String(36), nullable=False, index=True)
-    message_html = Column(mysql.TEXT)
-    message_text = Column(mysql.TEXT)
+    message_html = Column(Text)
+    message_text = Column(Text)
 
     def to_json(self, include_body=False):
         """Exports the object to a JSON friendly dict
@@ -375,7 +372,7 @@ class ConfigItem(Model, BaseModelMixin):
 
     config_item_id = Column(Integer, primary_key=True, autoincrement=True)
     key = Column(String(256), nullable=False, index=True)
-    value = Column(mysql.JSON, nullable=False)
+    value = Column(JSON, nullable=False)
     type = Column(String(20), nullable=False, default='string')
     namespace_prefix = Column(
         String(100),
@@ -583,7 +580,7 @@ class AuditLog(Model, BaseModelMixin):
     timestamp = Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'))
     actor = Column(String(100), nullable=False, index=True)
     event = Column(String(50), nullable=False, index=True)
-    data = Column(mysql.JSON, nullable=False)
+    data = Column(JSON, nullable=False)
 
     @classmethod
     def log(cls, event=None, actor=None, data=None):
