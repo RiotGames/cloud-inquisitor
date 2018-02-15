@@ -9,7 +9,6 @@ from pkg_resources import iter_entry_points
 from cloud_inquisitor.app import create_app
 from cloud_inquisitor.database import db
 from cloud_inquisitor.log import setup_logging
-from cloud_inquisitor.schema import * # NOQA
 
 MIGRATIONS_PATH = os.path.join(
     pkg_resources.resource_filename('cloud_inquisitor', 'data'),
