@@ -17,11 +17,13 @@ class BuiltinTestCase(test_cinq.CinqTestCase):
         assert response.status_code == 404
 
     def test_builtin_unauthorized(self):
-        response = self.anon_client.post('/auth/builtin/login',
-                                         data=dict(
-                                             username='nobody',
-                                             password='whatever'
-                                         ))
+        response = self.anon_client.post(
+            '/auth/builtin/login',
+            data={
+                'username': 'nobody',
+                'password': 'whatever'
+            }
+        )
         assert MSG_INVALID_USER_OR_PASSWORD.encode() in response.data
 
     def test_ebs_view_anon(self):
