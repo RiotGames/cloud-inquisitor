@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from cloud_inquisitor import app_config
 from cloud_inquisitor.config import dbconfig, DBCChoice
-from cloud_inquisitor.constants import ROLE_ADMIN, ROLE_USER
+from cloud_inquisitor.constants import DEFAULT_MENU_ITEMS
 from cloud_inquisitor.json_utils import InquisitorJSONDecoder, InquisitorJSONEncoder
 from cloud_inquisitor.plugins.views import BaseView, LoginRedirectView, LogoutRedirectView
 from cloud_inquisitor.schema import ResourceType
@@ -27,32 +27,7 @@ class CINQFlask(Flask):
         self.active_auth_system = None
         self.types = {}
         self.available_auth_systems = {}
-        self.menu_items = {
-            'default': {
-                'order': 10,
-                'name': None,
-                'required_role': ROLE_USER,
-                'items': []
-            },
-            'browse': {
-                'order': 20,
-                'name': 'Browse',
-                'required_role': ROLE_USER,
-                'items': []
-            },
-            'reports': {
-                'order': 30,
-                'name': 'Reports',
-                'required_role': ROLE_USER,
-                'items': []
-            },
-            'admin': {
-                'order': 99,
-                'name': 'Admin',
-                'required_role': ROLE_ADMIN,
-                'items': []
-            }
-        }
+        self.menu_items = DEFAULT_MENU_ITEMS
 
         self.config['DEBUG'] = app_config.log_level == 'DEBUG'
         self.config['SECRET_KEY'] = app_config.flask.secret_key

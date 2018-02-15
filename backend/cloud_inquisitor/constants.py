@@ -94,6 +94,32 @@ DEFAULT_CONFIG = {
     }
 }
 
+DEFAULT_MENU_ITEMS = {
+    'default': {
+        'order': 10,
+        'name': None,
+        'required_role': ROLE_USER,
+        'items': []
+    },
+    'browse': {
+        'order': 20,
+        'name': 'Browse',
+        'required_role': ROLE_USER,
+        'items': []
+    },
+    'reports': {
+        'order': 30,
+        'name': 'Reports',
+        'required_role': ROLE_USER,
+        'items': []
+    },
+    'admin': {
+        'order': 99,
+        'name': 'Admin',
+        'required_role': ROLE_ADMIN,
+        'items': []
+    }
+}
 # endregion
 
 
