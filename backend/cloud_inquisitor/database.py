@@ -1,5 +1,4 @@
 from sqlservice import SQLClient, declarative_base
-from werkzeug.local import LocalProxy
 
 from cloud_inquisitor import app_config
 
@@ -10,4 +9,4 @@ def get_db_connection():
         'SQL_DATABASE_URI': app_config.database_uri
     }, model_class=Model)
 
-db = LocalProxy(get_db_connection)
+db = get_db_connection()

@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from cloud_inquisitor.database import get_db_connection
+from cloud_inquisitor.database import db
 from cloud_inquisitor.schema import ConfigItem
 
 
@@ -46,14 +46,13 @@ class DBConfig(object):
         return cls.__instance
 
     def __init__(self):
-        self.db = get_db_connection()
         self.__data = {}
         self.reload_data()
 
     def reload_data(self):
         self.__data = {}
         try:
-            for ns in self.db.ConfigNamespace.all():
+            for ns in db.ConfigNamespace.all():
                 self.__data[ns.namespace_prefix] = {x.key: x.value for x in ns.config_items}
 
         except SQLAlchemyError as ex:
@@ -100,7 +99,7 @@ class DBConfig(object):
 
         if namespace in self.__data and key in self.__data[namespace]:
             if as_object:
-                return self.db.ConfigItem.find_one(
+                return db.ConfigItem.find_one(
                     ConfigItem.namespace_prefix == namespace,
                     ConfigItem.key == key
                 )
@@ -148,7 +147,7 @@ class DBConfig(object):
             raise ValueError('Invalid config item type: {}'.format(type(value)))
 
         if namespace in self.__data and key in self.__data[namespace]:
-            itm = self.db.ConfigItem.find_one(
+            itm = db.ConfigItem.find_one(
                 ConfigItem.namespace_prefix == namespace,
                 ConfigItem.key == key
             )
@@ -167,8 +166,8 @@ class DBConfig(object):
             itm.description = description
             itm.namespace_prefix = namespace
 
-        self.db.session.add(itm)
-        self.db.session.commit()
+        db.session.add(itm)
+        db.session.commit()
 
         if namespace in self.__data:
             self.__data[namespace][key] = value
@@ -186,15 +185,15 @@ class DBConfig(object):
             `None`
         """
         if self.key_exists(namespace, key):
-            obj = self.db.ConfigItem.find_one(
+            obj = db.ConfigItem.find_one(
                 ConfigItem.namespace_prefix == namespace,
                 ConfigItem.key == key
             )
 
             del self.__data[namespace][key]
 
-            self.db.session.delete(obj)
-            self.db.session.commit()
+            db.session.delete(obj)
+            db.session.commit()
         else:
             raise KeyError('{}/{}'.format(namespace, key))
 

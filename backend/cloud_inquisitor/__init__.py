@@ -1,40 +1,14 @@
-import json
 import logging
-import os
 import re
-from datetime import datetime, timedelta
 
 import boto3.session
-import munch
 import requests
 from werkzeug.local import LocalProxy
 
 from cloud_inquisitor.constants import CONFIG_FILE_PATHS, DEFAULT_CONFIG
-from cloud_inquisitor.utils import get_user_data_configuration, parse_date
+from cloud_inquisitor.utils import get_user_data_configuration, parse_date, read_config
 
 logger = logging.getLogger(__name__)
-
-def read_config():
-    """Attempts to read the application configuration file and will raise a `FileNotFoundError` if the
-    configuration file is not found. Returns the folder where the configuration file was loaded from, and
-    a `Munch` (dict-like object) containing the configuration
-
-    Configuration file paths searched, in order:
-        * ~/.cinq/config.json'
-        * ./config.json
-        * /usr/local/etc/cloud-inquisitor/config.json
-
-    Returns:
-        `str`, `dict` -
-    """
-    config = munch.munchify(DEFAULT_CONFIG)
-
-    for fpath in CONFIG_FILE_PATHS:
-        if os.path.exists(fpath):
-            config.update(json.load(open(fpath, 'r')))
-            return os.path.dirname(fpath), config
-
-    raise FileNotFoundError('Configuration file not found')
 
 # Setup app wide variables
 config_path, app_config = LocalProxy(read_config)
@@ -53,10 +27,10 @@ def get_aws_session(account):
     Returns:
         :obj:`boto3:boto3.session.Session`
     """
-    from cloud_inquisitor.dbconfig import dbconfig
+    from cloud_inquisitor.config import dbconfig
 
     # If no keys are on supplied for the account, use sts.assume_role instead
-    if not app_config.aws_api.access_key or not app_config.aws_api.secret_key:
+    if not all((app_config.aws_api.access_key, app_config.aws_api.secret_key)):
         sts = boto3.session.Session().client('sts')
     else:
         # If we are not running on an EC2 instance, assume the instance role
@@ -105,7 +79,5 @@ def get_aws_regions():
 
     return regions
 
-try:
-    AWS_REGIONS = get_aws_regions()
-except:
-    raise Exception('Unable to load list of regions from AWS API')
+
+AWS_REGIONS = LocalProxy(get_aws_regions)

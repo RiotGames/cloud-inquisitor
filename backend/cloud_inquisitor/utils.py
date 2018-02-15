@@ -12,13 +12,15 @@ from datetime import datetime
 
 import boto3
 import jwt
+import munch
 import pkg_resources
 import requests
 from argon2 import PasswordHasher
 from dateutil import parser
 from jinja2 import Environment, FileSystemLoader
 
-from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN, RGX_BUCKET, ROLE_ADMIN
+from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN, RGX_BUCKET, ROLE_ADMIN, DEFAULT_CONFIG, \
+    CONFIG_FILE_PATHS
 
 __jwt_data = None
 
@@ -441,3 +443,26 @@ def get_user_data_configuration(app_config):
         app_config.database_uri = kms_config['db_uri']
     else:
         raise RuntimeError('Failed loading user-data, cannot continue: {}: {}'.format(res.status_code, res.content))
+
+
+def read_config():
+    """Attempts to read the application configuration file and will raise a `FileNotFoundError` if the
+    configuration file is not found. Returns the folder where the configuration file was loaded from, and
+    a `Munch` (dict-like object) containing the configuration
+
+    Configuration file paths searched, in order:
+        * ~/.cinq/config.json'
+        * ./config.json
+        * /usr/local/etc/cloud-inquisitor/config.json
+
+    Returns:
+        `str`, `dict` -
+    """
+    config = munch.munchify(DEFAULT_CONFIG)
+
+    for fpath in CONFIG_FILE_PATHS:
+        if os.path.exists(fpath):
+            config.update(munch.munchify(json.load(open(fpath, 'r'))))
+            return os.path.dirname(fpath), config
+
+    raise FileNotFoundError('Configuration file not found')

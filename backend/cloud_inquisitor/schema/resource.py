@@ -138,6 +138,9 @@ class Resource(Model, BaseModelMixin):
             Resource.resource_id == resource_id
         )
 
+    def __repr__(self):
+        return '<Resource({})>'.format(self.resource_id)
+
 
 class ResourceMapping(Model, BaseModelMixin):
     """Mapping resource relationships (parent/child)
