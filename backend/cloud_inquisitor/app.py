@@ -33,11 +33,8 @@ class CINQFlask(Flask):
         self.config['DEBUG'] = app_config.log_level == 'DEBUG'
         self.config['SECRET_KEY'] = app_config.flask.secret_key
 
-    def run(self, *args, **kwargs):
         self.api = CINQApi(self)
-
         self.__register_types()
-        super().run(*args, **kwargs)
 
     def register_auth_system(self, auth_system):
         """Register a given authentication system with the framework. Returns `True` if the `auth_system` is registered
@@ -65,6 +62,23 @@ class CINQFlask(Flask):
             logger.debug('Not trying to load the {} auth system as it is disabled by config'.format(auth_system.name))
             return False
 
+    def register_menu_item(self, items):
+        """Registers a views menu items into the metadata for the application. Skip if the item is already present
+
+        Args:
+            items (`list` of `MenuItem`): A list of `MenuItem`s
+
+        Returns:
+            `None`
+        """
+        for itm in items:
+            if itm.group in self.menu_items:
+                # Only add the menu item if we don't already have it registered
+                if itm not in self.menu_items[itm.group]['items']:
+                    self.menu_items[itm.group]['items'].append(itm)
+            else:
+                logger.warning('Tried registering menu item to unknown group {}'.format(itm.group))
+
     def __register_types(self):
         """Iterates all entry points for resource types and registers a `resource_type_id` to class mapping
 
@@ -83,10 +97,13 @@ class CINQFlask(Flask):
 class CINQApi(Api):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.register_views()
+        self.register_views(self.app)
 
-    def register_views(self):
+    def register_views(self, app):
         """Iterates all entry points for views and auth systems and dynamically load and register the routes with Flask
+
+        Args:
+            app (`CINQFlask`): CINQFlask object to register views for
 
         Returns:
             `None`
@@ -96,9 +113,9 @@ class CINQApi(Api):
 
         for ep in iter_entry_points('cloud_inquisitor.plugins.auth'):
             cls = ep.load()
-            self.app.available_auth_systems[cls.name] = cls
+            app.available_auth_systems[cls.name] = cls
 
-            if self.app.register_auth_system(cls):
+            if app.register_auth_system(cls):
                 for vcls in cls.views:
                     self.add_resource(vcls, *vcls.URLS)
                     logger.debug('Registered auth system view {} for paths: {}'.format(
@@ -106,18 +123,14 @@ class CINQApi(Api):
                         ', '.join(vcls.URLS)
                     ))
 
-        if not self.app.active_auth_system:
+        if not app.active_auth_system:
             logger.error('No auth systems active, please enable an auth system and then start the system again')
             sys.exit(-1)
 
         for ep in iter_entry_points('cloud_inquisitor.plugins.views'):
             view = ep.load()
             self.add_resource(view, *view.URLS)
-            for itm in view.MENU_ITEMS:
-                if itm.group in self.app.menu_items:
-                    self.app.menu_items[itm.group]['items'].append(itm)
-                else:
-                    logger.warning('Tried registering menu item to unknown group {}'.format(itm.group))
+            app.register_menu_item(view.MENU_ITEMS)
 
             logger.debug('Registered view {} for paths: {}'.format(view.__name__, ', '.join(view.URLS)))
 

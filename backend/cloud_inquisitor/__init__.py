@@ -2,6 +2,7 @@ import logging
 import re
 
 import boto3.session
+import gevent.monkey; gevent.monkey.patch_all() # NOQA: fix for https://github.com/gevent/gevent/issues/941
 import requests
 from werkzeug.local import LocalProxy
 
