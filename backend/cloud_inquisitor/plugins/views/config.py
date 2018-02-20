@@ -1,6 +1,9 @@
 import json
+from base64 import b64encode
+from collections import defaultdict
 
-from flask import request, session
+from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
+from flask import request, session, Response
 
 from cloud_inquisitor.config import DBCChoice, DBCString, DBCInt, DBCFloat, DBCArray, DBCJSON
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
@@ -241,3 +244,53 @@ class Namespaces(BaseView):
 
         self.dbconfig.reload_data()
         return self.make_response('Namespace created', HTTP.CREATED)
+
+
+class ConfigImportExport(BaseView):
+    URLS = ['/api/v1/config/imex']
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def get(self):
+        out = [ns.to_json() for ns in db.ConfigNamespace.find()]
+
+        AuditLog.log('config.export', session['user'].username, {})
+        return Response(
+            response=b64encode(
+                bytes(
+                    json.dumps(out, cls=InquisitorJSONEncoder),
+                    'utf-8'
+                )
+            ),
+            status=HTTP.OK
+        )
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def post(self):
+        self.reqparse.add_argument('config', type=str, required=True)
+        args = self.reqparse.parse_args()
+
+        config = json.loads(args['config'], cls=InquisitorJSONDecoder)
+
+        for nsdata in config:
+            ns = ConfigNamespace.get(nsdata['namespacePrefix'])
+
+            # Update existing namespace
+            if ns:
+                ns.namespace_prefix = nsdata['namespacePrefix']
+                ns.name = nsdata['name']
+                ns.sort_order = nsdata['sortOrder']
+
+            else:
+                ns = ConfigNamespace()
+                ns.namespace_prefix = nsdata['namespacePrefix']
+                ns.name = nsdata['name']
+                ns.sort_order = nsdata['sortOrder']
+
+            for itmdata in nsdata['configItems']:
+                pass
+
+            db.session.add(ns)
+
+        return {}
