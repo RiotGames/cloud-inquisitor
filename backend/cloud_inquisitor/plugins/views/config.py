@@ -271,26 +271,46 @@ class ConfigImportExport(BaseView):
         self.reqparse.add_argument('config', type=str, required=True)
         args = self.reqparse.parse_args()
 
-        config = json.loads(args['config'], cls=InquisitorJSONDecoder)
+        try:
+            config = json.loads(args['config'], cls=InquisitorJSONDecoder)
+            for nsdata in config:
+                ns = ConfigNamespace.get(nsdata['namespacePrefix'])
 
-        for nsdata in config:
-            ns = ConfigNamespace.get(nsdata['namespacePrefix'])
+                # Update existing namespace
+                if ns:
+                    ns.namespace_prefix = nsdata['namespacePrefix']
+                    ns.name = nsdata['name']
+                    ns.sort_order = nsdata['sortOrder']
 
-            # Update existing namespace
-            if ns:
-                ns.namespace_prefix = nsdata['namespacePrefix']
-                ns.name = nsdata['name']
-                ns.sort_order = nsdata['sortOrder']
+                else:
+                    ns = ConfigNamespace()
+                    ns.namespace_prefix = nsdata['namespacePrefix']
+                    ns.name = nsdata['name']
+                    ns.sort_order = nsdata['sortOrder']
+                db.session.add(ns)
 
-            else:
-                ns = ConfigNamespace()
-                ns.namespace_prefix = nsdata['namespacePrefix']
-                ns.name = nsdata['name']
-                ns.sort_order = nsdata['sortOrder']
+                for itmdata in nsdata['configItems']:
+                    itm = ConfigItem.get(ns.namespace_prefix, itmdata['key'])
 
-            for itmdata in nsdata['configItems']:
-                pass
+                    if itm:
+                        itm.value = itmdata['value']
+                        itm.type = itmdata['type']
+                        itm.description = itmdata['description']
+                    else:
+                        itm = ConfigItem()
+                        itm.namespace_prefix = ns.namespace_prefix
+                        itm.key = itmdata['key']
+                        itm.value = itmdata['value']
+                        itm.description = itmdata['description']
 
-            db.session.add(ns)
+                    db.session.add(itm)
 
-        return {}
+            db.session.commit()
+            AuditLog.log('config.import', session['user'].username, {})
+            return self.make_response('Configuration imported')
+        except Exception as ex:
+            self.log.exception('Failed importing configuration data')
+            return self.make_response(
+                'Error importing configuration data: {}'.format(ex),
+                HTTP.SERVER_ERROR
+            )

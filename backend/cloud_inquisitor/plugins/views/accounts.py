@@ -1,9 +1,11 @@
 import json
+from base64 import b64encode
 
-from flask import session
+from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
+from flask import session, Response
 from sqlalchemy import desc
 
-from cloud_inquisitor.constants import ROLE_ADMIN, HTTP, ROLE_USER
+from cloud_inquisitor.constants import ROLE_ADMIN, HTTP, ROLE_USER, AccountTypes
 from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import Account, AuditLog
@@ -159,3 +161,63 @@ class AccountDetail(BaseView):
         acct.delete()
 
         return self.make_response('Account deleted')
+
+
+class AccountImportExport(BaseView):
+    URLS = ['/api/v1/account/imex']
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def get(self):
+        out = [ns.to_json(is_admin=True) for ns in db.Account.find()]
+
+        AuditLog.log('account.export', session['user'].username, {})
+        return Response(
+            response=b64encode(
+                bytes(
+                    json.dumps(out, cls=InquisitorJSONEncoder),
+                    'utf-8'
+                )
+            ),
+            status=HTTP.OK
+        )
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def post(self):
+        self.reqparse.add_argument('config', type=str, required=True)
+        args = self.reqparse.parse_args()
+
+        try:
+            account_data = json.loads(args['config'], cls=InquisitorJSONDecoder)
+
+            for acctData in account_data:
+                acct = Account.get(acctData['accountName'])
+
+                if not getattr(AccountTypes, acctData['accountType'], None):
+                    return self.make_response(
+                        'Unsupported account type: {}'.format(acctData['accountType']),
+                        HTTP.BAD_REQUEST
+                    )
+
+                if not acct:
+                    acct = Account()
+
+                acct.account_number = acctData['accountNumber']
+                acct.contacts = acctData['contacts']
+                acct.account_type = acctData['accountType']
+                acct.ad_group_base = acctData['adGroupBase']
+                acct.enabled = acctData['enabled']
+                acct.required_roles = acctData['requiredRoles']
+
+                db.session.add(acct)
+
+            db.session.commit()
+            AuditLog.log('account.import', session['user'].username, {})
+            return self.make_response({'message': 'Accounts imported'})
+        except Exception as ex:
+            self.log.exception('Failed importing configuration data')
+            return self.make_response(
+                'Error importing account data: {}'.format(ex),
+                HTTP.SERVER_ERROR
+            )
