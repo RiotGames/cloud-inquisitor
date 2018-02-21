@@ -2,9 +2,9 @@ import json
 
 from flask import request, session
 
-from cloud_inquisitor import db
 from cloud_inquisitor.config import DBCChoice, DBCString, DBCInt, DBCFloat, DBCArray, DBCJSON
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import ConfigNamespace, ConfigItem, AuditLog
 from cloud_inquisitor.utils import MenuItem
@@ -59,7 +59,7 @@ class ConfigList(BaseView):
     @check_auth(ROLE_ADMIN)
     def get(self):
         """List existing config namespaces and their items"""
-        namespaces = ConfigNamespace.query.order_by(
+        namespaces = db.ConfigNamespace.order_by(
             ConfigNamespace.sort_order,
             ConfigNamespace.name
         ).all()
@@ -131,9 +131,8 @@ class ConfigGet(BaseView):
         if args['type'] == 'choice' and not set(args['value']['enabled']).issubset(args['value']['available']):
             return self.make_response('Invalid item', HTTP.BAD_REQUEST)
 
-        item = (ConfigItem.query
-            .filter(ConfigItem.namespace_prefix == namespace, ConfigItem.key == key)
-            .first()
+        item = db.ConfigItem.find_one(
+            ConfigItem.namespace_prefix == namespace, ConfigItem.key == key
         )
 
         if item.value != args['value']:
@@ -168,7 +167,7 @@ class NamespaceGet(BaseView):
     @check_auth(ROLE_ADMIN)
     def get(self, namespacePrefix):
         """Get a specific configuration namespace"""
-        ns = ConfigNamespace.query.filter(ConfigNamespace.namespace_prefix == namespacePrefix).first()
+        ns = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == namespacePrefix)
         if not ns:
             return self.make_response('No such namespace: {}'.format(namespacePrefix), HTTP.NOT_FOUND)
 
@@ -186,7 +185,7 @@ class NamespaceGet(BaseView):
         args = self.reqparse.parse_args()
         AuditLog.log('configNamespace.update', session['user'].username, args)
 
-        ns = ConfigNamespace.query.filter(ConfigNamespace.namespace_prefix == namespacePrefix).first()
+        ns = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == namespacePrefix)
         if not ns:
             return self.make_response('No such namespace: {}'.format(namespacePrefix), HTTP.NOT_FOUND)
 
@@ -204,7 +203,7 @@ class NamespaceGet(BaseView):
     def delete(self, namespacePrefix):
         """Delete a specific configuration namespace"""
         AuditLog.log('configNamespace.delete', session['user'].username, {'namespacePrefix': namespacePrefix})
-        ns = ConfigNamespace.query.filter(ConfigNamespace.namespace_prefix == namespacePrefix).first()
+        ns = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == namespacePrefix)
         if not ns:
             return self.make_response('No such namespace: {}'.format(namespacePrefix), HTTP.NOT_FOUND)
 

@@ -11,8 +11,8 @@ from sqlalchemy import func, or_, and_, cast, DATETIME
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import aliased
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN
+from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import ResourceException
 from cloud_inquisitor.schema import Tag, Account, Resource, ResourceType, ResourceProperty
 from cloud_inquisitor.utils import to_utc_date, is_truthy, to_camelcase
@@ -28,7 +28,7 @@ class BaseResource(ABC):
         return self.get_property(item)
 
     def __str__(self):
-        return "<{} resource_id={}>".format(self.__class__.__name__, self.id)
+        return '<{} resource_id={}>'.format(self.__class__.__name__, self.id)
 
     # region Object properties
     @property
@@ -188,7 +188,7 @@ class BaseResource(ABC):
         Returns:
             list of resource objects
         """
-        qry = Resource.query.filter(
+        qry = db.Resource.filter(
             Resource.resource_type_id == ResourceType.get(cls.resource_type).resource_type_id
         )
 
@@ -224,7 +224,7 @@ class BaseResource(ABC):
         Returns:
             `list` of `Resource`, `sqlalchemy.orm.Query`
         """
-        qry = Resource.query.order_by(Resource.resource_id).filter(
+        qry = db.Resource.order_by(Resource.resource_id).filter(
             Resource.resource_type_id == ResourceType.get(cls.resource_type).resource_type_id
         )
 
@@ -542,7 +542,7 @@ class EC2Instance(BaseResource):
             `list` of `EBSVolume`
         """
         return [
-            EBSVolume(res) for res in Resource.query.join(
+            EBSVolume(res) for res in db.Resource.join(
                 ResourceProperty, Resource.resource_id == ResourceProperty.resource_id
             ).filter(
                 Resource.resource_type_id == ResourceType.get('aws_ebs_volume').resource_type_id,
@@ -652,7 +652,8 @@ class EC2Instance(BaseResource):
         )
 
         age_alias = aliased(ResourceProperty)
-        qry = (qry.join(age_alias, Resource.resource_id == age_alias.resource_id)
+        qry = (
+            qry.join(age_alias, Resource.resource_id == age_alias.resource_id)
             .filter(
                 age_alias.name == 'launch_date',
                 cast(func.JSON_UNQUOTE(age_alias.value), DATETIME) < datetime.now() - timedelta(days=age)
@@ -1085,7 +1086,7 @@ class AMI(BaseResource):
             `str`
         """
         return self.get_property('state').value
-    #endregion
+    # endregion
 
     def update(self, data):
         """Updates the object information based on live data, if there were any changes made. Any changes will be

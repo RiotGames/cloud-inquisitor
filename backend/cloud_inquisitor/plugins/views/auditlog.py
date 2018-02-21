@@ -1,7 +1,7 @@
 from sqlalchemy import distinct
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import AuditLog
 from cloud_inquisitor.utils import MenuItem
@@ -35,7 +35,7 @@ class AuditLogList(BaseView):
         self.reqparse.add_argument('actors', type=str, action='append', default=None)
         args = self.reqparse.parse_args()
 
-        qry = AuditLog.query.order_by(AuditLog.audit_log_event_id.desc())
+        qry = db.AuditLog.order_by(AuditLog.audit_log_event_id.desc())
         if args['events']:
             qry = qry.filter(AuditLog.event.in_(args['events']))
 
@@ -52,7 +52,7 @@ class AuditLogList(BaseView):
         return self.make_response({
             'auditLogEvents': qry.all(),
             'auditLogEventCount': totalEvents,
-            'eventTypes': [x[0] for x in db.session.query(distinct(AuditLog.event)).all()]
+            'eventTypes': [x[0] for x in db.query(distinct(AuditLog.event)).all()]
         })
 
 
@@ -62,7 +62,7 @@ class AuditLogGet(BaseView):
     @rollback
     @check_auth(ROLE_ADMIN)
     def get(self, auditLogEventId):
-        event = AuditLog.query.filter(AuditLog.audit_log_event_id == auditLogEventId).first()
+        event = db.AuditLog.find_one(AuditLog.audit_log_event_id == auditLogEventId)
 
         return self.make_response({
             'auditLogEvent': event

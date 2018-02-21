@@ -1,8 +1,4 @@
-"""Email based notification system
-
-
-
-"""
+"""Email based notification system"""
 import smtplib
 import uuid
 from datetime import datetime
@@ -11,9 +7,10 @@ from email.mime.text import MIMEText
 
 import boto3.session
 
-from cloud_inquisitor import app, db
+from cloud_inquisitor import app_config
 from cloud_inquisitor.config import dbconfig, ConfigOption
 from cloud_inquisitor.constants import NS_EMAIL
+from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import EmailSendError
 from cloud_inquisitor.plugins.notifiers import BaseNotifier
 from cloud_inquisitor.schema import Email
@@ -27,22 +24,27 @@ class EmailNotifier(BaseNotifier):
         ConfigOption('enabled', True, 'bool', 'Enable the Email notifier plugin'),
         ConfigOption('from_address', 'changeme@domain.tld', 'string', 'Sender address for emails'),
         ConfigOption('method', 'ses', 'string', 'EMail sending method, either ses or smtp'),
-        ConfigOption('from_arn', '', 'string',
+        ConfigOption(
+            'from_arn', '', 'string',
             'If using cross-account SES, this is the "From ARN", otherwise leave blank'
         ),
-        ConfigOption('return_path_arn', '', 'string',
+        ConfigOption(
+            'return_path_arn', '', 'string',
             'If using cross-account SES, this is the "Return Path ARN", otherwise leave blank'
         ),
-        ConfigOption('source_arn', '', 'string',
+        ConfigOption(
+            'source_arn', '', 'string',
             'If using cross-account SES, this is the "Source ARN", otherwise leave blank'
         ),
         ConfigOption('ses_region', 'us-west-2', 'string', 'Which SES region to send emails from'),
         ConfigOption('smtp_server', 'localhost', 'string', 'Address of the SMTP server to use'),
         ConfigOption('smtp_port', 25, 'int', 'Port for the SMTP server'),
-        ConfigOption('smtp_username', '', 'string',
+        ConfigOption(
+            'smtp_username', '', 'string',
             'Username for SMTP authentication. Leave blank for no authentication'
         ),
-        ConfigOption('smtp_password', '', 'string',
+        ConfigOption(
+            'smtp_password', '', 'string',
             'Password for SMTP authentication. Leave blank for no authentication'
         ),
         ConfigOption('smtp_tls', False, 'bool', 'Use TLS for sending emails'),
@@ -113,8 +115,8 @@ def __send_ses_email(sender, recipients, subject, html_body, text_body):
     Returns:
         `None`
     """
-    access_key = app.config.get('AWS_API_ACCESS_KEY')
-    secret_key = app.config.get('AWS_API_SECRET_KEY')
+    access_key = app_config.aws_api.access_key
+    secret_key = app_config.aws_api.secret_key
     source_arn = dbconfig.get('source_arn', NS_EMAIL)
     return_arn = dbconfig.get('return_path_arn', NS_EMAIL)
 
@@ -197,7 +199,6 @@ def __send_smtp_email(sender, recipients, subject, html_body, text_body):
     if text_body:
         text_part = MIMEText(text_body, 'plain')
         msg.attach(text_part)
-    
 
     # TLS if needed
     if dbconfig.get('smtp_tls', NS_EMAIL, False):

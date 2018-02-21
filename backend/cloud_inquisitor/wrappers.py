@@ -5,10 +5,10 @@ from functools import partial
 
 import jwt
 from botocore.exceptions import ClientError, EndpointConnectionError
-from flask import request, session
+from flask import request, session, current_app
 
-from cloud_inquisitor import ROLE_ADMIN, app, db
-from cloud_inquisitor.constants import HTTP
+from cloud_inquisitor.database import get_db_connection
+from cloud_inquisitor.constants import HTTP, ROLE_ADMIN
 from cloud_inquisitor.plugins.views import BaseView
 from cloud_inquisitor.utils import has_access, get_jwt_key_data
 
@@ -81,6 +81,9 @@ class rollback(__wrapper):
     Due to a caching mechanic within SQLAlchemy, we perform a rollback on every request regardless or we might end
     up getting stale data from a cached connection / existing transaction instead of live data.
     """
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.db = get_db_connection()
 
     def __call__(self, *args, **kwargs):
         try:
@@ -94,7 +97,7 @@ class rollback(__wrapper):
                 raise
 
         finally:
-            db.session.rollback()
+            self.db.session.rollback()
 
 
 class check_auth(__wrapper):
@@ -127,10 +130,10 @@ class check_auth(__wrapper):
                     get_jwt_key_data()
                 )
 
-                if token['auth_system'] != app.active_auth_system.name:
+                if token['auth_system'] != current_app.active_auth_system.name:
                     self.log.error('Token is from another auth_system ({}) than the current one ({})'.format(
                         token['auth_system'],
-                        app.active_auth_system.name
+                        current_app.active_auth_system.name
                     ))
 
                     return view.make_unauth_response()

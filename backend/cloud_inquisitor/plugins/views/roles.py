@@ -1,7 +1,7 @@
 from flask import session
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import Role, AuditLog
 from cloud_inquisitor.utils import MenuItem
@@ -27,7 +27,7 @@ class RoleList(BaseView):
     @rollback
     @check_auth(ROLE_ADMIN)
     def get(self):
-        roles = Role.query.all()
+        roles = db.Role.all()
 
         return self.make_response({
             'roles': roles,
@@ -60,7 +60,7 @@ class RoleGet(BaseView):
     @check_auth(ROLE_ADMIN)
     def get(self, roleId):
         """Get a specific role information"""
-        role = Role.query.filter(Role.role_id == roleId).first()
+        role = db.Role.find_one(Role.role_id == roleId)
 
         if not role:
             return self.make_response('No such role found', HTTP.NOT_FOUND)
@@ -75,7 +75,7 @@ class RoleGet(BaseView):
         args = self.reqparse.parse_args()
         AuditLog.log('role.update', session['user'].username, args)
 
-        role = Role.query.filter(Role.role_id == roleId).first()
+        role = db.Role.find_one(Role.role_id == roleId)
         if not role:
             self.make_response({
                 'message': 'No such role found'
@@ -94,7 +94,7 @@ class RoleGet(BaseView):
         """Delete a user role"""
         AuditLog.log('role.delete', session['user'].username, {'roleId': roleId})
 
-        role = Role.query.filter(Role.role_id == roleId).first()
+        role = db.Role.find_one(Role.role_id == roleId)
         if not role:
             return self.make_response('No such role found', HTTP.NOT_FOUND)
 

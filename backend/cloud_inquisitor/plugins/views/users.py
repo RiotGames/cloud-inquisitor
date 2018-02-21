@@ -1,7 +1,7 @@
 from flask import session, current_app
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN, ROLE_USER, HTTP
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import User, Role, AuditLog
 from cloud_inquisitor.utils import MenuItem, generate_password, hash_password
@@ -34,7 +34,7 @@ class UserList(BaseView):
         self.reqparse.add_argument('authSystem', type=str, default=None, action='append')
         args = self.reqparse.parse_args()
 
-        qry = User.query.order_by(User.username)
+        qry = db.User.order_by(User.username)
         if args['authSystem']:
             qry = qry.filter(User.auth_system.in_(args['authSystem']))
 
@@ -64,7 +64,10 @@ class UserList(BaseView):
         args = self.reqparse.parse_args()
         AuditLog.log('user.create', session['user'].username, args)
 
-        user = User.query.filter(User.username == args['username'], User.auth_system == args['authSystem']).first()
+        user = db.User.find_one(
+            User.username == args['username'],
+            User.auth_system == args['authSystem']
+        )
         roles = []
         if user:
             return self.make_response('User already exists', HTTP.BAD_REQUEST)
@@ -82,7 +85,7 @@ class UserList(BaseView):
             )
 
         for roleName in args['roles']:
-            role = Role.query.filter(Role.name == roleName).first()
+            role = db.Role.find_one(Role.name == roleName)
 
             if not role:
                 return self.make_response('No such role {}'.format(roleName), HTTP.BAD_REQUEST)
@@ -119,7 +122,7 @@ class UserList(BaseView):
     @check_auth(ROLE_ADMIN)
     def options(self):
         """Returns metadata information required for User Creation"""
-        roles = Role.query.all()
+        roles = db.Role.all()
 
         return self.make_response({
             'roles': roles,
@@ -135,8 +138,8 @@ class UserDetails(BaseView):
     @check_auth(ROLE_ADMIN)
     def get(self, user_id):
         """Returns a specific user"""
-        user = User.query.filter(User.user_id == user_id).first()
-        roles = Role.query.all()
+        user = db.User.find_one(User.user_id == user_id)
+        roles = db.Role.all()
 
         if not user:
             return self.make_response('Unable to find the user requested, might have been removed', HTTP.NOT_FOUND)
@@ -154,8 +157,8 @@ class UserDetails(BaseView):
         args = self.reqparse.parse_args()
         AuditLog.log('user.create', session['user'].username, args)
 
-        user = User.query.filter(User.user_id == user_id).first()
-        roles = Role.query.filter(Role.name.in_(args['roles'])).all()
+        user = db.User.find_one(User.user_id == user_id)
+        roles = db.Role.find(Role.name.in_(args['roles']))
         if not user:
             return self.make_response('No such user found: {}'.format(user_id), HTTP.NOT_FOUND)
 
@@ -183,7 +186,7 @@ class UserDetails(BaseView):
                 HTTP.FORBIDDEN
             )
 
-        user = User.query.filter(User.user_id == user_id).first()
+        user = db.User.find_one(User.user_id == user_id)
         if not user:
             return self.make_response('No such user id found: {}'.format(user_id), HTTP.UNAUTHORIZED)
 
@@ -208,7 +211,7 @@ class PasswordReset(BaseView):
         args = self.reqparse.parse_args()
         AuditLog.log('user.passwordReset', session['user'].username, args)
 
-        user = User.query.filter(User.user_id == user_id).first()
+        user = db.User.find_one(User.user_id == user_id)
         if not user:
             return self.make_response('User not found', HTTP.NOT_FOUND)
 

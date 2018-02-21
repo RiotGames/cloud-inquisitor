@@ -1,5 +1,5 @@
-import time
 import threading
+import time
 
 from flask_script import Option
 from pkg_resources import iter_entry_points
@@ -74,6 +74,7 @@ class Scheduler(BaseSchedulerCommand):
 
         scheduler = self.scheduler_plugins[self.active_scheduler]()
         scheduler.execute_scheduler()
+
 
 class Worker(BaseSchedulerCommand):
     """Execute the selected worker"""

@@ -1,10 +1,10 @@
 """Module containing constants for use througout the application
 """
+import os
 import re
 from enum import Enum
 
 from munch import munchify
-
 
 # region Plugin namespaces
 PLUGIN_NAMESPACES = munchify({
@@ -64,6 +64,62 @@ ROLE_USER = 'User'
 # region General variables
 UNAUTH_MESSAGE = 'Unauthorized, please log in'
 MSG_INVALID_USER_OR_PASSWORD = 'Invalid user or password provided'
+# endregion
+
+# region Default app settings
+CONFIG_FILE_PATHS = (
+    os.path.expanduser('~/.cinq/config.json'),
+    os.path.join(os.getcwd(), 'config.json'),
+    '/usr/local/etc/cloud-inquisitor/config.json',
+)
+
+DEFAULT_CONFIG = {
+    'log_level': 'INFO',
+    'use_user_data': True,
+    'kms_account_name': None,
+    'kms_region': 'us-west-2',
+    'user_data_url': 'http://169.254.269.254/latest/user-data',
+
+    'aws_api': {
+        'access_key': None,
+        'secret_key': None,
+        'instance_role_arn': None,
+    },
+
+    'database_uri': 'mysql://cinq:secretpass@localhost:3306/inquisitor',
+
+    'flask': {
+        'secret_key': 'verysecretkey',
+        'json_sort_keys': False,
+    }
+}
+
+DEFAULT_MENU_ITEMS = {
+    'default': {
+        'order': 10,
+        'name': None,
+        'required_role': ROLE_USER,
+        'items': []
+    },
+    'browse': {
+        'order': 20,
+        'name': 'Browse',
+        'required_role': ROLE_USER,
+        'items': []
+    },
+    'reports': {
+        'order': 30,
+        'name': 'Reports',
+        'required_role': ROLE_USER,
+        'items': []
+    },
+    'admin': {
+        'order': 99,
+        'name': 'Admin',
+        'required_role': ROLE_ADMIN,
+        'items': []
+    }
+}
 # endregion
 
 

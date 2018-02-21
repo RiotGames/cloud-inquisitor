@@ -3,8 +3,8 @@ import json
 from flask import session
 from sqlalchemy import desc
 
-from cloud_inquisitor import db
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP, ROLE_USER
+from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import Account, AuditLog
 from cloud_inquisitor.utils import validate_email, MenuItem
@@ -27,7 +27,7 @@ class AccountList(BaseView):
     @check_auth(ROLE_USER)
     def get(self):
         """List all accounts"""
-        qry = Account.query.order_by(desc(Account.enabled), Account.account_name)
+        qry = db.Account.order_by(desc(Account.enabled), Account.account_name)
 
         if ROLE_ADMIN not in session['user'].roles:
             qry = qry.filter(Account.account_id.in_(session['accounts']))
@@ -73,7 +73,7 @@ class AccountList(BaseView):
             else:
                 raise ValueError('Invalid type: {} for value {} for argument {}'.format(type(value), value, key))
 
-        if Account.query.filter_by(account_name=args['accountName']).count() > 0:
+        if db.Account.filter_by(account_name=args['accountName']).count() > 0:
             raise Exception('Account already exists')
 
         acct = Account(
@@ -99,7 +99,7 @@ class AccountDetail(BaseView):
     @check_auth(ROLE_ADMIN)
     def get(self, accountId):
         """Fetch a single account"""
-        account = Account.query.filter_by(account_id=accountId).first()
+        account = db.Account.find_one(Account.account_id == accountId)
         if account:
             return self.make_response({
                 'message': None,
@@ -134,7 +134,7 @@ class AccountDetail(BaseView):
         if not args['contacts']:
             raise Exception('You must provide at least one contact')
 
-        acct = Account.query.filter_by(account_id=accountId).first()
+        acct = db.Account.find_one(Account.account_id == accountId)
         acct.account_name = args['accountName']
         acct.account_number = args['accountNumber'].zfill(12)
         acct.contacts = args['contacts']
@@ -152,7 +152,7 @@ class AccountDetail(BaseView):
     def delete(self, accountId):
         """Delete an account"""
         AuditLog.log('account.delete', session['user'].username, {'accountId': accountId})
-        acct = Account.query.filter_by(account_id=accountId).first()
+        acct = db.Account.find_one(Account.account_id == accountId)
         if not acct:
             raise Exception('No such account found')
 

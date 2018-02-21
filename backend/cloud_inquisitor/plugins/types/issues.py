@@ -6,7 +6,7 @@ from sqlalchemy import or_, and_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import aliased
 
-from cloud_inquisitor import db
+from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import IssueException
 from cloud_inquisitor.plugins.types.resources import EC2Instance, EBSVolume
 from cloud_inquisitor.schema import IssueProperty, Issue, IssueType
@@ -23,7 +23,7 @@ class BaseIssue(ABC):
         return self.get_property(item)
 
     def __str__(self):
-        return "<{} issue_id={}>".format(self.__class__.__name__, self.id)
+        return '<{} issue_id={}>'.format(self.__class__.__name__, self.id)
 
     def get_property(self, item):
         for prop in self.issue.properties:
@@ -172,11 +172,11 @@ class BaseIssue(ABC):
         Returns:
             list of issue objects
         """
-        qry = Issue.query.filter(
+        issues = db.Issue.find(
             Issue.issue_type_id == IssueType.get(cls.issue_type).issue_type_id
         )
 
-        return {res.issue_id: cls(res) for res in qry.all()}
+        return {res.issue_id: cls(res) for res in issues}
 
     @classmethod
     def search(cls, *, limit=100, page=1, properties=None, return_query=False):
@@ -194,7 +194,7 @@ class BaseIssue(ABC):
         Returns:
             `list` of `Issue`, `sqlalchemy.orm.Query`
         """
-        qry = Issue.query.order_by(Issue.issue_id).filter(
+        qry = db.Issue.order_by(Issue.issue_id).filter(
             Issue.issue_type_id == IssueType.get(cls.issue_type).issue_type_id
         )
 
@@ -211,7 +211,7 @@ class BaseIssue(ABC):
                         and_(
                             alias.name == prop_name,
                             or_(*where_clause)
-                         ).self_group()
+                        ).self_group()
                     )
                 else:
                     qry = qry.filter(

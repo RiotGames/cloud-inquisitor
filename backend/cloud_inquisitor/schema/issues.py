@@ -2,11 +2,13 @@ from sqlalchemy import Column, String
 from sqlalchemy.dialects.mysql import INTEGER as Integer, JSON
 from sqlalchemy.orm import foreign, relationship
 
-from cloud_inquisitor import db
+from cloud_inquisitor.database import db, Model
 from cloud_inquisitor.schema.base import BaseModelMixin
 
+__all__ = ('IssueType', 'IssueProperty', 'Issue')
 
-class IssueType(db.Model, BaseModelMixin):
+
+class IssueType(Model, BaseModelMixin):
     """Issue type object
 
     Attributes:
@@ -30,10 +32,10 @@ class IssueType(db.Model, BaseModelMixin):
             :obj:`IssueType`
         """
         if isinstance(issue_type, str):
-            obj = cls.query.filter_by(issue_type=issue_type).first()
+            obj = getattr(db, cls.__name__).find_one(cls.issue_type == issue_type)
 
         elif isinstance(issue_type, int):
-            obj = cls.query.filter_by(issue_type_id=issue_type).first()
+            obj = getattr(db, cls.__name__).find_one(cls.issue_type_id == issue_type)
 
         elif isinstance(issue_type, cls):
             return issue_type
@@ -52,7 +54,7 @@ class IssueType(db.Model, BaseModelMixin):
         return obj
 
 
-class IssueProperty(db.Model, BaseModelMixin):
+class IssueProperty(Model, BaseModelMixin):
     """Issue Property object"""
     __tablename__ = 'issue_properties'
 
@@ -74,7 +76,7 @@ class IssueProperty(db.Model, BaseModelMixin):
         )
 
 
-class Issue(db.Model, BaseModelMixin):
+class Issue(Model, BaseModelMixin):
     """Issue object
 
     Attributes:
@@ -105,7 +107,7 @@ class Issue(db.Model, BaseModelMixin):
         Returns:
             :obj:`Issue`: Returns Issue object if found, else None
         """
-        return Issue.query.filter(
+        return db.Issue.find_one(
             Issue.issue_id == issue_id,
             Issue.issue_type_id == issue_type_id
-        ).first()
+        )

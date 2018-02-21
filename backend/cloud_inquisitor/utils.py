@@ -6,16 +6,21 @@ import random
 import re
 import string
 import time
-import pkg_resources
+import zlib
+from base64 import b64decode
 from datetime import datetime
 
+import boto3
 import jwt
+import munch
+import pkg_resources
 import requests
 from argon2 import PasswordHasher
 from dateutil import parser
 from jinja2 import Environment, FileSystemLoader
 
-from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN, RGX_BUCKET, ROLE_ADMIN
+from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN, RGX_BUCKET, ROLE_ADMIN, DEFAULT_CONFIG, \
+    CONFIG_FILE_PATHS
 
 __jwt_data = None
 
@@ -137,7 +142,7 @@ def get_template(template):
     tmplpath = os.path.join(pkg_resources.resource_filename('cloud_inquisitor', 'data'), 'templates')
     tmplenv = Environment(loader=FileSystemLoader(tmplpath), autoescape=True)
     tmplenv.filters['json_loads'] = json.loads
-    tmplenv.filters['slack_quote_join'] = lambda data: ", ".join(list('`{}`'.format(x) for x in data))
+    tmplenv.filters['slack_quote_join'] = lambda data: ', '.join('`{}`'.format(x) for x in data)
 
     return tmplenv.get_template(template)
 
@@ -254,6 +259,7 @@ def generate_jwt_token(user, authsys, **kwargs):
     enc = jwt.encode(token, get_jwt_key_data(), algorithm='HS512')
     return enc.decode()
 
+
 def get_jwt_key_data():
     """Returns the data for the JWT private key used for encrypting the user login token as a string object
 
@@ -265,12 +271,12 @@ def get_jwt_key_data():
     if __jwt_data:
         return __jwt_data
 
-    from cloud_inquisitor import app
+    from cloud_inquisitor import config_path
     from cloud_inquisitor.config import dbconfig
 
     jwt_key_file = dbconfig.get('jwt_key_file_path', default='ssl/private.key')
     if not os.path.isabs(jwt_key_file):
-        jwt_key_file = os.path.join(app.config.get('BASE_CFG_PATH'), jwt_key_file)
+        jwt_key_file = os.path.join(config_path, jwt_key_file)
 
     with open(os.path.join(jwt_key_file), 'r') as f:
         __jwt_data = f.read()
@@ -385,7 +391,7 @@ def get_resource_id(prefix, *data):
     """
     return '{}-{}'.format(
         prefix,
-        get_hash("-".join(str(x) for x in data))[-16:]
+        get_hash('-'.join(str(x) for x in data))[-16:]
     )
 
 
@@ -405,3 +411,60 @@ def parse_date(date_string):
         return parser.parse(date_string)
     except TypeError:
         return None
+
+
+def get_user_data_configuration(app_config):
+    """Retrieve and update the application configuration with information from the user-data
+
+    Args:
+        app_config (`munch.Munch`): Application configuration object
+
+    Returns:
+        `None`
+    """
+    kms_region = app_config.kms_region
+
+    if app_config.aws_api.access_key and app_config.aws_api.secret_key:
+        sts = boto3.session.Session(app_config.aws_api.access_key, app_config.aws_api.secret_key).client('sts')
+        audit_role = sts.assume_role(RoleArn=app_config.aws_api.instance_role_arn, RoleSessionName='cloud_inquisitor')
+        kms = boto3.session.Session(
+            audit_role['Credentials']['AccessKeyId'],
+            audit_role['Credentials']['SecretAccessKey'],
+            audit_role['Credentials']['SessionToken'],
+        ).client('kms', region_name=kms_region)
+    else:
+        kms = boto3.session.Session().client('kms', region_name=kms_region)
+
+    user_data_url = app_config.user_data_url
+    res = requests.get(user_data_url)
+
+    if res.status_code == 200:
+        data = kms.decrypt(CiphertextBlob=b64decode(res.content))
+        kms_config = json.loads(zlib.decompress(data['Plaintext']).decode('utf-8'))
+
+        app_config.database_uri = kms_config['db_uri']
+    else:
+        raise RuntimeError('Failed loading user-data, cannot continue: {}: {}'.format(res.status_code, res.content))
+
+
+def read_config():
+    """Attempts to read the application configuration file and will raise a `FileNotFoundError` if the
+    configuration file is not found. Returns the folder where the configuration file was loaded from, and
+    a `Munch` (dict-like object) containing the configuration
+
+    Configuration file paths searched, in order:
+        * ~/.cinq/config.json'
+        * ./config.json
+        * /usr/local/etc/cloud-inquisitor/config.json
+
+    Returns:
+        `str`, `dict` -
+    """
+    config = munch.munchify(DEFAULT_CONFIG)
+
+    for fpath in CONFIG_FILE_PATHS:
+        if os.path.exists(fpath):
+            config.update(munch.munchify(json.load(open(fpath, 'r'))))
+            return os.path.dirname(fpath), config
+
+    raise FileNotFoundError('Configuration file not found')
