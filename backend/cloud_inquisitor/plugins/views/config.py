@@ -1,13 +1,12 @@
 import json
 from base64 import b64encode
-from collections import defaultdict
 
-from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
 from flask import request, session, Response
 
 from cloud_inquisitor.config import DBCChoice, DBCString, DBCInt, DBCFloat, DBCArray, DBCJSON
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
 from cloud_inquisitor.database import db
+from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import ConfigNamespace, ConfigItem, AuditLog
 from cloud_inquisitor.utils import MenuItem
