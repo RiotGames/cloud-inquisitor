@@ -353,6 +353,12 @@ class ConfigNamespace(Model, BaseModelMixin):
         order_by='ConfigItem.key'
     )
 
+    @classmethod
+    def get(cls, ns):
+        return getattr(db, cls.__name__).find_one(
+            ConfigNamespace.namespace_prefix == ns
+        )
+
 
 class ConfigItem(Model, BaseModelMixin):
     """Configuration Item object

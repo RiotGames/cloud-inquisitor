@@ -15,6 +15,7 @@ MIGRATIONS_PATH = os.path.join(
     'migrations'
 )
 
+setup_logging()
 app = create_app()
 manager = Manager(app)
 migrate = Migrate(app, db, directory=MIGRATIONS_PATH)
@@ -36,5 +37,4 @@ for ep in iter_entry_points('cloud_inquisitor.plugins.commands'):
 
 
 def cli():
-    setup_logging()
     manager.run()
