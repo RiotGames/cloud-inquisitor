@@ -384,14 +384,21 @@ def get_resource_id(prefix, *data):
 
     Args:
         prefix (`str`): Key prefix
-        *data (`list`): List of items to use to build the resource id
+        *data: Data used to generate a unique ID
 
     Returns:
         `str`
     """
+    if type(data) in (list, tuple):
+        resource_data = '-'.join(sorted(data))
+    elif type(data) == dict:
+        resource_data = '-'.join('{}={}'.format(k, str(v)) for k, v in sorted(data.items()))
+    else:
+        resource_data = str(data)
+
     return '{}-{}'.format(
         prefix,
-        get_hash('-'.join(str(x) for x in data))[-16:]
+        get_hash(resource_data)[-16:]
     )
 
 
@@ -458,7 +465,7 @@ def read_config():
         * /usr/local/etc/cloud-inquisitor/config.json
 
     Returns:
-        `str`, `dict` -
+        `str`, `dict`
     """
     config = munch.munchify(DEFAULT_CONFIG)
 
