@@ -32,6 +32,7 @@
         "app_ssl_key_data":                         "",
         "app_use_user_data":                        null,
         "app_kms_account_name":                     null,
+        "app_kms_region":                           "us-west-2",
         "app_user_data_url":                        "http://169.254.169.254/latest/user-data",
         "app_aws_api_access_key":                   "",
         "app_aws_api_secret_key":                   "",
@@ -103,17 +104,21 @@
                 "APP_FRONTEND_BASE_PATH={{user `install_base`}}/{{user `frontend_dir`}}",
                 "APP_CONFIG_BASE_PATH={{user `app_config_path`}}",
                 "APP_DEBUG={{user `app_debug`}}",
-                "APP_DB_URI={{user `app_db_uri`}}",
                 "APP_WORKER_PROCS={{user `app_worker_procs`}}",
                 "APP_SSL_ENABLED={{user `app_ssl_enabled`}}",
                 "APP_SSL_CERT_DATA={{user `app_ssl_cert_data`}}",
                 "APP_SSL_KEY_DATA={{user `app_ssl_key_data`}}",
-                "APP_AWS_API_ACCESS_KEY={{user `app_aws_api_access_key`}}",
-                "APP_AWS_API_SECRET_KEY={{user `app_aws_api_secret_key`}}",
+
                 "APP_USE_USER_DATA={{user `app_use_user_data`}}",
                 "APP_KMS_ACCOUNT_NAME={{user `app_kms_account_name`}}",
+                "APP_KMS_REGION={{user `app_kms_region`}}",
                 "APP_USER_DATA_URL={{user `app_user_data_url`}}",
-                "APP_INSTANCE_ROLE_ARN={{user `app_instance_role_arn`}}"
+
+                "APP_AWS_API_ACCESS_KEY={{user `app_aws_api_access_key`}}",
+                "APP_AWS_API_SECRET_KEY={{user `app_aws_api_secret_key`}}",
+                "APP_INSTANCE_ROLE_ARN={{user `app_instance_role_arn`}}",
+
+                "APP_DB_URI={{user `app_db_uri`}}"
             ]
         },
         {

@@ -9,10 +9,11 @@ validate_environment() {
     if [ -z "${APP_CONFIG_BASE_PATH}" ]; then echo "Missing APP_CONFIG_BASE_PATH environment variable" && exit -1; fi
     if [ -z "${APP_DB_URI}" ]; then echo "Missing APP_DB_URI environment variable" && exit -1; fi
     if [ -z "${APP_SSL_ENABLED}" ]; then echo "Missing APP_SSL_ENABLED environment variable" && exit -1; fi
+    if [ -z "${APP_WORKER_PROCS}" ]; then echo "Missing APP_WORKER_PROCS environment variable" && exit -1; fi
     if [ -z "${APP_USE_USER_DATA}" ]; then echo "Missing APP_USE_USER_DATA environment variable" && exit -1; fi
     if [ -z "${APP_KMS_ACCOUNT_NAME}" ]; then echo "Missing APP_KMS_ACCOUNT_NAME environment variable" && exit -1; fi
+    if [ -z "${APP_KMS_REGION}" ]; then echo "Missing APP_KMS_REGION environment variable" && exit -1; fi
     if [ -z "${APP_USER_DATA_URL}" ]; then echo "Missing APP_USER_DATA_URL environment variable" && exit -1; fi
-    if [ -z "${APP_WORKER_PROCS}" ]; then echo "Missing APP_WORKER_PROCS environment variable" && exit -1; fi
 }
 
 create_virtualenv() {
@@ -49,19 +50,21 @@ install_frontend() {
 }
 
 configure_application() {
-    mkdir -p /usr/local/etc/cloud-inquisitor
     echo "Configuring backend"
+
+    mkdir -p ${APP_CONFIG_BASE_PATH}
     SECRET_KEY=$(openssl rand -hex 32)
-    sed -e "s|APP_DEBUG|${APP_DEBUG}|" \
-        -e "s|APP_DB_URI|${APP_DB_URI}|" \
+
+    sed -e "s|APP_DB_URI|${APP_DB_URI}|" \
         -e "s|APP_SECRET_KEY|${SECRET_KEY}|" \
-        -e "s|APP_USE_USER_DATA|${APP_USE_USER_DATA}|" \
+        -e "s|APP_USE_USER_DATA|${APP_USE_USER_DATA,,}|" \
         -e "s|APP_USER_DATA_URL|${APP_USER_DATA_URL}|" \
         -e "s|APP_KMS_ACCOUNT_NAME|${APP_KMS_ACCOUNT_NAME}|" \
-        -e "s|APP_INSTANCE_ROLE_ARN|${APP_INSTANCE_ROLE_ARN}|" \
+        -e "s|APP_KMS_REGION|${APP_KMS_REGION}|" \
         -e "s|APP_AWS_API_ACCESS_KEY|${APP_AWS_API_ACCESS_KEY}|" \
         -e "s|APP_AWS_API_SECRET_KEY|${APP_AWS_API_SECRET_KEY}|" \
-        files/backend-settings.py > ${APP_CONFIG_BASE_PATH}/production.py
+        -e "s|APP_INSTANCE_ROLE_ARN|${APP_INSTANCE_ROLE_ARN}|" \
+        files/backend-config.json > ${APP_CONFIG_BASE_PATH}/config.json
 
     cp files/logging.json ${APP_CONFIG_BASE_PATH}/logging.json
 }
