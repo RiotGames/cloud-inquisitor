@@ -1,4 +1,4 @@
-The following instances are now compliant with the RFC-0026 tagging standards (https://confluence.riotgames.com/display/tech/RFC+0026+-+AWS+Ownership+and+Cost+Attribution) and are no longer subject to being stopped:
+The following instances are now compliant with the Required Tags standards and are no longer subject to being stopped:
 {% for issue in issues %}
     *Account:* `{{ issue.instance.account.account_name }}`
     *Region:* `{{ issue.instance.location }}`
