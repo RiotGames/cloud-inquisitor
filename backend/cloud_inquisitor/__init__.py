@@ -2,7 +2,6 @@ import logging
 import re
 
 import boto3.session
-import gevent.monkey; gevent.monkey.patch_all() # NOQA: fix for https://github.com/gevent/gevent/issues/941
 import requests
 from werkzeug.local import LocalProxy
 
@@ -36,7 +35,11 @@ def get_aws_session(account):
     else:
         # If we are not running on an EC2 instance, assume the instance role
         # first, then assume the remote role
-        temp_sts = boto3.session.Session(app_config.aws_api.access_key, app_config.aws_api.secret_key).client('sts')
+        session_args = [app_config.aws_api.access_key, app_config.aws_api.secret_key]
+        if app_config.aws_api.session_token:
+            session_args.append(app_config.aws_api.session_token)
+
+        temp_sts = boto3.session.Session(*session_args).client('sts')
         audit_sts_role = temp_sts.assume_role(
             RoleArn=app_config.aws_api.instance_role_arn,
             RoleSessionName='inquisitor'

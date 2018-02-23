@@ -114,7 +114,6 @@ setuptools.setup(
         'flake8-pep3101~=1.1',
         'flake8-quotes~=0.9',
         'flake8~=3.3',
-        'gevent~=1.2',
         'gunicorn~=19.7',
         'ipython~=6.2',
         'munch~=2.1',

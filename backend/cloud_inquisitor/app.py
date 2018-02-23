@@ -5,6 +5,7 @@ import sys
 from flask import Flask, request, session, abort
 from flask_compress import Compress
 from flask_restful import Api
+from flask_script import Server
 from pkg_resources import iter_entry_points
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -16,6 +17,15 @@ from cloud_inquisitor.plugins.views import BaseView, LoginRedirectView, LogoutRe
 from cloud_inquisitor.schema import ResourceType
 
 logger = logging.getLogger(__name__.split('.')[0])
+
+
+class ServerWrapper(Server):
+    """Wrapper class for the built-in runserver functionality, which registers views before calling Flask's
+    ServerWrapper
+    """
+    def __call__(self, app, *args, **kwargs):
+        app.register_plugins()
+        super().__call__(app, *args, **kwargs)
 
 
 class CINQFlask(Flask):
@@ -34,7 +44,10 @@ class CINQFlask(Flask):
         self.config['SECRET_KEY'] = app_config.flask.secret_key
 
         self.api = CINQApi(self)
+
+    def register_plugins(self):
         self.__register_types()
+        self.api.register_views(self)
 
     def register_auth_system(self, auth_system):
         """Register a given authentication system with the framework. Returns `True` if the `auth_system` is registered
@@ -97,7 +110,7 @@ class CINQFlask(Flask):
 class CINQApi(Api):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.register_views(self.app)
+        #self.register_views(self.app)
 
     def register_views(self, app):
         """Iterates all entry points for views and auth systems and dynamically load and register the routes with Flask

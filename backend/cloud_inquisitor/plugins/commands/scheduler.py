@@ -3,6 +3,7 @@ import time
 
 from flask_script import Option
 from pkg_resources import iter_entry_points
+from werkzeug.local import LocalProxy
 
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_SCHEDULER
@@ -21,7 +22,7 @@ class BaseSchedulerCommand(BaseCommand):
 
     def __init__(self):
         super().__init__()
-        self.scheduler_plugins = self.load_scheduler_plugins()
+        self.scheduler_plugins = LocalProxy(self.load_scheduler_plugins)
         self.active_scheduler = dbconfig.get('scheduler')
 
     def load_scheduler_plugins(self):
