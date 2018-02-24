@@ -26,14 +26,14 @@ class APIServer(BaseCommand):
                 opts = {
                     'bind': address,
                     'workers': workers,
-                    'worker_class': 'gevent'
+                    'worker_class': 'gthread'
                 }
 
                 return opts
 
             def load(self):
                 app = create_app()
-
+                app.register_plugins()
                 return app
 
         FlaskApplication().run()

@@ -8,6 +8,7 @@ import string
 import time
 import zlib
 from base64 import b64decode
+from copy import deepcopy
 from datetime import datetime
 
 import boto3
@@ -467,11 +468,24 @@ def read_config():
     Returns:
         `str`, `dict`
     """
-    config = munch.munchify(DEFAULT_CONFIG)
+    def __recursive_update(old, new):
+        out = deepcopy(old)
+        for k, v in new.items():
+            if issubclass(type(v), dict):
+                if k in old:
+                    out[k] = __recursive_update(old[k], v)
+                else:
+                    out[k] = v
+            else:
+                out[k] = v
+
+        return out
 
     for fpath in CONFIG_FILE_PATHS:
         if os.path.exists(fpath):
-            config.update(munch.munchify(json.load(open(fpath, 'r'))))
-            return os.path.dirname(fpath), config
+            data = munch.munchify(json.load(open(fpath, 'r')))
+
+            # Our code expects a munch, so ensure that any regular dicts are converted
+            return os.path.dirname(fpath), munch.munchify(__recursive_update(DEFAULT_CONFIG, data))
 
     raise FileNotFoundError('Configuration file not found')

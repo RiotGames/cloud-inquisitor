@@ -84,6 +84,7 @@ DEFAULT_CONFIG = {
         'access_key': None,
         'secret_key': None,
         'instance_role_arn': None,
+        'session_token': None,
     },
 
     'database_uri': 'mysql://cinq:secretpass@localhost:3306/inquisitor',
