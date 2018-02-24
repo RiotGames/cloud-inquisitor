@@ -1,11 +1,11 @@
 from abc import abstractproperty
 
 from click import confirm, prompt
+from cloud_inquisitor.app import initialize
 from flask_script import Option
 from pkg_resources import iter_entry_points
 
-from cloud_inquisitor.config import ConfigOption
-from cloud_inquisitor.constants import PLUGIN_NAMESPACES
+from cloud_inquisitor.constants import PLUGIN_NAMESPACES, DEFAULT_CONFIG_OPTIONS
 from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins.commands import BaseCommand
 from cloud_inquisitor.schema import ConfigNamespace, ConfigItem, Account, Role
@@ -56,7 +56,7 @@ class Setup(BaseCommand):
             nsobj.sort_order = sort_order
         return nsobj
 
-    def register_default_option(self, nsobj: ConfigNamespace, opt: ConfigOption):
+    def register_default_option(self, nsobj, opt):
         """ Register default ConfigOption value if it doesn't exist. If does exist, update the description if needed """
         item = ConfigItem.get(nsobj.namespace_prefix, opt.name)
         if not item:
@@ -97,87 +97,7 @@ class Setup(BaseCommand):
         db.session.commit()
 
     def run(self, **kwargs):
-        # Setup the base application settings
-        defaults = [
-            {
-                'prefix': 'default',
-                'name': 'Default',
-                'sort_order': 0,
-                'options': [
-                    ConfigOption('debug', False, 'bool', 'Enable debug mode for flask'),
-                    ConfigOption('session_expire_time', 43200, 'int', 'Time in seconds before sessions expire'),
-                    ConfigOption('role_name', 'cinq_role', 'string',
-                                 'Role name Cloud Inquisitor will use in each account'),
-                    ConfigOption('ignored_aws_regions_regexp', '(^cn-|GLOBAL|-gov)', 'string',
-                                 'A regular expression used to filter out regions from the AWS static data'),
-                    ConfigOption(
-                        name='auth_system',
-                        default_value={
-                            'enabled': ['Local Authentication'],
-                            'available': ['Local Authentication'],
-                            'max_items': 1,
-                            'min_items': 1
-                        },
-                        type='choice',
-                        description='Enabled authentication module'
-                    ),
-                    ConfigOption('scheduler', 'StandaloneScheduler', 'string', 'Default scheduler module'),
-                    ConfigOption('jwt_key_file_path', 'ssl/private.key', 'string',
-                                 'Path to the private key used to encrypt JWT session tokens. Can be relative to the '
-                                 'folder containing the configuration file, or absolute path')
-                ],
-            },
-            {
-                'prefix': 'log',
-                'name': 'Logging',
-                'sort_order': 1,
-                'options': [
-                    ConfigOption('log_level', 'INFO', 'string', 'Log level'),
-                    ConfigOption('enable_syslog_forwarding', False, 'bool',
-                                 'Enable forwarding logs to remote log collector'),
-                    ConfigOption('remote_syslog_server_addr', '127.0.0.1', 'string',
-                                 'Address of the remote log collector'),
-                    ConfigOption('remote_syslog_server_port', 514, 'string', 'Port of the remote log collector'),
-                    ConfigOption('log_keep_days', 31, 'int', 'Delete log entries older than n days'),
-                ],
-            },
-            {
-                'prefix': 'api',
-                'name': 'API',
-                'sort_order': 2,
-                'options': [
-                    ConfigOption('host', '127.0.0.1', 'string', 'Host of the API server'),
-                    ConfigOption('port', 5000, 'int', 'Port of the API server'),
-                    ConfigOption('workers', 6, 'int', 'Number of worker processes spawned for the API')
-                ]
-            },
-        ]
-
-        # Setup all the default base settings
-        for data in defaults:
-            nsobj = self.get_config_namespace(data['prefix'], data['name'], sort_order=data['sort_order'])
-            for opt in data['options']:
-                self.register_default_option(nsobj, opt)
-            db.session.add(nsobj)
-            db.session.commit()
-
-        # Iterate over all of our plugins and setup their defaults
-        for ptype, namespaces in list(PLUGIN_NAMESPACES.items()):
-            for ns in namespaces:
-                for ep in iter_entry_points(ns):
-                    cls = ep.load()
-                    if hasattr(cls, 'ns'):
-                        ns_name = '{}: {}'.format(ptype.capitalize(), cls.name)
-                        nsobj = self.get_config_namespace(cls.ns, ns_name)
-                        if not isinstance(cls.options, abstractproperty):
-                            if cls.options:
-                                for opt in cls.options:
-                                    self.register_default_option(nsobj, opt)
-                        db.session.add(nsobj)
-                        db.session.commit()
-
-        # Create the default roles if they are missing
-        self.add_default_roles()
+        initialize()
 
         # If there are no accounts created, ask the user if he/she wants to create one now
         if not kwargs['headless_mode'] and not db.Account.find_one():

@@ -11,6 +11,9 @@ class BaseCommand(BasePlugin, Command, ABC):
         super().__init__()
         self.log = logging.getLogger(self.__class__.__module__)
 
+    @abstractmethod
+    def run(self, **kwargs): pass
+
     @property
     @abstractmethod
     def name(self): pass
