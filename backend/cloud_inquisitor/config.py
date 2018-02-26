@@ -158,7 +158,8 @@ class DBConfig(object):
 
             itm.value = value
             itm.type = vtype
-            itm.description = description
+            if description:
+                itm.description = description
         else:
             itm = ConfigItem()
             itm.key = key
