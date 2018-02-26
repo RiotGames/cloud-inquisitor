@@ -2,4 +2,4 @@
 Cloud Inquisitor in Docker
 **************************
 
-Please check out the `README </docs/local-development/README.rst>`_ for the full details on how to play with ``Cloud Inquisitor`` in `Docker <https://www.docker.com>`_.
+Please check out the `official docs <https://cloud-inquisitor.readthedocs.io/en/latest/local-development/docker.html>`_ for the full details on how to play with ``Cloud Inquisitor`` in `Docker <https://www.docker.com>`_.
