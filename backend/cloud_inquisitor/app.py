@@ -1,22 +1,115 @@
 """Contains the Flask app for the REST API"""
 import logging
 import sys
+from abc import abstractproperty
 
 from flask import Flask, request, session, abort
 from flask_compress import Compress
 from flask_restful import Api
 from flask_script import Server
 from pkg_resources import iter_entry_points
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, ProgrammingError
 
 from cloud_inquisitor import app_config
 from cloud_inquisitor.config import dbconfig, DBCChoice
-from cloud_inquisitor.constants import DEFAULT_MENU_ITEMS
+from cloud_inquisitor.constants import DEFAULT_MENU_ITEMS, DEFAULT_CONFIG_OPTIONS, PLUGIN_NAMESPACES
+from cloud_inquisitor.database import db
 from cloud_inquisitor.json_utils import InquisitorJSONDecoder, InquisitorJSONEncoder
 from cloud_inquisitor.plugins.views import BaseView, LoginRedirectView, LogoutRedirectView
-from cloud_inquisitor.schema import ResourceType
+from cloud_inquisitor.schema import ResourceType, ConfigNamespace, ConfigItem, Role
 
 logger = logging.getLogger(__name__.split('.')[0])
+
+
+def initialize():
+    """Initialize the application configuration, adding any missing default configuration or roles
+
+    Returns:
+        `None`
+    """
+    # region Helper functions
+    def _get_config_namespace(prefix, name, sort_order=2):
+        nsobj = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == prefix)
+        if not nsobj:
+            logger.info('Adding namespace {}'.format(name))
+            nsobj = ConfigNamespace()
+            nsobj.namespace_prefix = prefix
+            nsobj.name = name
+            nsobj.sort_order = sort_order
+        return nsobj
+
+    def _register_default_option(nsobj, opt):
+        """ Register default ConfigOption value if it doesn't exist. If does exist, update the description if needed """
+        item = ConfigItem.get(nsobj.namespace_prefix, opt.name)
+        if not item:
+            logger.info('Adding {} ({}) = {} to {}'.format(
+                opt.name,
+                opt.type,
+                opt.default_value,
+                nsobj.namespace_prefix
+            ))
+            item = ConfigItem()
+            item.namespace_prefix = nsobj.namespace_prefix
+            item.key = opt.name
+            item.value = opt.default_value
+            item.type = opt.type
+            item.description = opt.description
+            nsobj.config_items.append(item)
+        else:
+            if item.description != opt.description:
+                logger.info('Updating description of {} / {}'.format(item.namespace_prefix, item.key))
+                item.description = opt.description
+                db.session.add(item)
+
+    def _add_default_roles():
+        roles = {
+            'Admin': '#BD0000',
+            'NOC': '#5B5BFF',
+            'User': '#008000'
+        }
+
+        for name, color in roles.items():
+            if not Role.get(name):
+                role = Role()
+                role.name = name
+                role.color = color
+                db.session.add(role)
+                logger.info('Added standard role {} ({})'.format(name, color))
+
+        db.session.commit()
+    # endregion
+
+    # Setup all the default base settings
+    try:
+        for data in DEFAULT_CONFIG_OPTIONS:
+            nsobj = _get_config_namespace(data['prefix'], data['name'], sort_order=data['sort_order'])
+            for opt in data['options']:
+                _register_default_option(nsobj, opt)
+            db.session.add(nsobj)
+            db.session.commit()
+
+        # Iterate over all of our plugins and setup their defaults
+        for ptype, namespaces in list(PLUGIN_NAMESPACES.items()):
+            for ns in namespaces:
+                for ep in iter_entry_points(ns):
+                    _cls = ep.load()
+                    if hasattr(_cls, 'ns'):
+                        ns_name = '{}: {}'.format(ptype.capitalize(), _cls.name)
+                        nsobj = _get_config_namespace(_cls.ns, ns_name)
+                        if not isinstance(_cls.options, abstractproperty):
+                            if _cls.options:
+                                for opt in _cls.options:
+                                    _register_default_option(nsobj, opt)
+                        db.session.add(nsobj)
+                        db.session.commit()
+
+        # Create the default roles if they are missing
+        _add_default_roles()
+    except ProgrammingError as ex:
+        if str(ex).find('1146') != -1:
+            logging.getLogger('cloud_inquisitor').error(
+                'Missing required tables, please make sure you run `cloud-inquisitor db upgrade`'
+            )
 
 
 class ServerWrapper(Server):
@@ -29,6 +122,8 @@ class ServerWrapper(Server):
 
 
 class CINQFlask(Flask):
+    """Wrapper class for the Flask application. Takes case of setting up all the settings require for flask to run
+    """
     json_encoder = InquisitorJSONEncoder
     json_decoder = InquisitorJSONDecoder
 
@@ -44,6 +139,7 @@ class CINQFlask(Flask):
         self.config['SECRET_KEY'] = app_config.flask.secret_key
 
         self.api = CINQApi(self)
+        initialize()
 
     def register_plugins(self):
         self.__register_types()
@@ -92,6 +188,7 @@ class CINQFlask(Flask):
             else:
                 logger.warning('Tried registering menu item to unknown group {}'.format(itm.group))
 
+    # region Helper methods
     def __register_types(self):
         """Iterates all entry points for resource types and registers a `resource_type_id` to class mapping
 
@@ -105,12 +202,11 @@ class CINQFlask(Flask):
                 logger.debug('Registered resource type {}'.format(cls.__name__))
         except SQLAlchemyError as ex:
             logger.warning('Failed loading type information: {}'.format(ex))
+    # endregion
 
 
 class CINQApi(Api):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        #self.register_views(self.app)
+    """Wrapper around the flask_restful API class."""
 
     def register_views(self, app):
         """Iterates all entry points for views and auth systems and dynamically load and register the routes with Flask

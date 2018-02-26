@@ -2,9 +2,12 @@
 """
 import os
 import re
+from collections import namedtuple
 from enum import Enum
 
 from munch import munchify
+
+ConfigOption = namedtuple('ConfigOption', ('name', 'default_value', 'type', 'description'))
 
 # region Plugin namespaces
 PLUGIN_NAMESPACES = munchify({
@@ -121,6 +124,61 @@ DEFAULT_MENU_ITEMS = {
         'items': []
     }
 }
+
+DEFAULT_CONFIG_OPTIONS = [
+    {
+        'prefix': 'default',
+        'name': 'Default',
+        'sort_order': 0,
+        'options': [
+            ConfigOption('debug', False, 'bool', 'Enable debug mode for flask'),
+            ConfigOption('session_expire_time', 43200, 'int', 'Time in seconds before sessions expire'),
+            ConfigOption('role_name', 'cinq_role', 'string',
+                         'Role name Cloud Inquisitor will use in each account'),
+            ConfigOption('ignored_aws_regions_regexp', '(^cn-|GLOBAL|-gov)', 'string',
+                         'A regular expression used to filter out regions from the AWS static data'),
+            ConfigOption(
+                name='auth_system',
+                default_value={
+                    'enabled': ['Local Authentication'],
+                    'available': ['Local Authentication'],
+                    'max_items': 1,
+                    'min_items': 1
+                },
+                type='choice',
+                description='Enabled authentication module'
+            ),
+            ConfigOption('scheduler', 'StandaloneScheduler', 'string', 'Default scheduler module'),
+            ConfigOption('jwt_key_file_path', 'ssl/private.key', 'string',
+                         'Path to the private key used to encrypt JWT session tokens. Can be relative to the '
+                         'folder containing the configuration file, or absolute path')
+        ],
+    },
+    {
+        'prefix': 'log',
+        'name': 'Logging',
+        'sort_order': 1,
+        'options': [
+            ConfigOption('log_level', 'INFO', 'string', 'Log level'),
+            ConfigOption('enable_syslog_forwarding', False, 'bool',
+                         'Enable forwarding logs to remote log collector'),
+            ConfigOption('remote_syslog_server_addr', '127.0.0.1', 'string',
+                         'Address of the remote log collector'),
+            ConfigOption('remote_syslog_server_port', 514, 'string', 'Port of the remote log collector'),
+            ConfigOption('log_keep_days', 31, 'int', 'Delete log entries older than n days'),
+        ],
+    },
+    {
+        'prefix': 'api',
+        'name': 'API',
+        'sort_order': 2,
+        'options': [
+            ConfigOption('host', '127.0.0.1', 'string', 'Host of the API server'),
+            ConfigOption('port', 5000, 'int', 'Port of the API server'),
+            ConfigOption('workers', 6, 'int', 'Number of worker processes spawned for the API')
+        ]
+    },
+]
 # endregion
 
 

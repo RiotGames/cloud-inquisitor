@@ -57,7 +57,8 @@ class DBConfig(object):
                 self.__data[ns.namespace_prefix] = {x.key: x.value for x in ns.config_items}
 
         except SQLAlchemyError as ex:
-            print('Failed loading configuration from database: {}'.format(ex))
+            if str(ex).find('1146') != -1:
+                pass
 
     def namespace_exists(self, namespace):
         """Checks if a namespace exists
@@ -200,5 +201,6 @@ class DBConfig(object):
             raise KeyError('{}/{}'.format(namespace, key))
 
 
+# TODO: REMOVE THIS
 ConfigOption = namedtuple('ConfigOption', ('name', 'default_value', 'type', 'description'))
 dbconfig = DBConfig()
