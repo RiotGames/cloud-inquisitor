@@ -46,55 +46,6 @@ class Setup(BaseCommand):
 
         self.log.info('Account has been added')
 
-    def get_config_namespace(self, prefix, name, sort_order=2):
-        nsobj = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == prefix)
-        if not nsobj:
-            self.log.info('Adding namespace {}'.format(name))
-            nsobj = ConfigNamespace()
-            nsobj.namespace_prefix = prefix
-            nsobj.name = name
-            nsobj.sort_order = sort_order
-        return nsobj
-
-    def register_default_option(self, nsobj, opt):
-        """ Register default ConfigOption value if it doesn't exist. If does exist, update the description if needed """
-        item = ConfigItem.get(nsobj.namespace_prefix, opt.name)
-        if not item:
-            self.log.info('Adding {} ({}) = {} to {}'.format(
-                opt.name,
-                opt.type,
-                opt.default_value,
-                nsobj.namespace_prefix
-            ))
-            item = ConfigItem()
-            item.namespace_prefix = nsobj.namespace_prefix
-            item.key = opt.name
-            item.value = opt.default_value
-            item.type = opt.type
-            item.description = opt.description
-            nsobj.config_items.append(item)
-        else:
-            if item.description != opt.description:
-                self.log.info('Updating description of {} / {}'.format(item.namespace_prefix, item.key))
-                item.description = opt.description
-                db.session.add(item)
-
-    def add_default_roles(self):
-        roles = {
-            'Admin': '#BD0000',
-            'NOC': '#5B5BFF',
-            'User': '#008000'
-        }
-
-        for name, color in roles.items():
-            if not Role.get(name):
-                role = Role()
-                role.name = name
-                role.color = color
-                db.session.add(role)
-                self.log.info('Added standard role {} ({})'.format(name, color))
-
-        db.session.commit()
 
     def run(self, **kwargs):
         initialize()

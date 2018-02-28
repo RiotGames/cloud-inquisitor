@@ -75,8 +75,6 @@ def initialize():
                 role.color = color
                 db.session.add(role)
                 logger.info('Added standard role {} ({})'.format(name, color))
-
-        db.session.commit()
     # endregion
 
     # Setup all the default base settings
@@ -86,7 +84,6 @@ def initialize():
             for opt in data['options']:
                 _register_default_option(nsobj, opt)
             db.session.add(nsobj)
-            db.session.commit()
 
         # Iterate over all of our plugins and setup their defaults
         for ptype, namespaces in list(PLUGIN_NAMESPACES.items()):
@@ -101,10 +98,12 @@ def initialize():
                                 for opt in _cls.options:
                                     _register_default_option(nsobj, opt)
                         db.session.add(nsobj)
-                        db.session.commit()
 
         # Create the default roles if they are missing
         _add_default_roles()
+
+        db.session.commit()
+        dbconfig.reload_data()
     except ProgrammingError as ex:
         if str(ex).find('1146') != -1:
             logging.getLogger('cloud_inquisitor').error(
@@ -138,8 +137,8 @@ class CINQFlask(Flask):
         self.config['DEBUG'] = app_config.log_level == 'DEBUG'
         self.config['SECRET_KEY'] = app_config.flask.secret_key
 
-        self.api = CINQApi(self)
         initialize()
+        self.api = CINQApi(self)
 
     def register_plugins(self):
         self.__register_types()
