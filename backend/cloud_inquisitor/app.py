@@ -92,12 +92,13 @@ def initialize():
                     _cls = ep.load()
                     if hasattr(_cls, 'ns'):
                         ns_name = '{}: {}'.format(ptype.capitalize(), _cls.name)
-                        nsobj = _get_config_namespace(_cls.ns, ns_name)
                         if not isinstance(_cls.options, abstractproperty):
+                            nsobj = _get_config_namespace(_cls.ns, ns_name)
                             if _cls.options:
                                 for opt in _cls.options:
                                     _register_default_option(nsobj, opt)
-                        db.session.add(nsobj)
+
+                            db.session.add(nsobj)
 
         # Create the default roles if they are missing
         _add_default_roles()

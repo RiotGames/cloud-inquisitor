@@ -17,7 +17,6 @@ from cloud_inquisitor.schema import Email
 class EmailNotifier(BaseNotifier):
     name = 'Email Notifier'
     ns = NS_EMAIL
-    enabled = dbconfig.get('enabled', ns, True)
     options = (
         ConfigOption('enabled', True, 'bool', 'Enable the Email notifier plugin'),
         ConfigOption('from_address', 'changeme@domain.tld', 'string', 'Sender address for emails'),
