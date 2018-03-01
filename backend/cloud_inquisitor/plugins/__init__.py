@@ -38,10 +38,9 @@ class BasePlugin(object):
 class BaseAuditor(BasePlugin, ABC):
     start_delay = 30
 
-    @property
-    @abstractmethod
-    def enabled(self):
-        """Whether or not the auditor is enabled"""
+    @classmethod
+    def enabled(cls):
+        return dbconfig.get('enabled', cls.ns, False)
 
     @property
     @abstractmethod

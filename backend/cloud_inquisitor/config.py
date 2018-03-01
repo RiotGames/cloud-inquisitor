@@ -51,6 +51,14 @@ class DBConfig(object):
         self.reload_data()
 
     def reload_data(self):
+        """Reloads the configuration from the database
+
+        Returns:
+            `None`
+        """
+        # We must force a rollback here to ensure that we are working on a fresh session, without any cache
+        db.session.rollback()
+
         self.__data = {}
         try:
             for ns in db.ConfigNamespace.all():
