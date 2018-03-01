@@ -106,9 +106,9 @@ class BaseAuthPlugin(BasePlugin, ABC):
 
 
 class BaseCollector(BasePlugin, ABC):
-    @property
-    @abstractmethod
-    def enabled(self): pass
+    @classmethod
+    def enabled(cls):
+        return dbconfig.get('enabled', cls.ns, False)
 
     @property
     @abstractmethod
@@ -132,9 +132,9 @@ class BaseCommand(BasePlugin, Command, ABC):
 
 
 class BaseNotifier(BasePlugin, ABC):
-    @property
-    @abstractmethod
-    def enabled(self): pass
+    @classmethod
+    def enabled(cls):
+        return dbconfig.get('enabled', cls.ns, False)
 
     @property
     @abstractmethod
@@ -159,7 +159,7 @@ class BaseScheduler(BasePlugin, ABC):
         """
         for ep in iter_entry_points('cloud_inquisitor.plugins.collectors'):
             cls = ep.load()
-            if cls.enabled:
+            if cls.enabled():
                 self.log.debug('Collector loaded: {} in module {}'.format(cls.__name__, cls.__module__))
                 self.collectors.setdefault(cls.type, []).append(Worker(
                     cls.name,
@@ -175,7 +175,7 @@ class BaseScheduler(BasePlugin, ABC):
 
         for ep in iter_entry_points('cloud_inquisitor.plugins.auditors'):
             cls = ep.load()
-            if cls.enabled:
+            if cls.enabled():
                 self.log.debug('Auditor loaded: {} in module {}'.format(cls.__name__, cls.__module__))
                 self.auditors.append(Worker(
                     cls.name,
@@ -196,10 +196,6 @@ class BaseScheduler(BasePlugin, ABC):
             raise Exception('No auditors or collectors loaded, aborting scheduler')
 
         self.log.info('Scheduler loaded {} collectors and {} auditors'.format(collector_count, auditor_count))
-
-    @property
-    @abstractmethod
-    def enabled(self): pass
 
     @abstractmethod
     def execute_scheduler(self):

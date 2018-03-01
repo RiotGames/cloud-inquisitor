@@ -9,7 +9,6 @@ from cloud_inquisitor.plugins.notifiers import BaseNotifier
 class SlackNotifier(BaseNotifier):
     name = 'Slack Notifier'
     ns = NS_SLACK
-    enabled = dbconfig.get('enabled', ns, True)
     options = (
         ConfigOption('enabled', False, 'bool', 'Enable the Slack notifier plugin'),
         ConfigOption('api_key', '', 'string', 'API token for the slack notifications'),
