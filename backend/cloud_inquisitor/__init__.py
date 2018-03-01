@@ -18,6 +18,24 @@ if app_config.use_user_data:
     get_user_data_configuration(app_config)
 
 
+def get_local_aws_session():
+    """Returns a session for the local instance, not for a remote account
+
+    Returns:
+        :obj:`boto3:boto3.session.Session`
+    """
+    if not all((app_config.aws_api.access_key, app_config.aws_api.secret_key)):
+        return boto3.session.Session()
+    else:
+        # If we are not running on an EC2 instance, assume the instance role
+        # first, then assume the remote role
+        session_args = [app_config.aws_api.access_key, app_config.aws_api.secret_key]
+        if app_config.aws_api.session_token:
+            session_args.append(app_config.aws_api.session_token)
+
+        return boto3.session.Session(*session_args)
+
+
 def get_aws_session(account):
     """Function to return a boto3 Session based on the account passed in the first argument.
 
@@ -30,16 +48,14 @@ def get_aws_session(account):
     from cloud_inquisitor.config import dbconfig
 
     # If no keys are on supplied for the account, use sts.assume_role instead
-    if not all((app_config.aws_api.access_key, app_config.aws_api.secret_key)):
-        sts = boto3.session.Session().client('sts')
+    session = get_local_aws_session()
+    if session.get_credentials().method == 'iam-role':
+        sts = session.client('sts')
     else:
         # If we are not running on an EC2 instance, assume the instance role
         # first, then assume the remote role
-        session_args = [app_config.aws_api.access_key, app_config.aws_api.secret_key]
-        if app_config.aws_api.session_token:
-            session_args.append(app_config.aws_api.session_token)
+        temp_sts = session.client('sts')
 
-        temp_sts = boto3.session.Session(*session_args).client('sts')
         audit_sts_role = temp_sts.assume_role(
             RoleArn=app_config.aws_api.instance_role_arn,
             RoleSessionName='inquisitor'

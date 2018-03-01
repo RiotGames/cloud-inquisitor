@@ -3,10 +3,9 @@ import os
 from base64 import b64encode, b64decode
 from gzip import zlib
 
-import boto3.session
 from flask_script import Option
 
-from cloud_inquisitor import get_aws_session, app_config
+from cloud_inquisitor import get_aws_session, app_config, get_local_aws_session
 from cloud_inquisitor.plugins.commands import BaseCommand
 from cloud_inquisitor.schema import Account
 
@@ -24,8 +23,6 @@ class UserData(BaseCommand):
                help='Region the KMS key is located in'),
         Option('-d', '--data', dest='data', type=str, required=True,
                help='String formatted data to operate on. If prefixed with @ it will be treated as a file to be read'),
-        Option('-a', '--access-key', dest='access_key', type=str, default=None, help='AWS API Access key id'),
-        Option('-s', '--secret-key', dest='secret_key', type=str, default=None, help='AWS API Secret Access Key'),
         Option('-o', '--output-file', dest='output_file', type=str, help='Optional. Output file for the data'),
         Option('-e', '--encode-output', dest='encode_output', action='store_true', default=False,
                help='Base 64 encode the output'),
@@ -37,8 +34,6 @@ class UserData(BaseCommand):
         self.kwargs = kwargs
         try:
             key_id = self.kwargs['key_id']
-            access_key = self.kwargs['access_key'] or app_config.aws_api.access_key
-            secret_key = self.kwargs['secret_key'] or app_config.aws_api.secret_key
 
             if self.kwargs['data'].startswith('@'):
                 path = self.kwargs['data'][1:]
@@ -53,12 +48,11 @@ class UserData(BaseCommand):
             else:
                 data = kwargs['data']
 
-            if access_key and secret_key:
-                session = boto3.session.Session(access_key, secret_key)
-            else:
+            session = get_local_aws_session()
+            if session.get_credentials().method != 'iam-role':
                 kms_account_name = app_config.kms_account_name
                 if not kms_account_name:
-                    print('you must set the KMS_ACCOUNT_NAME setting in your configuration file to the name of the '
+                    print('you must set the kms_account_name setting in your configuration file to the name of the '
                           'account that is able to decrypt the user data')
                     return
                 acct = Account.get(kms_account_name)

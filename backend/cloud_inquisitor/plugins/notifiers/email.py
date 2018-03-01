@@ -5,9 +5,7 @@ from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-import boto3.session
-
-from cloud_inquisitor import app_config
+from cloud_inquisitor import get_local_aws_session
 from cloud_inquisitor.config import dbconfig, ConfigOption
 from cloud_inquisitor.constants import NS_EMAIL
 from cloud_inquisitor.database import db
@@ -115,16 +113,10 @@ def __send_ses_email(sender, recipients, subject, html_body, text_body):
     Returns:
         `None`
     """
-    access_key = app_config.aws_api.access_key
-    secret_key = app_config.aws_api.secret_key
     source_arn = dbconfig.get('source_arn', NS_EMAIL)
     return_arn = dbconfig.get('return_path_arn', NS_EMAIL)
 
-    if access_key and secret_key:
-        session = boto3.session.Session(access_key, secret_key)
-    else:
-        session = boto3.session.Session()
-
+    session = get_local_aws_session()
     ses = session.client('ses', region_name=dbconfig.get('ses_region', NS_EMAIL, 'us-west-2'))
 
     body = {}
