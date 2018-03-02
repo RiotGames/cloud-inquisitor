@@ -5,9 +5,8 @@ from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
 from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import EmailSendError
 from cloud_inquisitor.plugins import BaseView
-from cloud_inquisitor.plugins.notifiers.email import send_email
 from cloud_inquisitor.schema import Email, AuditLog
-from cloud_inquisitor.utils import MenuItem
+from cloud_inquisitor.utils import MenuItem, send_notification, NotificationContact
 from cloud_inquisitor.wrappers import check_auth, rollback
 
 
@@ -81,8 +80,6 @@ class EmailGet(BaseView):
     @rollback
     @check_auth(ROLE_ADMIN)
     def put(self, emailId):
-        AuditLog.log('email.resend', session['user'].username, {'emailId': emailId})
-
         email = db.Email.find_one(Email.email_id == emailId)
         if not email:
             return self.make_response({
@@ -91,15 +88,15 @@ class EmailGet(BaseView):
             }, HTTP.NOT_FOUND)
 
         try:
-            send_email(
-                email.subsystem,
-                email.sender,
-                email.recipients,
-                email.subject,
-                email.message_html,
-                email.message_text
+            send_notification(
+                subsystem=email.subsystem,
+                recipients=[NotificationContact('email', x) for x in email.recipients],
+                subject=email.subject,
+                body_html=email.message_html,
+                body_text=email.message_text
             )
 
+            AuditLog.log('email.resend', session['user'].username, {'emailId': emailId})
             return self.make_response('Email resent successfully')
 
         except EmailSendError as ex:
