@@ -15,7 +15,7 @@ config_path, app_config = LocalProxy(read_config)
 
 # Check if the user has opted to use userdata based configuration for DB, and load it if needed
 if app_config.use_user_data:
-    get_user_data_configuration(app_config)
+    get_user_data_configuration()
 
 
 def get_local_aws_session():
