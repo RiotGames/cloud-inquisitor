@@ -1,13 +1,13 @@
 import logging
 import time
 from abc import abstractmethod, ABC
-from functools import partial
+from functools import partial, wraps
 
 import jwt
 from botocore.exceptions import ClientError, EndpointConnectionError
 from flask import request, session, current_app
 
-from cloud_inquisitor.database import get_db_connection
+from cloud_inquisitor.database import db
 from cloud_inquisitor.constants import HTTP, ROLE_ADMIN
 from cloud_inquisitor.plugins.views import BaseView
 from cloud_inquisitor.utils import has_access, get_jwt_key_data
@@ -81,10 +81,6 @@ class rollback(__wrapper):
     Due to a caching mechanic within SQLAlchemy, we perform a rollback on every request regardless or we might end
     up getting stale data from a cached connection / existing transaction instead of live data.
     """
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.db = get_db_connection()
-
     def __call__(self, *args, **kwargs):
         try:
             return self.func(*args, **kwargs)
@@ -97,7 +93,7 @@ class rollback(__wrapper):
                 raise
 
         finally:
-            self.db.session.rollback()
+            db.session.rollback()
 
 
 class check_auth(__wrapper):
@@ -175,3 +171,15 @@ class check_auth(__wrapper):
                 return func(*wargs, **wkwargs)
 
             return wrapped
+
+
+def deprecated(msg):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            logging.getLogger(__name__).warning(msg)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

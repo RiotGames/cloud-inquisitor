@@ -1,6 +1,7 @@
 import binascii
 import hashlib
 import json
+import logging
 import os
 import random
 import re
@@ -8,6 +9,7 @@ import string
 import time
 import zlib
 from base64 import b64decode
+from collections import namedtuple
 from copy import deepcopy
 from datetime import datetime
 
@@ -24,6 +26,9 @@ from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN, RGX_BUCKET,
     CONFIG_FILE_PATHS
 
 __jwt_data = None
+
+log = logging.getLogger(__name__)
+NotificationContact = namedtuple('NotificationContact', ('type', 'value'))
 
 
 class MenuItem(object):
@@ -493,6 +498,7 @@ def read_config():
 
     raise FileNotFoundError('Configuration file not found')
 
+
 def flatten(data):
     """Returns a flattened version of a list.
 
@@ -511,3 +517,39 @@ def flatten(data):
         return list(flatten(data[0])) + list(flatten(data[1:]))
 
     return list(data[:1]) + list(flatten(data[1:]))
+
+
+def send_notification(*, subsystem, recipients, subject, body_html, body_text):
+    """Method to send a notification. A plugin may use only part of the information, but all fields are required.
+
+    Args:
+        subsystem (`str`): Name of the subsystem originating the notification
+        recipients (`list` of :obj:`NotificationContact`): List of recipients
+        subject (`str`): Subject / title of the notification
+        body_html (`str)`: HTML formatted version of the message
+        body_text (`str`): Text formatted version of the message
+
+    Returns:
+        `None`
+    """
+    from cloud_inquisitor import CINQ_PLUGINS
+
+    if not body_html and not body_text:
+        raise ValueError('body_html or body_text must be provided')
+
+    # Make sure that we don't have any duplicate recipients
+    recipients = list(set(recipients))
+
+    notifiers = map(lambda x: x.load(), CINQ_PLUGINS['cloud_inquisitor.plugins.notifiers']['plugins'])
+
+    for cls in filter(lambda x: x.enabled(), notifiers):
+        for recipient in recipients:
+            if recipient.type == cls.notifier_type:
+                try:
+                    notifier = cls()
+                    notifier.notify(subsystem, recipient.value, subject, body_html, body_text)
+                except Exception:
+                    log.exception('Failed sending notification for {}/{}'.format(
+                        recipient.type,
+                        recipient.value
+                    ))

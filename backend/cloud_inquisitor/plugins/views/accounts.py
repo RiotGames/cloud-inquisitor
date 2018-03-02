@@ -1,16 +1,26 @@
 import json
+import re
 from base64 import b64encode
 
-from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
-from flask import session, Response
+from flask import session, Response, current_app
 from sqlalchemy import desc
 
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP, ROLE_USER, AccountTypes
 from cloud_inquisitor.database import db
+from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.schema import Account, AuditLog
-from cloud_inquisitor.utils import validate_email, MenuItem
+from cloud_inquisitor.utils import MenuItem
 from cloud_inquisitor.wrappers import rollback, check_auth
+
+
+def validate_contacts(contacts):
+    for contact in contacts:
+        if contact['type'] in current_app.notifiers:
+            if not re.match(current_app.notifiers[contact['type']], contact['value'], re.I):
+                raise Exception('Invalid formatted contact for {}: {}'.format(contact['type'], contact['value']))
+        else:
+            raise Exception('Unsupported notification type: {}'.format(contact['type']))
 
 
 class AccountList(BaseView):
@@ -32,7 +42,7 @@ class AccountList(BaseView):
         qry = db.Account.order_by(desc(Account.enabled), Account.account_name)
 
         if ROLE_ADMIN not in session['user'].roles:
-            qry = qry.filter(Account.account_id.in_(session['accounts']))
+            qry = qry.filter(Account.account_id.in_(session['accounts']))  # NOQA
 
         accounts = qry.all()
 
@@ -53,16 +63,14 @@ class AccountList(BaseView):
         """Create a new account"""
         self.reqparse.add_argument('accountName', type=str, required=True)
         self.reqparse.add_argument('accountNumber', type=str, required=True)
-        self.reqparse.add_argument('contacts', type=str, required=True, action='append')
+        self.reqparse.add_argument('contacts', type=dict, required=True, action='append')
         self.reqparse.add_argument('enabled', type=int, required=True, choices=(0, 1))
         self.reqparse.add_argument('requiredGroups', type=str, action='append', default=())
         self.reqparse.add_argument('adGroupBase', type=str, default=None)
         args = self.reqparse.parse_args()
         AuditLog.log('account.create', session['user'].username, args)
 
-        for contact in args['contacts']:
-            if not contact.startswith('#') and (contact.find('@') >= 0 and not validate_email(contact)):
-                raise Exception('Invalid email address or slack channel name supplied: {}'.format(contact))
+        validate_contacts(args['contacts'])
 
         for key in ('accountName', 'accountNumber', 'contacts', 'enabled'):
             value = args[key]
@@ -119,16 +127,14 @@ class AccountDetail(BaseView):
         """Update an account"""
         self.reqparse.add_argument('accountName', type=str, required=True)
         self.reqparse.add_argument('accountNumber', type=str, required=True)
-        self.reqparse.add_argument('contacts', type=str, required=True, action='append')
+        self.reqparse.add_argument('contacts', type=dict, required=True, action='append')
         self.reqparse.add_argument('enabled', type=int, required=True, choices=(0, 1))
         self.reqparse.add_argument('requiredRoles', type=str, action='append', default=())
         self.reqparse.add_argument('adGroupBase', type=str, default=None)
         args = self.reqparse.parse_args()
         AuditLog.log('account.update', session['user'].username, args)
 
-        for contact in args['contacts']:
-            if not contact.startswith('#') and not validate_email(contact):
-                raise Exception('Invalid email address or slack channel name supplied: {}'.format(contact))
+        validate_contacts(args['contacts'])
 
         if not args['accountName'].strip():
             raise Exception('You must provide an account name')
