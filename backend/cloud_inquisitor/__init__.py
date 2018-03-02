@@ -13,10 +13,6 @@ __regions = None
 # Setup app wide variables
 config_path, app_config = LocalProxy(read_config)
 
-# Check if the user has opted to use userdata based configuration for DB, and load it if needed
-if app_config.use_user_data:
-    get_user_data_configuration()
-
 
 def get_local_aws_session():
     """Returns a session for the local instance, not for a remote account
@@ -103,5 +99,9 @@ def get_aws_regions(*, force=False):
 
     return __regions
 
+
+# Check if the user has opted to use userdata based configuration for DB, and load it if needed
+if app_config.use_user_data:
+    get_user_data_configuration()
 
 AWS_REGIONS = LocalProxy(get_aws_regions)
