@@ -11,13 +11,14 @@ ConfigOption = namedtuple('ConfigOption', ('name', 'default_value', 'type', 'des
 
 # region Plugin namespaces
 PLUGIN_NAMESPACES = munchify({
-    'auditor': ['cloud_inquisitor.plugins.auditors'],
-    'auth': ['cloud_inquisitor.plugins.auth'],
-    'collector': ['cloud_inquisitor.plugins.collectors'],
-    'notifier': ['cloud_inquisitor.plugins.notifiers'],
-    'schedulers': ['cloud_inquisitor.plugins.schedulers'],
-    'types': ['cloud_inquisitor.plugins.types'],
-    'view': ['cloud_inquisitor.plugins.views']
+    'auditor': 'cloud_inquisitor.plugins.auditors',
+    'auth': 'cloud_inquisitor.plugins.auth',
+    'collector': 'cloud_inquisitor.plugins.collectors',
+    'commands': 'cloud_inquisitor.plugins.commands',
+    'notifier': 'cloud_inquisitor.plugins.notifiers',
+    'schedulers': 'cloud_inquisitor.plugins.schedulers',
+    'types': 'cloud_inquisitor.plugins.types',
+    'view': 'cloud_inquisitor.plugins.views'
 })
 # endregion
 

@@ -7,8 +7,9 @@ from enum import Enum
 from flask import current_app, make_response
 from flask_restful import Resource, reqparse
 from flask_script import Command
-from pkg_resources import iter_entry_points, EntryPoint
+from pkg_resources import EntryPoint
 
+from cloud_inquisitor import CINQ_PLUGINS
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import HTTP, UNAUTH_MESSAGE
 from cloud_inquisitor.json_utils import InquisitorJSONEncoder
@@ -157,7 +158,7 @@ class BaseScheduler(BasePlugin, ABC):
         Returns:
             `None`
         """
-        for ep in iter_entry_points('cloud_inquisitor.plugins.collectors'):
+        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.collectors']['plugins']:
             cls = ep.load()
             if cls.enabled():
                 self.log.debug('Collector loaded: {} in module {}'.format(cls.__name__, cls.__module__))
@@ -173,7 +174,7 @@ class BaseScheduler(BasePlugin, ABC):
             else:
                 self.log.debug('Collector disabled: {} in module {}'.format(cls.__name__, cls.__module__))
 
-        for ep in iter_entry_points('cloud_inquisitor.plugins.auditors'):
+        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.auditors']['plugins']:
             cls = ep.load()
             if cls.enabled():
                 self.log.debug('Auditor loaded: {} in module {}'.format(cls.__name__, cls.__module__))

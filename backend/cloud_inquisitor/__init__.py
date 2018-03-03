@@ -1,10 +1,13 @@
 import logging
 import re
+from collections import defaultdict
 
 import boto3.session
 import requests
+from pkg_resources import iter_entry_points
 from werkzeug.local import LocalProxy
 
+from cloud_inquisitor.constants import PLUGIN_NAMESPACES
 from cloud_inquisitor.utils import get_user_data_configuration, read_config
 
 logger = logging.getLogger(__name__)
@@ -105,3 +108,14 @@ if app_config.use_user_data:
     get_user_data_configuration()
 
 AWS_REGIONS = LocalProxy(get_aws_regions)
+
+# Load all the plugin entry points, but don't load them just yet
+CINQ_PLUGINS = defaultdict(dict)
+for name, ns in PLUGIN_NAMESPACES.items():
+    CINQ_PLUGINS[ns] = {
+        'name': name,
+        'plugins': []
+    }
+
+    for ep in iter_entry_points(ns):
+        CINQ_PLUGINS[ns]['plugins'].append(ep)

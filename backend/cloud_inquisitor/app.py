@@ -7,18 +7,19 @@ from flask import Flask, request, session, abort
 from flask_compress import Compress
 from flask_restful import Api
 from flask_script import Server
-from pkg_resources import iter_entry_points
 from sqlalchemy.exc import SQLAlchemyError, ProgrammingError
 
-from cloud_inquisitor import app_config
+from cloud_inquisitor import app_config, CINQ_PLUGINS
 from cloud_inquisitor.config import dbconfig, DBCChoice
-from cloud_inquisitor.constants import DEFAULT_MENU_ITEMS, DEFAULT_CONFIG_OPTIONS, PLUGIN_NAMESPACES
+from cloud_inquisitor.constants import DEFAULT_MENU_ITEMS, DEFAULT_CONFIG_OPTIONS
 from cloud_inquisitor.database import db
 from cloud_inquisitor.json_utils import InquisitorJSONDecoder, InquisitorJSONEncoder
 from cloud_inquisitor.plugins.views import BaseView, LoginRedirectView, LogoutRedirectView
 from cloud_inquisitor.schema import ResourceType, ConfigNamespace, ConfigItem, Role
 
 logger = logging.getLogger(__name__.split('.')[0])
+
+__initialized = False
 
 
 def initialize():
@@ -27,6 +28,11 @@ def initialize():
     Returns:
         `None`
     """
+    global __initialized
+
+    if __initialized:
+        return
+
     # region Helper functions
     def _get_config_namespace(prefix, name, sort_order=2):
         nsobj = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == prefix)
@@ -86,25 +92,28 @@ def initialize():
             db.session.add(nsobj)
 
         # Iterate over all of our plugins and setup their defaults
-        for ptype, namespaces in list(PLUGIN_NAMESPACES.items()):
-            for ns in namespaces:
-                for ep in iter_entry_points(ns):
-                    _cls = ep.load()
-                    if hasattr(_cls, 'ns'):
-                        ns_name = '{}: {}'.format(ptype.capitalize(), _cls.name)
-                        if not isinstance(_cls.options, abstractproperty):
-                            nsobj = _get_config_namespace(_cls.ns, ns_name)
-                            if _cls.options:
-                                for opt in _cls.options:
-                                    _register_default_option(nsobj, opt)
+        for ns, info in CINQ_PLUGINS.items():
+            if info['name'] == 'commands':
+                continue
 
-                            db.session.add(nsobj)
+            for ep in info['plugins']:
+                _cls = ep.load()
+                if hasattr(_cls, 'ns'):
+                    ns_name = '{}: {}'.format(info['name'].capitalize(), _cls.name)
+                    if not isinstance(_cls.options, abstractproperty):
+                        nsobj = _get_config_namespace(_cls.ns, ns_name)
+                        if _cls.options:
+                            for opt in _cls.options:
+                                _register_default_option(nsobj, opt)
+
+                        db.session.add(nsobj)
 
         # Create the default roles if they are missing
         _add_default_roles()
 
         db.session.commit()
         dbconfig.reload_data()
+        __initialized = True
     except ProgrammingError as ex:
         if str(ex).find('1146') != -1:
             logging.getLogger('cloud_inquisitor').error(
@@ -196,7 +205,7 @@ class CINQFlask(Flask):
             `None`
         """
         try:
-            for ep in iter_entry_points('cloud_inquisitor.plugins.types'):
+            for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.types']['plugins']:
                 cls = ep.load()
                 self.types[ResourceType.get(cls.resource_type).resource_type_id] = cls
                 logger.debug('Registered resource type {}'.format(cls.__name__))
@@ -220,7 +229,7 @@ class CINQApi(Api):
         self.add_resource(LoginRedirectView, '/auth/login')
         self.add_resource(LogoutRedirectView, '/auth/logout')
 
-        for ep in iter_entry_points('cloud_inquisitor.plugins.auth'):
+        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.auth']['plugins']:
             cls = ep.load()
             app.available_auth_systems[cls.name] = cls
 
@@ -236,7 +245,7 @@ class CINQApi(Api):
             logger.error('No auth systems active, please enable an auth system and then start the system again')
             sys.exit(-1)
 
-        for ep in iter_entry_points('cloud_inquisitor.plugins.views'):
+        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.views']['plugins']:
             view = ep.load()
             self.add_resource(view, *view.URLS)
             app.register_menu_item(view.MENU_ITEMS)

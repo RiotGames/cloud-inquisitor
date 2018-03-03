@@ -2,9 +2,8 @@ import threading
 import time
 
 from flask_script import Option
-from pkg_resources import iter_entry_points
-from werkzeug.local import LocalProxy
 
+from cloud_inquisitor import CINQ_PLUGINS
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_SCHEDULER
 from cloud_inquisitor.plugins.commands import BaseCommand
@@ -22,7 +21,7 @@ class BaseSchedulerCommand(BaseCommand):
 
     def __init__(self):
         super().__init__()
-        self.scheduler_plugins = LocalProxy(self.load_scheduler_plugins)
+        self.scheduler_plugins = {}
         self.active_scheduler = dbconfig.get('scheduler')
 
     def load_scheduler_plugins(self):
@@ -31,34 +30,26 @@ class BaseSchedulerCommand(BaseCommand):
         Returns:
             `list` of :obj:`BaseScheduler`
         """
-        schedulers = {}
-        for ep in iter_entry_points('cloud_inquisitor.plugins.schedulers'):
-            cls = ep.load()
-            if cls.enabled:
-                self.log.debug('Scheduler loaded: {} in module {}'.format(cls.__name__, cls.__module__))
-                schedulers[cls.__name__] = cls
-            else:
-                self.log.debug('Scheduler disabled: {} in module {}'.format(cls.__name__, cls.__module__))
-
-        return schedulers
+        if not self.scheduler_plugins:
+            for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.schedulers']['plugins']:
+                cls = ep.load()
+                self.scheduler_plugins[cls.__name__] = cls
+                if cls.__name__ == self.active_scheduler:
+                    self.log.debug('Scheduler loaded: {} in module {}'.format(cls.__name__, cls.__module__))
+                else:
+                    self.log.debug('Scheduler disabled: {} in module {}'.format(cls.__name__, cls.__module__))
 
     def run(self, **kwargs):
-        if kwargs['list']:
-            self.log.info('--- List of Scheduler Modules ---')
-            for name, scheduler in list(self.scheduler_plugins.items()):
-                if self.active_scheduler == name:
-                    self.log.info('{} (active)'.format(name))
-                else:
-                    self.log.info(name)
-            self.log.info('--- End list of Scheduler Modules ---')
-            return
+        self.load_scheduler_plugins()
 
         if kwargs['scheduler']:
             self.active_scheduler = kwargs['scheduler']
 
         if self.active_scheduler not in self.scheduler_plugins:
             self.log.error('Unable to locate the {} scheduler plugin'.format(self.active_scheduler))
-            return
+            return False
+
+        return True
 
 
 class Scheduler(BaseSchedulerCommand):
@@ -71,7 +62,18 @@ class Scheduler(BaseSchedulerCommand):
         Returns:
             `None`
         """
-        super().run(**kwargs)
+        if not super().run(**kwargs):
+            return
+
+        if kwargs['list']:
+            self.log.info('--- List of Scheduler Modules ---')
+            for name, scheduler in list(self.scheduler_plugins.items()):
+                if self.active_scheduler == name:
+                    self.log.info('{} (active)'.format(name))
+                else:
+                    self.log.info(name)
+            self.log.info('--- End list of Scheduler Modules ---')
+            return
 
         scheduler = self.scheduler_plugins[self.active_scheduler]()
         scheduler.execute_scheduler()
