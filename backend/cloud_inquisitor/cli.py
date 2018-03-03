@@ -4,8 +4,8 @@ import pkg_resources
 from click import confirm
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
-from pkg_resources import iter_entry_points
 
+from cloud_inquisitor import CINQ_PLUGINS
 from cloud_inquisitor.app import create_app, ServerWrapper
 from cloud_inquisitor.database import db
 from cloud_inquisitor.log import setup_logging
@@ -32,7 +32,7 @@ def drop_db():
 
 
 # Load custom commands
-for ep in iter_entry_points('cloud_inquisitor.plugins.commands'):
+for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.commands']['plugins']:
     cls = ep.load()
     manager.add_command(ep.name, cls)
 

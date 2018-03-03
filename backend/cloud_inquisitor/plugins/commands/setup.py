@@ -1,14 +1,10 @@
-from abc import abstractproperty
-
 from click import confirm, prompt
-from cloud_inquisitor.app import initialize
 from flask_script import Option
-from pkg_resources import iter_entry_points
 
-from cloud_inquisitor.constants import PLUGIN_NAMESPACES, DEFAULT_CONFIG_OPTIONS
+from cloud_inquisitor.app import initialize
 from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins.commands import BaseCommand
-from cloud_inquisitor.schema import ConfigNamespace, ConfigItem, Account, Role
+from cloud_inquisitor.schema import Account
 
 
 class Setup(BaseCommand):
@@ -45,7 +41,6 @@ class Setup(BaseCommand):
         db.session.commit()
 
         self.log.info('Account has been added')
-
 
     def run(self, **kwargs):
         initialize()

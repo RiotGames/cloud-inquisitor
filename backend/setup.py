@@ -12,7 +12,6 @@ setuptools.setup(
         ],
         'cloud_inquisitor.plugins.commands': [
             'add_account = cloud_inquisitor.plugins.commands.accounts:AddAccount',
-            'api_server = cloud_inquisitor.plugins.commands.apiserver:APIServer',
             'auth = cloud_inquisitor.plugins.commands.auth:Auth',
             'delete_account = cloud_inquisitor.plugins.commands.accounts:DeleteAccount',
             'import-saml = cloud_inquisitor.plugins.commands.saml:ImportSAML',

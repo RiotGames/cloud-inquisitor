@@ -1,10 +1,9 @@
 import xml.etree.ElementTree as etree
 
 from flask_script import Option
-from pkg_resources import iter_entry_points
 
+from cloud_inquisitor import CINQ_PLUGINS
 from cloud_inquisitor.config import dbconfig, DBCString
-from cloud_inquisitor.constants import PLUGIN_NAMESPACES
 from cloud_inquisitor.plugins.commands import BaseCommand
 
 
@@ -29,16 +28,14 @@ class ImportSAML(BaseCommand):
     )
 
     def run(self, **kwargs):
-        config_namespace = None
-        for ns in PLUGIN_NAMESPACES['auth']:
-            for ep in iter_entry_points(ns):
-                if ep.module_name == 'cinq_auth_onelogin_saml':
-                    cls = ep.load()
-                    config_namespace = cls.ns
-                    break
-            else:
-                self.log.error('The SAML authentication plugin is not installed')
-                return
+        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.auth']['plugins']:
+            if ep.module_name == 'cinq_auth_onelogin_saml':
+                cls = ep.load()
+                config_namespace = cls.ns
+                break
+        else:
+            self.log.error('The SAML authentication plugin is not installed')
+            return
 
         try:
             ns = {
