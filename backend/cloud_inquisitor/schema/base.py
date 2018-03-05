@@ -9,14 +9,14 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.attributes import QueryableAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 
-from cloud_inquisitor.database import db
 from cloud_inquisitor.constants import ROLE_ADMIN, SchedulerStatus, AccountTypes
 from cloud_inquisitor.database import Model
+from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import SchedulerError
 from cloud_inquisitor.utils import isoformat, to_camelcase
 
 __all__ = (
-    'BaseModelMixin', 'Account', 'Tag', 'LogEvent', 'Email', 'ConfigNamespace', 'ConfigItem', 'Role', 'User',
+    'BaseModelMixin', 'Account', 'LogEvent', 'Email', 'ConfigNamespace', 'ConfigItem', 'Role', 'User',
     'UserRole', 'AuditLog', 'SchedulerBatch', 'SchedulerJob',
 )
 
@@ -202,46 +202,6 @@ class Account(Model, BaseModelMixin):
         return getattr(db, cls.__name__).find_one({
             'account_id': account_id
         })
-
-
-class Tag(Model, BaseModelMixin):
-    """Tag object
-
-    Attributes:
-        tag_id (int): Internal unique ID for the object
-        resource_id (str): ID of the resource the tag is associated with
-        key (str): Key of the tag
-        value (str): Value of the tag
-        created (datetime): The first time this tag was defined
-    """
-    __tablename__ = 'tags'
-    __table_args__ = (
-        UniqueConstraint('tag_id', 'key', 'resource_id', name='uniq_tag_resource_id_key'),
-    )
-
-    tag_id = Column(Integer, primary_key=True, autoincrement=True)
-    resource_id = Column(String(256), index=True, primary_key=True)
-    key = Column(String(128), nullable=False, primary_key=True)
-    value = Column(String(256), nullable=False, index=True)
-    created = Column(DateTime, nullable=False)
-
-    def __init__(self, resource_id=None, key=None, value=None):
-        self.resource_id = resource_id
-        self.key = key
-        self.value = value
-        self.created = datetime.now()
-
-    def __str__(self):
-        return '{0} = {1}'.format(self.key, self.value)
-
-    def __repr__(self):
-        return "Tag(tag_id={}, resource_id='{}', key='{}', value='{}', created='{}')".format(
-            self.tag_id,
-            self.resource_id,
-            self.key,
-            self.value,
-            self.created
-        )
 
 
 class LogEvent(Model, BaseModelMixin):
