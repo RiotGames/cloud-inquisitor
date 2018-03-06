@@ -1,11 +1,58 @@
-from sqlalchemy import Column, String
+from datetime import datetime
+
+from sqlalchemy import Column, String, ForeignKey, DateTime, UniqueConstraint
 from sqlalchemy.dialects.mysql import INTEGER as Integer, JSON
 from sqlalchemy.orm import foreign, relationship
 
 from cloud_inquisitor.database import db, Model
-from cloud_inquisitor.schema.base import Tag, BaseModelMixin, Account
+from cloud_inquisitor.schema.base import BaseModelMixin, Account
 
-__all__ = ('ResourceType', 'ResourceProperty', 'Resource', 'ResourceMapping')
+__all__ = ('Tag', 'ResourceType', 'ResourceProperty', 'Resource', 'ResourceMapping')
+
+
+class Tag(Model, BaseModelMixin):
+    """Tag object
+
+    Attributes:
+        tag_id (int): Internal unique ID for the object
+        resource_id (str): ID of the resource the tag is associated with
+        key (str): Key of the tag
+        value (str): Value of the tag
+        created (datetime): The first time this tag was defined
+    """
+    __tablename__ = 'tags'
+    __table_args__ = (
+        UniqueConstraint('tag_id', 'key', 'resource_id', name='uniq_tag_resource_id_key'),
+    )
+
+    tag_id = Column(Integer, primary_key=True, autoincrement=True)
+    resource_id = Column(
+        String(256),
+        ForeignKey('resources.resource_id', name='fk_tag_resource_id', ondelete='CASCADE'),
+        index=True,
+        primary_key=True
+    )
+    key = Column(String(128), nullable=False, primary_key=True)
+    value = Column(String(256), nullable=False, index=True)
+    created = Column(DateTime, nullable=False)
+
+    def __init__(self, resource_id=None, key=None, value=None):
+        self.resource_id = resource_id
+        self.key = key
+        self.value = value
+        self.created = datetime.now()
+
+    def __str__(self):
+        return '{0} = {1}'.format(self.key, self.value)
+
+    def __repr__(self):
+        return "Tag(tag_id={}, resource_id='{}', key='{}', value='{}', created='{}')".format(
+            self.tag_id,
+            self.resource_id,
+            self.key,
+            self.value,
+            self.created
+        )
 
 
 class ResourceType(Model, BaseModelMixin):
@@ -58,7 +105,13 @@ class ResourceProperty(Model, BaseModelMixin):
     __tablename__ = 'resource_properties'
 
     property_id = Column(Integer(unsigned=True), primary_key=True, autoincrement=True)
-    resource_id = Column(String(256), nullable=False, primary_key=True, index=True)
+    resource_id = Column(
+        String(256),
+        ForeignKey('resources.resource_id', name='fk_resource_property_resource_id', ondelete='CASCADE'),
+        nullable=False,
+        primary_key=True,
+        index=True
+    )
     name = Column(String(50), nullable=False, index=True)
     value = Column(JSON, nullable=False)
 
@@ -89,9 +142,17 @@ class Resource(Model, BaseModelMixin):
     __tablename__ = 'resources'
 
     resource_id = Column(String(256), primary_key=True)
-    account_id = Column(Integer, index=True)
+    account_id = Column(
+        Integer,
+        ForeignKey('accounts.account_id', name='fk_resource_account_id', ondelete='CASCADE'),
+        index=True
+    )
     location = Column(String(50), nullable=True, index=True)
-    resource_type_id = Column(Integer(unsigned=True), index=True)
+    resource_type_id = Column(
+        Integer(unsigned=True),
+        ForeignKey('resource_types.resource_type_id', name='fk_resource_types_resource_type_id', ondelete='CASCADE'),
+        index=True
+    )
     tags = relationship(
         'Tag',
         lazy='select',
@@ -157,5 +218,15 @@ class ResourceMapping(Model, BaseModelMixin):
     __tablename__ = 'resource_mappings'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    parent = Column(String(256), nullable=False, index=True)
-    child = Column(String(256), nullable=False, index=True)
+    parent = Column(
+        String(256),
+        ForeignKey('resources.resource_id', name='fk_resource_mapping_parent', ondelete='CASCADE'),
+        nullable=False,
+        index=True
+    )
+    child = Column(
+        String(256),
+        ForeignKey('resources.resource_id', name='fk_resource_mapping_child', ondelete='CASCADE'),
+        nullable=False,
+        index=True
+    )
