@@ -1,14 +1,14 @@
 version: '3'
 services:
   db:
-    image: mysql
+    image: mysql:5.7
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=mypassword
       - MYSQL_DATABASE=cinq
-      - MYSQL_USER=${DB_USER:-cinq}
-      - MYSQL_PASSWORD=${DB_PASS:-changeme}
+      - MYSQL_USER=cinq
+      - MYSQL_PASSWORD=changeme
     volumes:
       - "./database:/var/lib/mysql"
 
@@ -16,35 +16,58 @@ services:
     build:
       context: ./../
       dockerfile: ./docker/frontend-Dockerfile
-    ports:
-      - "8000:80"
-    depends_on:
-      - api
-      
-  api:
+
+  nginx:
     build:
       context: ./../
-      dockerfile: ./docker/api-Dockerfile
+      dockerfile: ./docker/nginx-Dockerfile
     ports:
-      - "5000:5000"
-    environment:
-      - INQUISITOR_SETTINGS=/cloudinquisitor/settings/config.py
-      - DB_USER=${DB_USER:-cinq}
-      - DB_PASS=${DB_PASS:-changeme}
-      - DB_URL=${DB_URL:-db}
-      - DB_PORT=${DB_PORT:-3306}
+      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8443:443"
     depends_on:
+      - frontend
+      - api
+
+  base:
+    build:
+      context: ./../
+      dockerfile: ./docker/base-Dockerfile
+    volumes:
+      - "./files/dev-backend-config.json:/usr/local/etc/cloud-inquisitor/config.json"
+      - "./files/logging.json:/usr/local/etc/cloud-inquisitor/logging.json"
+
+  # To reference the base image built inside the docker-compose.yml
+  #  it must be prefixed with by the COMPOSE_PROJECT_NAME, defined in .env,
+  # followed by an '_'.  By default the name is "cinq_base"
+  api:
+    image: cinq_base
+    ports:
+      - "127.0.0.1:5000:5000"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+    volumes:
+      - "./files/dev-backend-config.json:/usr/local/etc/cloud-inquisitor/config.json"
+      - "./files/logging.json:/usr/local/etc/cloud-inquisitor/logging.json"
+    command: bash -c "source /env/bin/activate && cloud-inquisitor runserver -h 0.0.0.0 -p 5000"
+    depends_on:
+      - base
       - db
 
   scheduler:
-    build:
-      context: ./../
-      dockerfile: ./docker/scheduler-Dockerfile
+    image: cinq_base
     environment:
-      - INQUISITOR_SETTINGS=/cloudinquisitor/settings/config.py
-      - DB_USER=${DB_USER:-cinq}
-      - DB_PASS=${DB_PASS:-changeme}
-      - DB_URL=${DB_URL:-db}
-      - DB_PORT=${DB_PORT:-3306}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+    volumes:
+      - "./files/dev-backend-config.json:/usr/local/etc/cloud-inquisitor/config.json"
+      - "./files/logging.json:/usr/local/etc/cloud-inquisitor/logging.json"
+    command: bash -c "source /env/bin/activate && cloud-inquisitor scheduler"
     depends_on:
+      - base
       - db
+      - api
+      
+      

@@ -1,0 +1,22 @@
+{
+    "log_level": "INFO",
+
+    "use_user_data": false,
+    "kms_account_name": "APP_KMS_ACCOUNT_NAME",
+    "kms_region": "APP_KMS_REGION",
+    "user_data_url": "not used in local dev",
+
+    "aws_api": {
+        "access_key": "APP_AWS_API_ACCESS_KEY",
+        "secret_key": "APP_AWS_API_SECRET_KEY",
+	"session_token": "APP_AWS_API_SESSION_TOKEN",
+        "instance_role_arn": "APP_INSTANCE_ROLE_ARN"
+    },
+
+    "database_uri": "mysql://cinq:changeme@db:3306/cinq",
+
+    "flask": {
+        "secret_key": "APP_SECRET_KEY",
+        "json_sort_keys": false
+    }
+}
