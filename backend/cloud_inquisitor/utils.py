@@ -377,29 +377,32 @@ def from_camelcase(inStr):
 
 
 def get_resource_id(prefix, *data):
-    """Returns a unique ID based on the SHA256 hash of the provided data. Each element in `*data` must support
-    the __str__ method
+    """Returns a unique ID based on the SHA256 hash of the provided data. The input data is flattened and sorted to
+    ensure identical hashes are generated regardless of the order of the input. Values must be of types `str`, `int` or
+    `float`, any other input type will raise a `ValueError`
 
     >>> get_resource_id('ec2', 'lots', 'of', 'data')
-    'ec2-00607742acfcbb63'
+    'ec2-1d21940125214123'
+    >>> get_resource_id('ecs', 'foo', ['more', 'data', 'here', 2, 3])
+    'ecs-e536b036ea6fd463'
+    >>> get_resource_id('ecs', ['more'], 'data', 'here', [[2], 3], 'foo')
+    'ecs-e536b036ea6fd463'
 
     Args:
         prefix (`str`): Key prefix
-        *data: Data used to generate a unique ID
+        *data (`str`, `int`, `float`, `list`, `tuple`): Data used to generate a unique ID
 
     Returns:
         `str`
     """
-    if type(data) in (list, tuple):
-        resource_data = '-'.join(sorted(data))
-    elif type(data) == dict:
-        resource_data = '-'.join('{}={}'.format(k, str(v)) for k, v in sorted(data.items()))
-    else:
-        resource_data = str(data)
+    parts = flatten(data)
+    for part in parts:
+        if type(part) not in (str, int, float):
+            raise ValueError('Supported data types: int, float, list, tuple, str. Got: {}'.format(type(part)))
 
     return '{}-{}'.format(
         prefix,
-        get_hash(resource_data)[-16:]
+        get_hash('-'.join(sorted(map(str, parts))))[-16:]
     )
 
 
@@ -489,3 +492,22 @@ def read_config():
             return os.path.dirname(fpath), munch.munchify(__recursive_update(DEFAULT_CONFIG, data))
 
     raise FileNotFoundError('Configuration file not found')
+
+def flatten(data):
+    """Returns a flattened version of a list.
+
+    Courtesy of https://stackoverflow.com/a/12472564
+
+    Args:
+        data (`tuple` or `list`): Input data
+
+    Returns:
+        `list`
+    """
+    if not data:
+        return data
+
+    if type(data[0]) in (list, tuple):
+        return list(flatten(data[0])) + list(flatten(data[1:]))
+
+    return list(data[:1]) + list(flatten(data[1:]))
