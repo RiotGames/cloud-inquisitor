@@ -172,6 +172,7 @@ class Account(Model, BaseModelMixin):
         Returns:
             `None`
         """
+        self.log.info('Deleting account {}'.format(self.account_name))
         db.session.delete(self)
         if auto_commit:
             db.session.commit()
