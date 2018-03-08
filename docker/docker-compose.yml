@@ -12,11 +12,6 @@ services:
     volumes:
       - "./database:/var/lib/mysql"
 
-  frontend:
-    build:
-      context: ./../
-      dockerfile: ./docker/frontend-Dockerfile
-
   nginx:
     build:
       context: ./../
@@ -27,6 +22,16 @@ services:
     depends_on:
       - frontend
       - api
+
+  frontend:
+    build:
+      context: ./../
+      dockerfile: ./docker/frontend-Dockerfile
+    ports:
+      - "127.0.0.1:3000:3000"
+    #volumes: 
+      #- "./../../cinq-frontend:/frontend"
+      # Change the above path to cinq-frontend to fit your directory structure
 
   base:
     build:
@@ -50,7 +55,12 @@ services:
     volumes:
       - "./files/dev-backend-config.json:/usr/local/etc/cloud-inquisitor/config.json"
       - "./files/logging.json:/usr/local/etc/cloud-inquisitor/logging.json"
-    command: bash -c "source /env/bin/activate && cloud-inquisitor runserver -h 0.0.0.0 -p 5000"
+      - "./../:/cloud-inquisitor"
+    command: >
+      bash -c "cd /cloud-inquisitor/backend
+      && source /env/bin/activate 
+      && python setup.py install > /dev/null
+      && cloud-inquisitor runserver -h 0.0.0.0 -p 5000"
     depends_on:
       - base
       - db
@@ -64,10 +74,13 @@ services:
     volumes:
       - "./files/dev-backend-config.json:/usr/local/etc/cloud-inquisitor/config.json"
       - "./files/logging.json:/usr/local/etc/cloud-inquisitor/logging.json"
-    command: bash -c "source /env/bin/activate && cloud-inquisitor scheduler"
+      - "./../:/cloud-inquisitor"
+    command: >
+      bash -c "cd /cloud-inquisitor/backend
+      && source /env/bin/activate 
+      && python setup.py install > /dev/null
+      && cloud-inquisitor scheduler"
     depends_on:
       - base
       - db
       - api
-      
-      
