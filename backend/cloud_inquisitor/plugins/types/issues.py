@@ -347,7 +347,7 @@ class RequiredTagsIssue(BaseIssue):
         if updated:
             now = datetime.now()
             self.set_property('last_change', now)
-            self.set_property('next_change', now + data['next_change'])
+            self.set_property('next_change', data['next_change'])
 
         return updated
 
