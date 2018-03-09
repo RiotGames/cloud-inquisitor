@@ -56,11 +56,18 @@ services:
       - "./files/dev-backend-config.json:/usr/local/etc/cloud-inquisitor/config.json"
       - "./files/logging.json:/usr/local/etc/cloud-inquisitor/logging.json"
       - "./../:/cloud-inquisitor"
+      #- "./../../cinq-auditor-iam:/plugins/cinq-auditor-iam"
     command: >
-      bash -c "cd /cloud-inquisitor/backend
-      && source /env/bin/activate 
+      bash -c " source /env/bin/activate;
+
+      [ -d /plugins ] && cd /plugins 
+      && for plugin in `ls /plugins`; do 
+             pushd $$plugin && python3 setup.py install && popd;  
+         done;
+
+      cd /cloud-inquisitor/backend
       && python setup.py install > /dev/null
-      && cloud-inquisitor runserver -h 0.0.0.0 -p 5000"
+      && cloud-inquisitor runserver -h 0.0.0.0 -p 5000;"
     depends_on:
       - base
       - db
@@ -75,9 +82,16 @@ services:
       - "./files/dev-backend-config.json:/usr/local/etc/cloud-inquisitor/config.json"
       - "./files/logging.json:/usr/local/etc/cloud-inquisitor/logging.json"
       - "./../:/cloud-inquisitor"
+      #- "./../../cinq-auditor-iam:/plugins/cinq-auditor-iam"
     command: >
-      bash -c "cd /cloud-inquisitor/backend
-      && source /env/bin/activate 
+      bash -c " source /env/bin/activate;
+
+      [ -d /plugins ] && cd /plugins 
+      && for plugin in `ls /plugins`; do 
+             pushd $$plugin && python3 setup.py install && popd;  
+         done;
+
+      cd /cloud-inquisitor/backend
       && python setup.py install > /dev/null
       && cloud-inquisitor scheduler"
     depends_on:
