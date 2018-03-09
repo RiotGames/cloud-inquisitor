@@ -163,6 +163,20 @@ class Account(Model, BaseModelMixin):
 
         return False
 
+    def delete(self, auto_commit=True):
+        """Delete the account and all of its resources from the database
+
+        Args:
+             auto_commit (`bool`): Automatically commit the change to the database. Default: `True`
+
+        Returns:
+            `None`
+        """
+        log.info('Deleting account {}'.format(self.account_name))
+        db.session.delete(self)
+        if auto_commit:
+            db.session.commit()
+
     @classmethod
     def get(cls, account):
         """Return an Account object by name
