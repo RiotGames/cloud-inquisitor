@@ -66,7 +66,7 @@ services:
       if [ -d /plugins ]; then
          cd /plugins;
          for plugin in `ls /plugins`; do 
-             pushd $$plugin && python3 setup.py clean --all install && popd;  
+             (cd $$plugin && python3 setup.py clean --all install)  
          done;
       fi
 
@@ -94,7 +94,7 @@ services:
       if [ -d /plugins ]; then
          cd /plugins;
          for plugin in `ls /plugins`; do 
-             pushd $$plugin && python3 setup.py clean --all install && popd;  
+             (cd $$plugin && python3 setup.py clean --all install)
          done;
       fi
 
