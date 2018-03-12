@@ -6,7 +6,7 @@ RUN mkdir /cert \
     && openssl genrsa -des3 -passout pass:x -out server.pass.key 2048 \
     && openssl rsa -passin pass:x -in server.pass.key -out private.key \
     && rm server.pass.key \
-    && openssl req -new -key private.key -out server.csr -subj "/C=US/ST=CA/L=LA/O=RiotGames/OU=PlatSec/CN=cinq.security.riotgames.com" \
+    && openssl req -new -key private.key -out server.csr -subj "/C=US/ST=CA/L=LA/O=RiotGames/OU=PlatSec/CN=cinq.yourcompany.tld" \
     && openssl x509 -req -days 365 -in server.csr -signkey private.key -out server.crt
 
 FROM nginx:alpine
