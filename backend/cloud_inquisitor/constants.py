@@ -51,7 +51,7 @@ NS_AUTH_ONELOGIN_SAML = 'saml'
 # region Regular Expressions
 RGX_BUCKET = re.compile('(?P<bucket>.*?)\.s3(-website-(?P<region>.*?))?\.amazonaws.com')
 RGX_BUCKET_WEBSITE = re.compile('^s3-website-(?P<region>.*?)?\.amazonaws.com')
-RGX_EMAIL_VALIDATION_PATTERN = r'([A-Z0-9._%+-]+[^+]@[A-Z0-9.-]+\.[A-Z]{2,})'
+RGX_EMAIL_VALIDATION_PATTERN = r'([a-zA-Z0-9._%+-]+[^+]@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
 RGX_INSTANCE = re.compile(r'^i-(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{17})$', re.IGNORECASE)
 RGX_INSTANCE_DNS = re.compile('ec2-(\d+)-(\d+)-(\d+)-(\d+)\.(?:.*\.compute|compute-\d)\.amazonaws.com')
 RGX_IP = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', re.IGNORECASE)

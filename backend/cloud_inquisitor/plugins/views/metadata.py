@@ -39,5 +39,6 @@ class MetaData(BaseView):
             'regions': list(AWS_REGIONS),
             'menuItems': menuItems,
             'resourceTypes': {v.resource_name: k for k, v in current_app.types.items()},
-            'currentUser': session['user'].to_json()
+            'currentUser': session['user'].to_json(),
+            'notifiers': [{'type': k, 'validation': v} for k, v in current_app.notifiers.items()],
         })

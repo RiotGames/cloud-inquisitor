@@ -150,6 +150,8 @@ class CINQFlask(Flask):
         initialize()
         self.api = CINQApi(self)
 
+        self.notifiers = self.__register_notifiers()
+
     def register_plugins(self):
         self.__register_types()
         self.api.register_views(self)
@@ -211,6 +213,19 @@ class CINQFlask(Flask):
                 logger.debug('Registered resource type {}'.format(cls.__name__))
         except SQLAlchemyError as ex:
             logger.warning('Failed loading type information: {}'.format(ex))
+
+    def __register_notifiers(self):
+        """Lists all notifiers to be able to provide metadata for the frontend
+
+        Returns:
+            `list` of `dict`
+        """
+        notifiers = {}
+        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.notifiers']['plugins']:
+            cls = ep.load()
+            notifiers[cls.notifier_type] = cls.validation
+
+        return notifiers
     # endregion
 
 

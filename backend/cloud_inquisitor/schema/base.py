@@ -99,7 +99,7 @@ class Account(Model, BaseModelMixin):
         Args:
             name (str): Name of the account
             account_number (int): Unique account identifier
-            contacts (:obj:`list` of :obj:`str`): List of contacts for the account
+            contacts (:obj:`list` of :obj:`dict`): List of contacts for the account
             enabled (bool): If True (default value) the account will be included in all collections, reports etc.
             ad_group_base (str): The base name of the AD Groups used for SAML federation
         """
