@@ -104,3 +104,4 @@ npm-debug.log
 # Docker
 docker/database
 docker/dev-backend-config.py
+docker/files/dev-backend-config.json

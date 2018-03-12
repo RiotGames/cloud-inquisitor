@@ -1,0 +1,146 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "rainbow": {
+            "datefmt": "[%H:%M:%S]",
+            "format": "%(asctime)s %(name)s %(message)s"
+        },
+        "standard": {
+            "datefmt": "[%H:%M:%S]",
+            "format": "%(asctime)s %(name)s [%(levelname)s] %(message)s"
+        }
+    },
+    "filters": {
+        "standard": {
+            "()": "cloud_inquisitor.log.LogLevelFilter"
+        }
+    },
+    "handlers": {
+        "console": {
+            "formatter": "rainbow",
+            "datefmt": "[%H:%M:%S]",
+            "stream": "ext://sys.stdout",
+            "color_asctime": [ null, null, null ],
+            "color_message_warning": [ "yellow", null, true ],
+            "color_name": [ "green", null, false ],
+            "class": "rainbow_logging_handler.RainbowLoggingHandler",
+            "filters": ["standard"]
+        },
+        "file": {
+            "filename": "/var/log/cloud-inquisitor/default.log",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "when": "midnight",
+            "backupCount": 7,
+            "formatter": "standard",
+            "filters": ["standard"]
+        },
+        "file.http": {
+            "filename": "/var/log/cloud-inquisitor/apiserver.log",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "when": "midnight",
+            "backupCount": 7,
+            "formatter": "standard",
+            "filters": ["standard"]
+        },
+        "file.scheduler": {
+            "filename": "/var/log/cloud-inquisitor/scheduler.log",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "when": "midnight",
+            "backupCount": 7,
+            "formatter": "standard",
+            "filters": ["standard"]
+        },
+        "database": {
+            "class": "cloud_inquisitor.log.DBLogger",
+            "min_level": "WARNING"
+        },
+        "pipeline": {
+            "class": "cloud_inquisitor.log.SyslogPipelineHandler",
+            "formatter": "syslog",
+            "filters": ["standard"]
+        }
+    },
+    "loggers": {
+        "": {
+            "level": "DEBUG",
+            "handlers": [
+                "file",
+                "console",
+                "database"
+            ]
+        },
+        "cloud_inquisitor": {
+            "level": "DEBUG",
+            "propagate": false,
+            "handlers": [
+                "console",
+                "database",
+                "pipeline"
+            ]
+        },
+        "apscheduler": {
+            "level": "WARNING",
+            "propagate": false,
+            "handlers": [
+                "file",
+                "console",
+                "database"
+            ]
+        },
+        "boto3": {
+            "level": "WARNING",
+            "propagate": false,
+            "handlers": [
+                "console",
+                "file",
+                "database"
+            ]
+        },
+        "botocore": {
+            "level": "WARNING",
+            "propagate": false,
+            "handlers": [
+                "console",
+                "file",
+                "database"
+            ]
+        },
+        "parso": {
+            "level": "WARNING",
+            "propagate": "false"
+        },
+        "git": {
+            "level": 100,
+            "propagate": "false"
+        },
+        "requests": {
+            "level": "WARNING",
+            "propagate": false,
+            "handlers": [
+                "console",
+                "file"
+            ]
+        },
+        "pyexcel": {
+            "level": 100,
+            "propagate": "false"
+        },
+        "pyexcel_io": {
+            "level": 100,
+            "propagate": "false"
+        },
+        "urllib3": {
+            "level": 100,
+            "propagate": "false"
+        },
+        "werkzeug": {
+            "level": "INFO",
+            "propagate": false,
+            "handlers": [
+                "console",
+                "file.http"
+            ]
+        }
+    }
+}
