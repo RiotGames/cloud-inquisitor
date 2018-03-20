@@ -125,7 +125,7 @@ setuptools.setup(
         'rainbow-logging-handler~=2.2',
         'requests~=2.14',
         'slackclient~=1.0',
-        'sqlservice~=0.14.2',
+        'sqlservice~=0.20',
     ],
 
     # Metadata
