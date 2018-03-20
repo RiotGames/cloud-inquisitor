@@ -7,7 +7,9 @@ Model = declarative_base()
 
 def get_db_connection():
     return SQLClient({
-        'SQL_DATABASE_URI': app_config.database_uri
+        'SQL_DATABASE_URI': app_config.database_uri,
+        'SQL_POOL_RECYCLE': 3600,
+        'SQL_POOL_PRE_PING': True
     }, model_class=Model)
 
 
