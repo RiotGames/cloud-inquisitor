@@ -8,8 +8,9 @@ from sqlalchemy import desc
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP, ROLE_USER, AccountTypes
 from cloud_inquisitor.database import db
 from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
+from cloud_inquisitor.log import auditlog
 from cloud_inquisitor.plugins import BaseView
-from cloud_inquisitor.schema import Account, AuditLog
+from cloud_inquisitor.schema import Account
 from cloud_inquisitor.utils import MenuItem
 from cloud_inquisitor.wrappers import rollback, check_auth
 
@@ -68,7 +69,6 @@ class AccountList(BaseView):
         self.reqparse.add_argument('requiredGroups', type=str, action='append', default=())
         self.reqparse.add_argument('adGroupBase', type=str, default=None)
         args = self.reqparse.parse_args()
-        AuditLog.log('account.create', session['user'].username, args)
 
         validate_contacts(args['contacts'])
 
@@ -99,6 +99,8 @@ class AccountList(BaseView):
 
         # Add the newly created account to the session so we can see it right away
         session['accounts'].append(acct.account_id)
+        auditlog(event='account.create', actor=session['user'].username, data=args)
+
         return self.make_response({'message': 'Account created', 'accountId': acct.account_id}, HTTP.CREATED)
 
 
@@ -132,8 +134,6 @@ class AccountDetail(BaseView):
         self.reqparse.add_argument('requiredRoles', type=str, action='append', default=())
         self.reqparse.add_argument('adGroupBase', type=str, default=None)
         args = self.reqparse.parse_args()
-        AuditLog.log('account.update', session['user'].username, args)
-
         validate_contacts(args['contacts'])
 
         if not args['accountName'].strip():
@@ -152,6 +152,7 @@ class AccountDetail(BaseView):
 
         db.session.add(acct)
         db.session.commit()
+        auditlog(event='account.update', actor=session['user'].username, data=args)
 
         return self.make_response({'message': 'Object updated', 'account': acct.to_json(is_admin=True)})
 
@@ -159,12 +160,12 @@ class AccountDetail(BaseView):
     @check_auth(ROLE_ADMIN)
     def delete(self, accountId):
         """Delete an account"""
-        AuditLog.log('account.delete', session['user'].username, {'accountId': accountId})
         acct = db.Account.find_one(Account.account_id == accountId)
         if not acct:
             raise Exception('No such account found')
 
         acct.delete()
+        auditlog(event='account.delete', actor=session['user'].username, data={'accountId': accountId})
 
         return self.make_response('Account deleted')
 
@@ -177,7 +178,7 @@ class AccountImportExport(BaseView):
     def get(self):
         out = [ns.to_json(is_admin=True) for ns in db.Account.find()]
 
-        AuditLog.log('account.export', session['user'].username, {})
+        auditlog(event='account.export', actor=session['user'].username, data={})
         return Response(
             response=b64encode(
                 bytes(
@@ -219,7 +220,8 @@ class AccountImportExport(BaseView):
                 db.session.add(acct)
 
             db.session.commit()
-            AuditLog.log('account.import', session['user'].username, {})
+            auditlog(event='account.import', actor=session['user'].username, data={})
+
             return self.make_response({'message': 'Accounts imported'})
         except Exception as ex:
             self.log.exception('Failed importing configuration data')

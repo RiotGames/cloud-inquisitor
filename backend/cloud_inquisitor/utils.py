@@ -12,6 +12,7 @@ from base64 import b64decode
 from collections import namedtuple
 from copy import deepcopy
 from datetime import datetime
+from functools import wraps
 
 import boto3.session
 import jwt
@@ -553,3 +554,26 @@ def send_notification(*, subsystem, recipients, subject, body_html, body_text):
                         recipient.type,
                         recipient.value
                     ))
+
+
+def deprecated(msg):
+    """Marks a function / method as deprecated.
+
+    Takes one argument, a message to be logged with information on future usage of the function or alternative methods
+    to call.
+
+    Args:
+        msg (str): Deprecation message to be logged
+
+    Returns:
+        `callable`
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            logging.getLogger(__name__).warning(msg)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

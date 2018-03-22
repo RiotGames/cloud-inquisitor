@@ -13,8 +13,7 @@ from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import EmailSendError
 from cloud_inquisitor.plugins.notifiers import BaseNotifier
 from cloud_inquisitor.schema import Email
-from cloud_inquisitor.utils import send_notification, NotificationContact
-from cloud_inquisitor.wrappers import deprecated
+from cloud_inquisitor.utils import send_notification, NotificationContact, deprecated
 
 
 class EmailNotifier(BaseNotifier):

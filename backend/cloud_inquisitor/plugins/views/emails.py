@@ -4,8 +4,9 @@ from sqlalchemy import desc, func, distinct
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
 from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import EmailSendError
+from cloud_inquisitor.log import auditlog
 from cloud_inquisitor.plugins import BaseView
-from cloud_inquisitor.schema import Email, AuditLog
+from cloud_inquisitor.schema import Email
 from cloud_inquisitor.utils import MenuItem, send_notification, NotificationContact
 from cloud_inquisitor.wrappers import check_auth, rollback
 
@@ -96,7 +97,7 @@ class EmailGet(BaseView):
                 body_text=email.message_text
             )
 
-            AuditLog.log('email.resend', session['user'].username, {'emailId': emailId})
+            auditlog(event='email.resend', actor=session['user'].username, data={'emailId': emailId})
             return self.make_response('Email resent successfully')
 
         except EmailSendError as ex:

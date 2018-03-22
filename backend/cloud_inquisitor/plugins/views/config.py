@@ -7,8 +7,9 @@ from cloud_inquisitor.config import DBCChoice, DBCString, DBCInt, DBCFloat, DBCA
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
 from cloud_inquisitor.database import db
 from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
+from cloud_inquisitor.log import auditlog
 from cloud_inquisitor.plugins import BaseView
-from cloud_inquisitor.schema import ConfigNamespace, ConfigItem, AuditLog
+from cloud_inquisitor.schema import ConfigNamespace, ConfigItem
 from cloud_inquisitor.utils import MenuItem
 from cloud_inquisitor.wrappers import check_auth, rollback
 
@@ -81,7 +82,6 @@ class ConfigList(BaseView):
         self.reqparse.add_argument('value', required=True)
         self.reqparse.add_argument('type', type=str, required=True)
         args = self.reqparse.parse_args()
-        AuditLog.log('configItem.create', session['user'].username, args)
 
         if not self.dbconfig.namespace_exists(args['namespacePrefix']):
             return self.make_response('The namespace doesnt exist', HTTP.NOT_FOUND)
@@ -90,6 +90,7 @@ class ConfigList(BaseView):
             return self.make_response('This config item already exists', HTTP.CONFLICT)
 
         self.dbconfig.set(args['namespacePrefix'], args['key'], _to_dbc_class(args), description=args['description'])
+        auditlog(event='configItem.create', actor=session['user'].username, data=args)
 
         return self.make_response('Config item added', HTTP.CREATED)
 
@@ -112,7 +113,6 @@ class ConfigGet(BaseView):
     def put(self, namespace, key):
         """Update a single configuration item"""
         args = request.json
-        AuditLog.log('configItem.update', session['user'].username, args)
 
         if not self.dbconfig.key_exists(namespace, key):
             return self.make_response('No such config entry: {}/{}'.format(namespace, key), HTTP.BAD_REQUEST)
@@ -147,6 +147,7 @@ class ConfigGet(BaseView):
             item.description = args['description']
 
         self.dbconfig.set(namespace, key, _to_dbc_class(args))
+        auditlog(event='configItem.update', actor=session['user'].username, data=args)
 
         return self.make_response('Config entry updated')
 
@@ -154,11 +155,11 @@ class ConfigGet(BaseView):
     @check_auth(ROLE_ADMIN)
     def delete(self, namespace, key):
         """Delete a specific configuration item"""
-        AuditLog.log('configItem.delete', session['user'].username, {'namespace': namespace, 'key': key})
         if not self.dbconfig.key_exists(namespace, key):
             return self.make_response('No such config entry exists: {}/{}'.format(namespace, key), HTTP.BAD_REQUEST)
 
         self.dbconfig.delete(namespace, key)
+        auditlog(event='configItem.delete', actor=session['user'].username, data={'namespace': namespace, 'key': key})
         return self.make_response('Config entry deleted')
 
 
@@ -185,7 +186,6 @@ class NamespaceGet(BaseView):
         self.reqparse.add_argument('name', type=str, required=True)
         self.reqparse.add_argument('sortOrder', type=int, required=True)
         args = self.reqparse.parse_args()
-        AuditLog.log('configNamespace.update', session['user'].username, args)
 
         ns = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == namespacePrefix)
         if not ns:
@@ -197,6 +197,7 @@ class NamespaceGet(BaseView):
         db.session.commit()
 
         self.dbconfig.reload_data()
+        auditlog(event='configNamespace.update', actor=session['user'].username, data=args)
 
         return self.make_response('Namespace updated')
 
@@ -204,7 +205,6 @@ class NamespaceGet(BaseView):
     @check_auth(ROLE_ADMIN)
     def delete(self, namespacePrefix):
         """Delete a specific configuration namespace"""
-        AuditLog.log('configNamespace.delete', session['user'].username, {'namespacePrefix': namespacePrefix})
         ns = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == namespacePrefix)
         if not ns:
             return self.make_response('No such namespace: {}'.format(namespacePrefix), HTTP.NOT_FOUND)
@@ -213,6 +213,11 @@ class NamespaceGet(BaseView):
         db.session.commit()
 
         self.dbconfig.reload_data()
+        auditlog(
+            event='configNamespace.delete',
+            actor=session['user'].username,
+            data={'namespacePrefix': namespacePrefix}
+        )
         return self.make_response('Namespace deleted')
 
 
@@ -227,7 +232,6 @@ class Namespaces(BaseView):
         self.reqparse.add_argument('name', type=str, required=True)
         self.reqparse.add_argument('sortOrder', type=int, required=True)
         args = self.reqparse.parse_args()
-        AuditLog.log('configNamespace.create', session['user'].username, args)
 
         if self.dbconfig.namespace_exists(args['namespacePrefix']):
             return self.make_response('Namespace {} already exists'.format(args['namespacePrefix']), HTTP.CONFLICT)
@@ -242,6 +246,8 @@ class Namespaces(BaseView):
         db.session.commit()
 
         self.dbconfig.reload_data()
+        auditlog(event='configNamespace.create', actor=session['user'].username, data=args)
+
         return self.make_response('Namespace created', HTTP.CREATED)
 
 
@@ -253,7 +259,7 @@ class ConfigImportExport(BaseView):
     def get(self):
         out = [ns.to_json() for ns in db.ConfigNamespace.find()]
 
-        AuditLog.log('config.export', session['user'].username, {})
+        auditlog(event='config.export', actor=session['user'].username, data={})
         return Response(
             response=b64encode(
                 bytes(
@@ -305,7 +311,7 @@ class ConfigImportExport(BaseView):
                     db.session.add(itm)
 
             db.session.commit()
-            AuditLog.log('config.import', session['user'].username, {})
+            auditlog(event='config.import', actor=session['user'].username, data=config)
             return self.make_response('Configuration imported')
         except Exception as ex:
             self.log.exception('Failed importing configuration data')

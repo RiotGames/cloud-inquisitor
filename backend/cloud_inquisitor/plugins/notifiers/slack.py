@@ -6,8 +6,7 @@ from cloud_inquisitor.config import dbconfig, ConfigOption
 from cloud_inquisitor.constants import NS_SLACK, RGX_EMAIL_VALIDATION_PATTERN
 from cloud_inquisitor.exceptions import SlackError
 from cloud_inquisitor.plugins.notifiers import BaseNotifier
-from cloud_inquisitor.utils import NotificationContact, send_notification
-from cloud_inquisitor.wrappers import deprecated
+from cloud_inquisitor.utils import NotificationContact, send_notification, deprecated
 
 
 class SlackNotifier(BaseNotifier):

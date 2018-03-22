@@ -2,8 +2,9 @@ from flask import session, current_app
 
 from cloud_inquisitor.constants import ROLE_ADMIN, ROLE_USER, HTTP
 from cloud_inquisitor.database import db
+from cloud_inquisitor.log import auditlog
 from cloud_inquisitor.plugins import BaseView
-from cloud_inquisitor.schema import User, Role, AuditLog
+from cloud_inquisitor.schema import User, Role
 from cloud_inquisitor.utils import MenuItem, generate_password, hash_password
 from cloud_inquisitor.wrappers import check_auth, rollback
 
@@ -62,7 +63,7 @@ class UserList(BaseView):
         self.reqparse.add_argument('password', type=str, required=False, default=None)
         self.reqparse.add_argument('roles', type=str, action='append', default=[])
         args = self.reqparse.parse_args()
-        AuditLog.log('user.create', session['user'].username, args)
+        auditlog(event='user.create', actor=session['user'].username, data=args)
 
         user = db.User.find_one(
             User.username == args['username'],
@@ -155,7 +156,7 @@ class UserDetails(BaseView):
         """Update a user object"""
         self.reqparse.add_argument('roles', type=str, action='append')
         args = self.reqparse.parse_args()
-        AuditLog.log('user.create', session['user'].username, args)
+        auditlog(event='user.create', actor=session['user'].username, data=args)
 
         user = db.User.find_one(User.user_id == user_id)
         roles = db.Role.find(Role.name.in_(args['roles']))
@@ -179,7 +180,7 @@ class UserDetails(BaseView):
     @check_auth(ROLE_ADMIN)
     def delete(self, user_id):
         """Delete a user"""
-        AuditLog.log('user.delete', session['user'].username, {'userId': user_id})
+        auditlog(event='user.delete', actor=session['user'].username, data={'userId': user_id})
         if session['user'].user_id == user_id:
             return self.make_response(
                 'You cannot delete the user you are currently logged in as',
@@ -209,7 +210,7 @@ class PasswordReset(BaseView):
     def put(self, user_id):
         self.reqparse.add_argument('password', type=str, required=False)
         args = self.reqparse.parse_args()
-        AuditLog.log('user.passwordReset', session['user'].username, args)
+        auditlog(event='user.passwordReset', actor=session['user'].username, data=args)
 
         user = db.User.find_one(User.user_id == user_id)
         if not user:

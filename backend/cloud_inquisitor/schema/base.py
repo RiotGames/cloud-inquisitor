@@ -10,10 +10,9 @@ from sqlalchemy.orm.attributes import QueryableAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 
 from cloud_inquisitor.constants import ROLE_ADMIN, SchedulerStatus, AccountTypes
-from cloud_inquisitor.database import Model
-from cloud_inquisitor.database import db
+from cloud_inquisitor.database import Model, db
 from cloud_inquisitor.exceptions import SchedulerError
-from cloud_inquisitor.utils import isoformat, to_camelcase
+from cloud_inquisitor.utils import isoformat, to_camelcase, deprecated
 
 __all__ = (
     'BaseModelMixin', 'Account', 'LogEvent', 'Email', 'ConfigNamespace', 'ConfigItem', 'Role', 'User',
@@ -563,6 +562,7 @@ class AuditLog(Model, BaseModelMixin):
     data = Column(JSON, nullable=False)
 
     @classmethod
+    @deprecated('AuditLog.log is deprecated, use cloud_inquisitor.log.auditlog instead')
     def log(cls, event=None, actor=None, data=None):
         """Generate and insert a new event
 
@@ -574,18 +574,10 @@ class AuditLog(Model, BaseModelMixin):
         Returns:
             `None`
         """
-        try:
-            entry = cls()
-            entry.event = event
-            entry.actor = actor
-            entry.data = data
+        if 'auditlog' not in locals():
+            from cloud_inquisitor.log import auditlog
 
-            db.session.add(entry)
-            db.session.commit()
-
-        except Exception:
-            log.exception('Failed adding audit log event')
-            db.session.rollback()
+        auditlog(event=event, actor=actor, data=data)
 
 
 class SchedulerBatch(Model, BaseModelMixin):
