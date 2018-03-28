@@ -12,6 +12,7 @@ from base64 import b64decode
 from collections import namedtuple
 from copy import deepcopy
 from datetime import datetime
+from difflib import Differ
 from functools import wraps
 
 import boto3.session
@@ -21,10 +22,11 @@ import pkg_resources
 import requests
 from argon2 import PasswordHasher
 from dateutil import parser
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, BaseLoader
 
 from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN, RGX_BUCKET, ROLE_ADMIN, DEFAULT_CONFIG, \
     CONFIG_FILE_PATHS
+from cloud_inquisitor.exceptions import InquisitorError
 
 __jwt_data = None
 
@@ -52,6 +54,29 @@ class MenuItem(object):
             'args': self.args or {},
             'order': self.order
         }
+
+
+def deprecated(msg):
+    """Marks a function / method as deprecated.
+
+    Takes one argument, a message to be logged with information on future usage of the function or alternative methods
+    to call.
+
+    Args:
+        msg (str): Deprecation message to be logged
+
+    Returns:
+        `callable`
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            logging.getLogger(__name__).warning(msg)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 def get_hash(data):
@@ -146,12 +171,17 @@ def get_template(template):
     Returns:
         A Jinja2 Template object
     """
-    tmplpath = os.path.join(pkg_resources.resource_filename('cloud_inquisitor', 'data'), 'templates')
-    tmplenv = Environment(loader=FileSystemLoader(tmplpath), autoescape=True)
+    from cloud_inquisitor.database import db
+
+    tmpl = db.Template.find_one(template_name=template)
+    if not tmpl:
+        raise InquisitorError('No such template found: {}'.format(template))
+
+    tmplenv = Environment(loader=BaseLoader, autoescape=True)
     tmplenv.filters['json_loads'] = json.loads
     tmplenv.filters['slack_quote_join'] = lambda data: ', '.join('`{}`'.format(x) for x in data)
 
-    return tmplenv.get_template(template)
+    return tmplenv.from_string(tmpl.template)
 
 
 def parse_bucket_info(domain):
@@ -556,24 +586,22 @@ def send_notification(*, subsystem, recipients, subject, body_html, body_text):
                     ))
 
 
-def deprecated(msg):
-    """Marks a function / method as deprecated.
+def diff(a, b):
+    """Return the difference between two strings
 
-    Takes one argument, a message to be logged with information on future usage of the function or alternative methods
-    to call.
+    Will return a human-readable difference between two strings. See
+    https://docs.python.org/3/library/difflib.html#difflib.Differ for more information about the output format
 
     Args:
-        msg (str): Deprecation message to be logged
+        a (str): Original string
+        b (str): New string
 
     Returns:
-        `callable`
+        `str`
     """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            logging.getLogger(__name__).warning(msg)
-            return func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
+    return ''.join(
+        Differ().compare(
+            a.splitlines(keepends=True),
+            b.splitlines(keepends=True)
+        )
+    )

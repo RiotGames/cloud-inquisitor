@@ -105,25 +105,28 @@ def setup_logging():
 
     # If syslogging is disabled, set the pipeline handler to NullHandler
     if dbconfig.get('enable_syslog_forwarding', NS_LOG, False):
-        config['formatters']['syslog'] = {
-            'format': _get_syslog_format('cloud-inquisitor-logs')
-        }
+        try:
+            config['formatters']['syslog'] = {
+                'format': _get_syslog_format('cloud-inquisitor-logs')
+            }
 
-        config['handlers']['syslog'] = {
-            'class': 'cloud_inquisitor.log.SyslogPipelineHandler',
-            'formatter': 'syslog',
-            'filters': ['standard']
-        }
+            config['handlers']['syslog'] = {
+                'class': 'cloud_inquisitor.log.SyslogPipelineHandler',
+                'formatter': 'syslog',
+                'filters': ['standard']
+            }
 
-        config['loggers']['cloud_inquisitor']['handlers'].append('syslog')
+            config['loggers']['cloud_inquisitor']['handlers'].append('syslog')
 
-        # Configure the audit log handler
-        audit_handler = SyslogPipelineHandler()
-        audit_handler.setFormatter(logging.Formatter(_get_syslog_format('cloud-inquisitor-audit')))
-        audit_handler.setLevel(logging.DEBUG)
+            # Configure the audit log handler
+            audit_handler = SyslogPipelineHandler()
+            audit_handler.setFormatter(logging.Formatter(_get_syslog_format('cloud-inquisitor-audit')))
+            audit_handler.setLevel(logging.DEBUG)
 
-        _AUDIT_LOGGER.addHandler(audit_handler)
-        _AUDIT_LOGGER.propagate = False
+            _AUDIT_LOGGER.addHandler(audit_handler)
+            _AUDIT_LOGGER.propagate = False
+        except Exception as ex:
+            print('An error occured while configuring the syslogger: {}'.format(ex))
 
     logging.config.dictConfig(config)
 

@@ -63,6 +63,8 @@ setuptools.setup(
             'role_list = cloud_inquisitor.plugins.views.roles:RoleList',
             'search = cloud_inquisitor.plugins.views.search:Search',
             'stats = cloud_inquisitor.plugins.views.stats:StatsGet',
+            'template_get = cloud_inquisitor.plugins.views.templates:TemplateGet',
+            'template_list = cloud_inquisitor.plugins.views.templates:TemplateList',
             'user_details = cloud_inquisitor.plugins.views.users:UserDetails',
             'user_list = cloud_inquisitor.plugins.views.users:UserList',
         ]
