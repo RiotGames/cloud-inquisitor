@@ -1,7 +1,9 @@
 """Contains the Flask app for the REST API"""
 import logging
+import os
 import sys
 from abc import abstractproperty
+from pkg_resources import resource_filename
 
 from flask import Flask, request, session, abort
 from flask_compress import Compress
@@ -14,12 +16,126 @@ from cloud_inquisitor.config import dbconfig, DBCChoice
 from cloud_inquisitor.constants import DEFAULT_MENU_ITEMS, DEFAULT_CONFIG_OPTIONS
 from cloud_inquisitor.database import db
 from cloud_inquisitor.json_utils import InquisitorJSONDecoder, InquisitorJSONEncoder
+from cloud_inquisitor.log import auditlog
 from cloud_inquisitor.plugins.views import BaseView, LoginRedirectView, LogoutRedirectView
-from cloud_inquisitor.schema import ResourceType, ConfigNamespace, ConfigItem, Role
+from cloud_inquisitor.schema import ResourceType, ConfigNamespace, ConfigItem, Role, Template
+from cloud_inquisitor.utils import get_hash, diff
 
 logger = logging.getLogger(__name__.split('.')[0])
 
 __initialized = False
+
+
+# region Helper functions
+def _get_config_namespace(prefix, name, sort_order=2):
+    nsobj = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == prefix)
+    if not nsobj:
+        logger.info('Adding namespace {}'.format(name))
+        nsobj = ConfigNamespace()
+        nsobj.namespace_prefix = prefix
+        nsobj.name = name
+        nsobj.sort_order = sort_order
+    return nsobj
+
+def _register_default_option(nsobj, opt):
+    """ Register default ConfigOption value if it doesn't exist. If does exist, update the description if needed """
+    item = ConfigItem.get(nsobj.namespace_prefix, opt.name)
+    if not item:
+        logger.info('Adding {} ({}) = {} to {}'.format(
+            opt.name,
+            opt.type,
+            opt.default_value,
+            nsobj.namespace_prefix
+        ))
+        item = ConfigItem()
+        item.namespace_prefix = nsobj.namespace_prefix
+        item.key = opt.name
+        item.value = opt.default_value
+        item.type = opt.type
+        item.description = opt.description
+        nsobj.config_items.append(item)
+    else:
+        if item.description != opt.description:
+            logger.info('Updating description of {} / {}'.format(item.namespace_prefix, item.key))
+            item.description = opt.description
+            db.session.add(item)
+
+def _add_default_roles():
+    roles = {
+        'Admin': '#BD0000',
+        'NOC': '#5B5BFF',
+        'User': '#008000'
+    }
+
+    for name, color in roles.items():
+        if not Role.get(name):
+            role = Role()
+            role.name = name
+            role.color = color
+            db.session.add(role)
+            logger.info('Added standard role {} ({})'.format(name, color))
+
+def _import_templates(force=False):
+    """Import templates from disk into database
+
+    Reads all templates from disk and adds them to the database. By default, any template that has been modified by
+    the user will not be updated. This can however be changed by setting `force` to `True`, which causes all templates
+    to be imported regardless of status
+
+    Args:
+        force (`bool`): Force overwrite any templates with local changes made. Default: `False`
+
+    Returns:
+        `None`
+    """
+    tmplpath = os.path.join(resource_filename('cloud_inquisitor', 'data'), 'templates')
+    disk_templates = {f: os.path.join(root, f) for root, directory, files in os.walk(tmplpath) for f in files}
+    db_templates = {tmpl.template_name: tmpl for tmpl in db.Template.find()}
+
+    for name, template_file in disk_templates.items():
+        with open(template_file, 'r') as f:
+            body = f.read()
+        disk_hash = get_hash(body)
+
+        if name not in db_templates:
+            template = Template()
+            template.template_name = name
+            template.template = body
+
+            db.session.add(template)
+            auditlog(
+                event='template.import',
+                actor='init',
+                data={
+                    'template_name': name,
+                    'template': body
+                }
+            )
+            logger.info('Imported template {}'.format(name))
+        else:
+            template = db_templates[name]
+            db_hash = get_hash(template.template)
+
+            if db_hash != disk_hash:
+                if force or not db_templates[name].is_modified:
+                    template.template = body
+
+                    db.session.add(template)
+                    auditlog(
+                        event='template.update',
+                        actor='init',
+                        data={
+                            'template_name': name,
+                            'template_diff': diff(template.template, body)
+                        }
+                    )
+                    logger.info('Updated template {}'.format(name))
+                else:
+                    logger.warning(
+                        'Updated template available for {}. Will not import as it would'
+                        ' overwrite user edited content and force is not enabled'.format(name)
+                    )
+# endregion
 
 
 def initialize():
@@ -32,56 +148,6 @@ def initialize():
 
     if __initialized:
         return
-
-    # region Helper functions
-    def _get_config_namespace(prefix, name, sort_order=2):
-        nsobj = db.ConfigNamespace.find_one(ConfigNamespace.namespace_prefix == prefix)
-        if not nsobj:
-            logger.info('Adding namespace {}'.format(name))
-            nsobj = ConfigNamespace()
-            nsobj.namespace_prefix = prefix
-            nsobj.name = name
-            nsobj.sort_order = sort_order
-        return nsobj
-
-    def _register_default_option(nsobj, opt):
-        """ Register default ConfigOption value if it doesn't exist. If does exist, update the description if needed """
-        item = ConfigItem.get(nsobj.namespace_prefix, opt.name)
-        if not item:
-            logger.info('Adding {} ({}) = {} to {}'.format(
-                opt.name,
-                opt.type,
-                opt.default_value,
-                nsobj.namespace_prefix
-            ))
-            item = ConfigItem()
-            item.namespace_prefix = nsobj.namespace_prefix
-            item.key = opt.name
-            item.value = opt.default_value
-            item.type = opt.type
-            item.description = opt.description
-            nsobj.config_items.append(item)
-        else:
-            if item.description != opt.description:
-                logger.info('Updating description of {} / {}'.format(item.namespace_prefix, item.key))
-                item.description = opt.description
-                db.session.add(item)
-
-    def _add_default_roles():
-        roles = {
-            'Admin': '#BD0000',
-            'NOC': '#5B5BFF',
-            'User': '#008000'
-        }
-
-        for name, color in roles.items():
-            if not Role.get(name):
-                role = Role()
-                role.name = name
-                role.color = color
-                db.session.add(role)
-                logger.info('Added standard role {} ({})'.format(name, color))
-    # endregion
 
     # Setup all the default base settings
     try:
@@ -108,8 +174,10 @@ def initialize():
 
                         db.session.add(nsobj)
 
-        # Create the default roles if they are missing
+        # Create the default roles if they are missing and import any missing or updated templates,
+        # if they havent been modified by the user
         _add_default_roles()
+        _import_templates()
 
         db.session.commit()
         dbconfig.reload_data()
