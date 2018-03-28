@@ -1,0 +1,14 @@
+{
+    "jsonEvent": "{{ event_type }}",
+    "Event": {
+        "meta": {
+            "host": "{{ host }}"
+        },
+        "record": {
+            "level": "%(levelname)s",
+            "time": "%(asctime)s",
+            "name": "%(name)s",
+            "message": "%(message)s"
+        }
+    }
+}

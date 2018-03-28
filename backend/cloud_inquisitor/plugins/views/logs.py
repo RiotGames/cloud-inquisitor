@@ -5,8 +5,9 @@ from sqlalchemy import func, desc
 
 from cloud_inquisitor.constants import ROLE_ADMIN
 from cloud_inquisitor.database import db
+from cloud_inquisitor.log import auditlog
 from cloud_inquisitor.plugins import BaseView
-from cloud_inquisitor.schema import LogEvent, AuditLog
+from cloud_inquisitor.schema import LogEvent
 from cloud_inquisitor.utils import MenuItem
 from cloud_inquisitor.wrappers import check_auth, rollback
 
@@ -70,7 +71,6 @@ class Logs(BaseView):
     def delete(self):
         self.reqparse.add_argument('maxAge', type=int, default=31)
         args = self.reqparse.parse_args()
-        AuditLog.log('logs.prune', session['user'].username, args)
 
         db.LogEvent.filter(
             func.datesub(
@@ -79,6 +79,9 @@ class Logs(BaseView):
         ).delete()
 
         db.session.commit()
+        auditlog(event='logs.prune', actor=session['user'].username, data=args)
+
+        return self.make_response('Pruned logs older than {} days'.format(args['maxAge']))
 
 
 class LogDetails(BaseView):

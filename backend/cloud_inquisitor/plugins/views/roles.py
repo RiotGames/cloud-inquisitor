@@ -2,8 +2,9 @@ from flask import session
 
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
 from cloud_inquisitor.database import db
+from cloud_inquisitor.log import auditlog
 from cloud_inquisitor.plugins import BaseView
-from cloud_inquisitor.schema import Role, AuditLog
+from cloud_inquisitor.schema import Role
 from cloud_inquisitor.utils import MenuItem
 from cloud_inquisitor.wrappers import check_auth, rollback
 
@@ -41,7 +42,6 @@ class RoleList(BaseView):
         self.reqparse.add_argument('name', type=str, required=True)
         self.reqparse.add_argument('color', type=str, required=True)
         args = self.reqparse.parse_args()
-        AuditLog.log('role.create', session['user'].username, args)
 
         role = Role()
         role.name = args['name']
@@ -49,6 +49,7 @@ class RoleList(BaseView):
 
         db.session.add(role)
         db.session.commit()
+        auditlog(event='role.create', actor=session['user'].username, data=args)
 
         return self.make_response('Role {} has been created'.format(role.role_id), HTTP.CREATED)
 
@@ -73,7 +74,6 @@ class RoleGet(BaseView):
         """Update a user role"""
         self.reqparse.add_argument('color', type=str, required=True)
         args = self.reqparse.parse_args()
-        AuditLog.log('role.update', session['user'].username, args)
 
         role = db.Role.find_one(Role.role_id == roleId)
         if not role:
@@ -85,6 +85,7 @@ class RoleGet(BaseView):
 
         db.session.add(role)
         db.session.commit()
+        auditlog(event='role.update', actor=session['user'].username, data=args)
 
         return self.make_response('Role {} has been updated'.format(role.name))
 
@@ -92,8 +93,6 @@ class RoleGet(BaseView):
     @check_auth(ROLE_ADMIN)
     def delete(self, roleId):
         """Delete a user role"""
-        AuditLog.log('role.delete', session['user'].username, {'roleId': roleId})
-
         role = db.Role.find_one(Role.role_id == roleId)
         if not role:
             return self.make_response('No such role found', HTTP.NOT_FOUND)
@@ -103,5 +102,6 @@ class RoleGet(BaseView):
 
         db.session.delete(role)
         db.session.commit()
+        auditlog(event='role.delete', actor=session['user'].username, data={'roleId': roleId})
 
         return self.make_response('Role has been deleted')

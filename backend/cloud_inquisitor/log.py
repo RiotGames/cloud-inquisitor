@@ -10,13 +10,14 @@ from cloud_inquisitor import app_config, config_path
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_LOG
 from cloud_inquisitor.database import db
-from cloud_inquisitor.schema import LogEvent
+from cloud_inquisitor.schema import LogEvent, AuditLog
+from cloud_inquisitor.utils import get_template
+
+_AUDIT_LOGGER = logging.getLogger('audit-log')
 
 
 class DBLogger(logging.Handler):
-    """Class handling logging to a MySQL database
-    """
-
+    """Class handling logging to a MySQL database"""
     def __init__(self, min_level):
         super().__init__()
         self.min_level = min_level
@@ -58,19 +59,16 @@ class DBLogger(logging.Handler):
 
 
 class SyslogPipelineHandler(logging.handlers.SysLogHandler):
-    """ Send logs to syslog pipeline """
-
+    """ Send logs to a syslog server"""
     def __init__(self, address=None, facility='local7', socktype=None):
         super().__init__(
-            address or (dbconfig.get('remote_syslog_server_addr', NS_LOG, '127.0.0.1'),
-                        dbconfig.get('remote_syslog_server_port', NS_LOG, 514)),
-            facility, socktype)
-
-    def emit(self, record):
-        if record.levelno < logging.getLevelName(dbconfig.get('log_level', NS_LOG, 'WARNING')):
-            return
-
-        super().emit(record)
+            address or (
+                dbconfig.get('remote_syslog_server_addr', NS_LOG, '127.0.0.1'),
+                int(dbconfig.get('remote_syslog_server_port', NS_LOG, 514))
+            ),
+            facility,
+            socktype
+        )
 
 
 class LogLevelFilter(logging.Filter):
@@ -79,26 +77,87 @@ class LogLevelFilter(logging.Filter):
         return app_config.log_level == 'DEBUG' or record.levelno >= logging.getLevelName(app_config.log_level)
 
 
+def _get_syslog_format(event_type):
+    """Take an event type argument and return a python logging format
+
+    In order to properly format the syslog messages to current standard, load the template and perform necessary
+    replacements and return the string.
+
+    Args:
+        event_type (str): Event type name
+
+    Returns:
+        `str`
+    """
+    syslog_format_template = get_template('syslog_format.json')
+    fmt = syslog_format_template.render(
+        event_type=event_type,
+        host=dbconfig.get('instance_name', default='local')
+    )
+
+    # Load and redump string, to get rid of any extraneous whitespaces
+    return json.dumps(json.loads(fmt))
+
+
 def setup_logging():
     """Utility function to setup the logging systems based on the `logging.json` configuration file"""
-
     config = json.load(open(os.path.join(config_path, 'logging.json')))
-    if not dbconfig.get('enable_syslog_forwarding', NS_LOG, False):
-        config['handlers']['pipeline'] = {
-            'class': 'logging.NullHandler',
+
+    # If syslogging is disabled, set the pipeline handler to NullHandler
+    if dbconfig.get('enable_syslog_forwarding', NS_LOG, False):
+        config['formatters']['syslog'] = {
+            'format': _get_syslog_format('cloud-inquisitor-logs')
         }
 
-    config['formatters']['syslog'] = {'format': json.dumps({
-        'jsonEvent': 'cloud-inquisitor',
-        'Event': {
-            'meta': {
-                'host': dbconfig.get('instance_name', default='local')
-            },
-            'record': {
-                'time': '%(asctime)s',
-                'name': '%(name)s',
-                'message': '%(message)s'
-            }
+        config['handlers']['syslog'] = {
+            'class': 'cloud_inquisitor.log.SyslogPipelineHandler',
+            'formatter': 'syslog',
+            'filters': ['standard']
         }
-    })}
+
+        config['loggers']['cloud_inquisitor']['handlers'].append('syslog')
+
+        # Configure the audit log handler
+        audit_handler = SyslogPipelineHandler()
+        audit_handler.setFormatter(logging.Formatter(_get_syslog_format('cloud-inquisitor-audit')))
+        audit_handler.setLevel(logging.DEBUG)
+
+        _AUDIT_LOGGER.addHandler(audit_handler)
+        _AUDIT_LOGGER.propagate = False
+
     logging.config.dictConfig(config)
+
+
+def auditlog(*, event, actor, data, level=logging.INFO):
+    """Generate and insert a new event
+
+    Args:
+        event (`str`): Action performed
+        actor (`str`): Actor (user or subsystem) triggering the event
+        data (`dict`): Any extra data necessary for describing the event
+        level (`str` or `int`): Log level for the message. Uses standard python logging level names / numbers
+
+    Returns:
+        `None`
+    """
+    try:
+        entry = AuditLog()
+        entry.event = event
+        entry.actor = actor
+        entry.data = data
+
+        db.session.add(entry)
+        db.session.commit()
+
+        _AUDIT_LOGGER.log(
+            logging.getLevelName(level) if type(level) == str else level,
+            {
+                'event': event,
+                'actor': actor,
+                'data': data,
+            }
+        )
+
+    except Exception:
+        logging.getLogger(__name__).exception('Failed adding audit log event')
+        db.session.rollback()
