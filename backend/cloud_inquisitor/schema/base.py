@@ -16,7 +16,7 @@ from cloud_inquisitor.utils import isoformat, to_camelcase, deprecated
 
 __all__ = (
     'BaseModelMixin', 'Account', 'LogEvent', 'Email', 'ConfigNamespace', 'ConfigItem', 'Role', 'User',
-    'UserRole', 'AuditLog', 'SchedulerBatch', 'SchedulerJob',
+    'UserRole', 'AuditLog', 'SchedulerBatch', 'SchedulerJob', 'Template'
 )
 
 log = getLogger(__name__)
@@ -640,3 +640,11 @@ class SchedulerJob(Model, BaseModelMixin):
     @staticmethod
     def get(job_id):
         return db.SchedulerJob.find_one(SchedulerJob.job_id == job_id)
+
+
+class Template(Model, BaseModelMixin):
+    __tablename__ = 'templates'
+
+    template_name = Column(String(50), primary_key=True)
+    template = Column(Text, nullable=False)
+    is_modified = Column(TinyInt, default=0, nullable=False)
