@@ -104,4 +104,7 @@ class RoleGet(BaseView):
         db.session.commit()
         auditlog(event='role.delete', actor=session['user'].username, data={'roleId': roleId})
 
-        return self.make_response('Role has been deleted')
+        return self.make_response({
+            'message': 'Role has been deleted',
+            'roleId': roleId
+        })
