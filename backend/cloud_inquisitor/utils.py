@@ -376,8 +376,12 @@ def merge_lists(*args, sort=False):
     """
 
     out = set()
-    for lst in filter(None, args):
-        out.update(lst)
+    for contact in filter(None, args):
+        if type(contact) is list:
+            for user in contact:
+                out.update([user['value']])
+        else:
+            out.update([contact['value']])
 
     return sorted(out) if sort else list(out)
 
