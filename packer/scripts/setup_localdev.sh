@@ -138,7 +138,7 @@ sudo -u `logname` -H git clone https://github.com/RiotGames/cloud-inquisitor.git
 cat >/proj/tmp/config.json <<EOL
 {
     "log_level": "DEBUG",
-
+    "test_mode": false,
     "use_user_data": false,
     "kms_account_name": "YOUR_AWS_ACCOUNT_NAME_HERE",
     "kms_region": "AWS_REGION_HERE",
