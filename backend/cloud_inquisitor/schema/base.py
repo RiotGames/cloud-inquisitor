@@ -12,7 +12,12 @@ from sqlalchemy.orm.collections import InstrumentedList
 from cloud_inquisitor.constants import ROLE_ADMIN, SchedulerStatus, AccountTypes
 from cloud_inquisitor.database import Model, db
 from cloud_inquisitor.exceptions import SchedulerError
-from cloud_inquisitor.utils import isoformat, to_camelcase, deprecated
+from cloud_inquisitor.utils import (
+    isoformat,
+    to_camelcase,
+    deprecated,
+    NotificationContact
+)
 
 __all__ = (
     'BaseModelMixin', 'Account', 'LogEvent', 'Email', 'ConfigNamespace', 'ConfigItem', 'Role', 'User',
@@ -175,6 +180,9 @@ class Account(Model, BaseModelMixin):
         db.session.delete(self)
         if auto_commit:
             db.session.commit()
+
+    def get_contacts(self):
+        return [NotificationContact(contact['type'], contact['value']) for contact in self.contacts]
 
     @classmethod
     def get(cls, account):

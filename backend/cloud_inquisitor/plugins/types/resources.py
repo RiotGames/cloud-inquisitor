@@ -15,7 +15,12 @@ from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN
 from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import ResourceException
 from cloud_inquisitor.schema import Tag, Account, Resource, ResourceType, ResourceProperty
-from cloud_inquisitor.utils import to_utc_date, is_truthy, to_camelcase
+from cloud_inquisitor.utils import (
+    to_utc_date,
+    is_truthy,
+    to_camelcase,
+    NotificationContact
+)
 
 
 class BaseResource(ABC):
@@ -613,14 +618,13 @@ class EC2Instance(BaseResource):
             if tag.key.lower() == 'owner':
                 rgx = re.compile(RGX_EMAIL_VALIDATION_PATTERN, re.I)
                 if partial_owner_match:
-                    m = rgx.findall(tag.value)
-                    if m:
-                        return m
+                    match = rgx.findall(tag.value)
+                    if match:
+                        return [NotificationContact('email', email) for email in match]
                 else:
-                    m = rgx.match(tag.value)
-                    if m:
-                        return m.groups()
-
+                    match = rgx.match(tag.value)
+                    if match:
+                        return [NotificationContact('email', email) for email in match.groups()]
         return None
 
     @classmethod

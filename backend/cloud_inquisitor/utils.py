@@ -359,27 +359,22 @@ def has_access(user, required_roles, match_all=True):
         return False
 
 
-def merge_lists(*args, sort=False):
+def merge_lists(*args):
     """Merge an arbitrary number of lists into a single list and dedupe it
-
-    >>> merge_lists(('foo', 'bar'), ('bar', 'foobar'))
-    ['foobar', 'foo', 'bar']
-    >>> merge_lists(('foo', 'bar'), ('bar', 'foobar'), sort=True)
-    ['bar', 'foo', 'foobar']
 
     Args:
         *args: Two or more lists
-        sort (bool): Sort the merged list before returning it, default: `False`
 
     Returns:
         A deduped merged list of all the provided lists as a single list
     """
 
-    out = set()
-    for lst in filter(None, args):
-        out.update(lst)
+    out = {}
+    for contacts in filter(None, args):
+        for contact in contacts:
+            out[contact.value] = contact
 
-    return sorted(out) if sort else list(out)
+    return list(out.values())
 
 
 def to_camelcase(inStr):
@@ -571,19 +566,22 @@ def send_notification(*, subsystem, recipients, subject, body_html, body_text):
     # Make sure that we don't have any duplicate recipients
     recipients = list(set(recipients))
 
-    notifiers = map(lambda x: x.load(), CINQ_PLUGINS['cloud_inquisitor.plugins.notifiers']['plugins'])
+    notifiers = map(lambda plugin: plugin.load(), CINQ_PLUGINS['cloud_inquisitor.plugins.notifiers']['plugins'])
 
     for cls in filter(lambda x: x.enabled(), notifiers):
         for recipient in recipients:
-            if recipient.type == cls.notifier_type:
-                try:
-                    notifier = cls()
-                    notifier.notify(subsystem, recipient.value, subject, body_html, body_text)
-                except Exception:
-                    log.exception('Failed sending notification for {}/{}'.format(
-                        recipient.type,
-                        recipient.value
-                    ))
+            if isinstance(recipient, NotificationContact):
+                if recipient.type == cls.notifier_type:
+                    try:
+                        notifier = cls()
+                        notifier.notify(subsystem, recipient.value, subject, body_html, body_text)
+                    except Exception:
+                        log.exception('Failed sending notification for {}/{}'.format(
+                            recipient.type,
+                            recipient.value
+                        ))
+            else:
+                log.warning('Unexpected recipient {}'.format(recipient))
 
 
 def diff(a, b):
