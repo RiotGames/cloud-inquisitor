@@ -1,11 +1,11 @@
 <div>
     <p>
-        The following instances are not compliant with the Required Tagging standards.
+        The following resources are not compliant with the Required Tagging standards.
     </p>
     <p>
-        Instances that are not tagged appropriately within a month of being detected as non-compliant will be shutdown
-        automatically until tags have been added. To prevent this from happening have the owners of the instances to tag
-        their assets correctly.
+        Improperly tagged resources will be shutdown or removed automatically within a month of being detected
+        if the required tags are not added. To prevent this from happening, the owners of the resources should
+        tag their assets correctly.
     </p>
 
     <div>
@@ -13,7 +13,7 @@
         <table style="border: 0px; border-spacing: 0px;">
             <thead>
             <tr>
-                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">Instance</th>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">Resource</th>
                 <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 150px; text-align: left; padding: 4px;">Account</th>
                 <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 125px; text-align: left; padding: 4px;">Region</th>
                 <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">Missing tags</th>
@@ -22,23 +22,22 @@
             </tr>
             </thead>
             <tbody>
-            {% for issue in issues %}
+            {% for resource in resources %}
             <tr>
                 <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                    {{issue.instance.get_name_or_instance_id(True)}}
+                    {{resource.instance.get_name_or_instance_id(True)}}
+                </td>
+                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};"> {{resource.instance.account.account_name}}
                 </td>
                 <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                    {{issue.instance.account.account_name}}
+                    {{resource.instance.location}}
                 </td>
                 <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                    {{issue.instance.location}}
+                    {{', '.join(resource.missing_tags)}}
                 </td>
                 <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                    {{', '.join(issue.missing_tags)}}
-                </td>
-                <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                    {% if issue.notes %}
-                    {% for note in issue.notes %}
+                    {% if resource.notes %}
+                    {% for note in resource.notes %}
                     <p>{{note}}</p>
                     {% endfor %}
                     {% else %}
@@ -46,7 +45,7 @@
                     {% endif %}
                 </td>
                 <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                    {{issue.state_name()}}
+                    {{resource.state_name()}}
                 </td>
             </tr>
             {% endfor %}

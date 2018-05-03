@@ -1,6 +1,6 @@
 <div>
     <p>
-        The following instances are now compliant with the Required Tags standards and are no longer subject to being stopped.
+        The following resources are now compliant with the Required Tags standards and are no longer subject to stopping or removal.
     </p>
 
     <div>
@@ -8,22 +8,22 @@
         <table style="border: 0px; border-spacing: 0px;">
             <thead>
             <tr>
-                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 400px; text-align: left; padding: 4px;">Instance</th>
+                <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 400px; text-align: left; padding: 4px;">Resource</th>
                 <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 125px; text-align: left; padding: 4px;">Account</th>
                 <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 125px; text-align: left; padding: 4px;">Region</th>
             </tr>
             </thead>
             <tbody>
-            {% for issue in fixed %}
+            {% for resource in resources %}
             <tr>
                 <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                    {{issue.instance.get_name_or_instance_id(True)}}
+                    {{resource.instance.get_name_or_instance_id(True)}}
                 </td>
                 <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                    {{issue.instance.account.account_name}}
+                    {{resource.instance.account.account_name}}
                 </td>
                 <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                    {{issue.instance.location}}
+                    {{resource.instance.location}}
                 </td>
             </tr>
             {% endfor %}

@@ -1,11 +1,12 @@
-The following instances are not compliant with the Required Tagging standards:
-{% for issue in issues %}
-    *Account:* `{{ issue.instance.account.account_name }}`
-    *Region:* `{{ issue.instance.location }}`
-    *Instance ID:* `{{ issue.instance.get_name_or_instance_id(True) }}`
-    *Missing Tags:* {{ issue.missing_tags | slack_quote_join }}
-    *Notes:* {{ issue.notes | slack_quote_join }}
-    *Status:* `{{ issue.state_name() }}`
+The following resources are not compliant with the Required Tagging standards.
+
+Improperly tagged resources will be shutdown or removed automatically within a month of being detected if the required tags are not added. To prevent this from happening, the owners of the resources should tag their assets correctly.
+{% for resource in resources %}
+    *Account:* `{{ resource.instance.account.account_name }}`
+    *Region:* `{{ resource.instance.location }}`
+    *Resource ID:* `{{ resource.instance.get_name_or_instance_id(True) }}`
+    *Missing Tags:* {{ resource.missing_tags | slack_quote_join }}
+    *Notes:* {{ resource.notes | slack_quote_join }}
+    *Status:* `{{ resource.state_name() }}`
 
 {% endfor %}
-Instances that are not tagged appropriately within a month of being detected as non-compliant *will be shutdown automatically* until tags have been added. To prevent this from happening have the owners of the instances to tag their assets correctly.
