@@ -9,7 +9,7 @@ from cloud_inquisitor.schema import ConfigItem, Issue, Resource, ResourcePropert
 from tests.libs.util_mocks import service_lut
 from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
 
-AVAILABLE_SERVICES = ['ec2', 's3', 'route53']
+AVAILABLE_SERVICES = ['ec2', 'iam', 'kms', 'route53', 's3', 'ses', 'sqs', 'sts']
 
 
 class CinqTestService(object):
@@ -22,7 +22,7 @@ class CinqTestService(object):
         self.scheduler = None
         self.api_server = None
         self.servers = {}
-        for service in service_lut.keys():
+        for service in AVAILABLE_SERVICES:
             self.servers[service] = None
 
     ''' Service related routines '''
@@ -33,7 +33,6 @@ class CinqTestService(object):
         """
         self.reset_db_config()
         self.reset_db_data()
-        self.start_mocking_services()
 
     def shut_down(self):
         """
@@ -45,25 +44,46 @@ class CinqTestService(object):
         self.reset_db_data()
         self.reset_db_config()
 
-    @staticmethod
-    def start_mocking_service(service, port):
+    def start_mocking_service(self, service, port):
         if service in AVAILABLE_SERVICES:
-            return subprocess.Popen(
-                ['moto_server', service, '-p{}'.format(port)]
-            )
+            if self.servers[service]:
+                self.stop_mocking_service(service)
+            self.servers[service] = subprocess.Popen(['moto_server', service, '-p{}'.format(port)])
 
-    def start_mocking_services(self):
-        for service in self.servers.keys():
+    def start_mocking_services(self, *args):
+        """
+        Start mocking services
+
+        Args:
+            args (`list`): a list of mocking services you want to start. Note that the name of the services should be in
+                             AVAILABLE_SERVICES. Otherwise nothing will happen. If it is empty, all services in
+                             AVAILABLE_SERVICES will be started
+        """
+        if not args:
+            args = AVAILABLE_SERVICES
+
+        for service in args:
             _, port = service_lut[service].split(':')
-            self.servers[service] = self.start_mocking_service(service, port)
+            self.start_mocking_service(service, port)
 
     def stop_mocking_service(self, service_name):
-        if self.servers[service_name]:
+        if service_name in AVAILABLE_SERVICES and self.servers[service_name]:
             self.servers[service_name].kill()
             self.servers[service_name] = None
 
-    def stop_mocking_services(self):
-        for service in self.servers.keys():
+    def stop_mocking_services(self, *args):
+        """
+        Stop mocking services
+
+        Args:
+            args (`list`): a list of mocking services you want to stop. Note that the name of the services should be in
+                             AVAILABLE_SERVICES. Otherwise nothing will happen. If it is empty, all services will be
+                             stopped
+        """
+        if not args:
+            args = AVAILABLE_SERVICES
+
+        for service in args:
             self.stop_mocking_service(service)
 
     ''' DB related routines '''

@@ -11,6 +11,9 @@ def test_collect(cinq_test_service):
     :return:
     """
 
+    # Prep
+    cinq_test_service.start_mocking_services('ec2')
+
     # Add resources
     client = aws_get_client('ec2')
     resource = client.run_instances(ImageId='i-10000', MinCount=1, MaxCount=1)

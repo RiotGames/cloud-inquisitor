@@ -13,6 +13,7 @@ def test_audit(cinq_test_service):
 
     # Prep
     recipient = NotificationContact('email', dbconfig.get('test_email', NS_CINQ_TEST))
+    cinq_test_service.start_mocking_services('ec2')
 
     # Add resources
     client = aws_get_client('ec2')
