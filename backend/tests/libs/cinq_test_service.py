@@ -9,8 +9,6 @@ from cloud_inquisitor.schema import ConfigItem, Issue, Resource, ResourcePropert
 from tests.libs.util_mocks import service_lut
 from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
 
-AVAILABLE_SERVICES = ['ec2', 'iam', 'kms', 'route53', 's3', 'ses', 'sqs', 'sts']
-
 
 class CinqTestService(object):
     def __init__(self):
@@ -22,7 +20,7 @@ class CinqTestService(object):
         self.scheduler = None
         self.api_server = None
         self.servers = {}
-        for service in AVAILABLE_SERVICES:
+        for service in service_lut.keys():
             self.servers[service] = None
 
     ''' Service related routines '''
@@ -45,7 +43,7 @@ class CinqTestService(object):
         self.reset_db_config()
 
     def start_mocking_service(self, service, port):
-        if service in AVAILABLE_SERVICES:
+        if service in service_lut.keys():
             if self.servers[service]:
                 self.stop_mocking_service(service)
             self.servers[service] = subprocess.Popen(['moto_server', service, '-p{}'.format(port)])
@@ -60,14 +58,14 @@ class CinqTestService(object):
                              AVAILABLE_SERVICES will be started
         """
         if not args:
-            args = AVAILABLE_SERVICES
+            args = service_lut.keys()
 
         for service in args:
             _, port = service_lut[service].split(':')
             self.start_mocking_service(service, port)
 
     def stop_mocking_service(self, service_name):
-        if service_name in AVAILABLE_SERVICES and self.servers[service_name]:
+        if service_name in service_lut.keys() and self.servers[service_name]:
             self.servers[service_name].kill()
             self.servers[service_name] = None
 
@@ -81,7 +79,7 @@ class CinqTestService(object):
                              stopped
         """
         if not args:
-            args = AVAILABLE_SERVICES
+            args = service_lut.keys()
 
         for service in args:
             self.stop_mocking_service(service)

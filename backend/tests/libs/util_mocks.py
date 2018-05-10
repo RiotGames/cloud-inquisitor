@@ -1,17 +1,12 @@
 from boto3 import Session
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_CINQ_TEST, ROLE_ADMIN
+from moto.backends import BACKENDS
+from tests.libs.var_const import CINQ_TEST_MOCKING_SERVICE_HOST, CINQ_TEST_MOCKING_SERVICE_PORTS
 
 service_lut = {
-    'ami': '127.0.0.1:30000',
-    'ec2': '127.0.0.1:30000',
-    'iam': '127.0.0.1:30001',
-    'kms': '127.0.0.1:30002',
-    'route53': '127.0.0.1:30003',
-    's3': '127.0.0.1:30004',
-    'ses': '127.0.0.1:30005',
-    'sqs': '127.0.0.1:30006',
-    'sts': '127.0.0.1:30007'
+    k: '{}:{}'.format(CINQ_TEST_MOCKING_SERVICE_HOST, v)
+    for (k, v) in dict(zip(BACKENDS.keys(), CINQ_TEST_MOCKING_SERVICE_PORTS)).items()
 }
 
 
