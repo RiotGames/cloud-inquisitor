@@ -3,7 +3,7 @@ from collections import namedtuple
 from sqlalchemy.exc import SQLAlchemyError
 
 from cloud_inquisitor.database import db
-from cloud_inquisitor.schema import ConfigItem
+from cloud_inquisitor.schema import ConfigItem, ConfigNamespace
 
 
 # region Config type classes
@@ -207,6 +207,42 @@ class DBConfig(object):
             db.session.commit()
         else:
             raise KeyError('{}/{}'.format(namespace, key))
+
+
+def apply_config(config):
+    for nsdata in config:
+        ns = ConfigNamespace.get(nsdata['namespacePrefix'])
+
+        # Update existing namespace
+        if ns:
+            ns.namespace_prefix = nsdata['namespacePrefix']
+            ns.name = nsdata['name']
+            ns.sort_order = nsdata['sortOrder']
+
+        else:
+            ns = ConfigNamespace()
+            ns.namespace_prefix = nsdata['namespacePrefix']
+            ns.name = nsdata['name']
+            ns.sort_order = nsdata['sortOrder']
+        db.session.add(ns)
+
+        for itmdata in nsdata['configItems']:
+            itm = ConfigItem.get(ns.namespace_prefix, itmdata['key'])
+
+            if itm:
+                itm.value = itmdata['value']
+                itm.type = itmdata['type']
+                itm.description = itmdata['description']
+            else:
+                itm = ConfigItem()
+                itm.namespace_prefix = ns.namespace_prefix
+                itm.key = itmdata['key']
+                itm.value = itmdata['value']
+                itm.description = itmdata['description']
+
+            db.session.add(itm)
+
+    db.session.commit()
 
 
 # TODO: REMOVE THIS

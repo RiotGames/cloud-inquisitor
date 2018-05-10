@@ -3,7 +3,7 @@ from base64 import b64encode
 
 from flask import request, session, Response
 
-from cloud_inquisitor.config import DBCChoice, DBCString, DBCInt, DBCFloat, DBCArray, DBCJSON
+from cloud_inquisitor.config import DBCChoice, DBCString, DBCInt, DBCFloat, DBCArray, DBCJSON, apply_config
 from cloud_inquisitor.constants import ROLE_ADMIN, HTTP
 from cloud_inquisitor.database import db
 from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
@@ -278,39 +278,7 @@ class ConfigImportExport(BaseView):
 
         try:
             config = json.loads(args['config'], cls=InquisitorJSONDecoder)
-            for nsdata in config:
-                ns = ConfigNamespace.get(nsdata['namespacePrefix'])
-
-                # Update existing namespace
-                if ns:
-                    ns.namespace_prefix = nsdata['namespacePrefix']
-                    ns.name = nsdata['name']
-                    ns.sort_order = nsdata['sortOrder']
-
-                else:
-                    ns = ConfigNamespace()
-                    ns.namespace_prefix = nsdata['namespacePrefix']
-                    ns.name = nsdata['name']
-                    ns.sort_order = nsdata['sortOrder']
-                db.session.add(ns)
-
-                for itmdata in nsdata['configItems']:
-                    itm = ConfigItem.get(ns.namespace_prefix, itmdata['key'])
-
-                    if itm:
-                        itm.value = itmdata['value']
-                        itm.type = itmdata['type']
-                        itm.description = itmdata['description']
-                    else:
-                        itm = ConfigItem()
-                        itm.namespace_prefix = ns.namespace_prefix
-                        itm.key = itmdata['key']
-                        itm.value = itmdata['value']
-                        itm.description = itmdata['description']
-
-                    db.session.add(itm)
-
-            db.session.commit()
+            apply_config(config)
             auditlog(event='config.import', actor=session['user'].username, data=config)
             return self.make_response('Configuration imported')
         except Exception as ex:

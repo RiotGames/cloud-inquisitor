@@ -123,7 +123,7 @@ setuptools.setup(
         'pyexcel-xlsx==0.3.0',
         'pyexcel==0.4.5',
         'pytest-cov~=2.5',
-        'pytest~=3.0',
+        'pytest~=3.5',
         'rainbow-logging-handler~=2.2',
         'requests~=2.14',
         'slackclient~=1.0',

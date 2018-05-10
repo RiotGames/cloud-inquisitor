@@ -54,11 +54,6 @@
         "database": {
             "class": "cloud_inquisitor.log.DBLogger",
             "min_level": "WARNING"
-        },
-        "pipeline": {
-            "class": "cloud_inquisitor.log.SyslogPipelineHandler",
-            "formatter": "syslog",
-            "filters": ["standard"]
         }
     },
     "loggers": {
@@ -76,8 +71,7 @@
             "handlers": [
                 "file.api",
                 "console",
-                "database",
-                "pipeline"
+                "database"
             ]
         },
         "apscheduler": {
