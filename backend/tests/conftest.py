@@ -2,8 +2,8 @@ import cloud_inquisitor
 import cloud_inquisitor.utils
 import cloud_inquisitor.wrappers
 import pytest
-from tests.libs.cinq_test_service import CinqTestService
 from tests.libs.util_mocks import __check_auth, get_mocked_session, send_notification
+from tests.service import *
 
 
 def patch_cinq_func():
