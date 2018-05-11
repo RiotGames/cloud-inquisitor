@@ -12,7 +12,6 @@ from tests.service import *
 def patch_cinq_func():
     setattr(cloud_inquisitor, 'get_aws_session', get_mocked_session)
     setattr(cloud_inquisitor, 'get_local_aws_session', get_mocked_session)
-    setattr(cloud_inquisitor.app_config, 'use_user_data', False)
     setattr(cloud_inquisitor.utils, 'send_notification', send_notification)
     setattr(cloud_inquisitor.wrappers.check_auth, '__check_auth', __check_auth)
 
