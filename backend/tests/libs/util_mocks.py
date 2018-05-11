@@ -32,10 +32,6 @@ class MockSession(Session):
         )
 
 
-def send_notification(*, subsystem, recipients, subject, body_html, body_text):
-    pass
-
-
 def __check_auth(self, view):
     test_role = dbconfig.get('test_role', NS_CINQ_TEST, ROLE_ADMIN)
     if test_role in self.role:
@@ -44,9 +40,13 @@ def __check_auth(self, view):
         return view.make_unauth_response()
 
 
+def get_mocked_session(*args, **kwargs):
+    return MockSession()
+
+
 def no_op(*args, **kwargs):
     return
 
 
-def get_mocked_session(*args, **kwargs):
-    return MockSession()
+def send_notification(*, subsystem, recipients, subject, body_html, body_text):
+    pass

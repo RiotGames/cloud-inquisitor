@@ -23,7 +23,6 @@ class CinqTestService(object):
         for service in service_lut.keys():
             self.servers[service] = None
 
-        self.add_account = add_account
         self.empty_tables = empty_tables
         self.has_resource = has_resource
         self.get_resource = get_resource
@@ -92,19 +91,21 @@ class CinqTestService(object):
 
     ''' DB related routines '''
 
-    def reset_db_accounts(self):
-        empty_tables(Account)
-        self.test_account = add_account(
-            account_name=CINQ_TEST_ACCOUNT_NAME,
-            account_number=CINQ_TEST_ACCOUNT_NO,
-            account_contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
-            is_enabled=1,
-            auto_commit=True
-        )
+    def add_test_account(self, **kwargs):
+        if kwargs:
+            self.test_account = add_account(**kwargs)
+        else:
+            self.test_account = add_account(
+                account_name=CINQ_TEST_ACCOUNT_NAME,
+                account_number=CINQ_TEST_ACCOUNT_NO,
+                account_contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
+                is_enabled=1,
+                auto_commit=True
+            )
 
     def reset_db_data(self):
-        empty_tables(Issue, Resource)
-        self.reset_db_accounts()
+        empty_tables(Account, Issue, Resource)
+        self.add_test_account()
 
     def reset_db_config(self):
         empty_tables(ConfigItem)

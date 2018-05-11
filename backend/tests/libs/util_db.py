@@ -8,6 +8,8 @@ def empty_tables(*args):
     for table in args:
         db.session.query(table).delete()
 
+    db.session.commit()
+
 
 def has_resource(resource_id):
     return bool(db.session.query(Resource).filter(Resource.resource_id == resource_id).first())
