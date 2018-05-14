@@ -5,6 +5,7 @@ from cloud_inquisitor.constants import NS_CINQ_TEST
 from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins.views.accounts import add_account
 from cloud_inquisitor.schema import ConfigItem, Issue, Account, Resource
+from tests.libs.exceptions import TestSetupError
 from tests.libs.util_db import empty_tables, has_resource, get_resource, modify_resource
 from tests.libs.util_misc import verify
 from tests.libs.util_mocks import service_lut
@@ -58,15 +59,20 @@ class CinqTestService(object):
         Start mocking services
 
         Args:
-            args (`list`): a list of mocking services you want to start. Note that the name of the services should be in
-                             AVAILABLE_SERVICES. Otherwise nothing will happen. If it is empty, all services in
-                             AVAILABLE_SERVICES will be started
+            args (`list`): a list of mocking services you want to start. Note that the name of the services should be
+                             supported by moto. Raises TestSetupError if empty or invalid inputs were given
         """
         if not args:
-            args = service_lut.keys()
+            raise TestSetupError('Need to specify at least 1 service to start')
 
+        services = []
         for service in args:
-            _, port = service_lut[service].split(':')
+            if service not in service_lut:
+                raise TestSetupError('Mocking the following service is not supported: {}'.format(service))
+
+            services.append((service, service_lut[service].split(':')[-1]))
+
+        for service, port in services:
             self.start_mocking_service(service, port)
 
     def stop_mocking_service(self, service_name):
@@ -79,9 +85,7 @@ class CinqTestService(object):
         Stop mocking services
 
         Args:
-            args (`list`): a list of mocking services you want to stop. Note that the name of the services should be in
-                             AVAILABLE_SERVICES. Otherwise nothing will happen. If it is empty, all services will be
-                             stopped
+            args (`list`): a list of mocking services you want to stop. If it is empty, all services will be stopped
         """
         if not args:
             args = service_lut.keys()
