@@ -36,6 +36,7 @@ NS_COLLECTOR_EC2 = 'collector_ec2'
 
 # Miscellaneous
 NS_API = 'api'
+NS_CINQ_TEST = 'cinq_test'
 NS_EMAIL = 'email'
 NS_LOG = 'log'
 NS_SLACK = 'slack'
@@ -179,6 +180,15 @@ DEFAULT_CONFIG_OPTIONS = [
             ConfigOption('workers', 6, 'int', 'Number of worker processes spawned for the API')
         ]
     },
+    {
+        'prefix': 'cinq_test',
+        'name': 'Tests',
+        'sort_order': 3,
+        'options': [
+            ConfigOption('test_email', '', 'string', 'Email used for testing and getting emails'),
+            ConfigOption('user_role', ROLE_ADMIN, 'string', 'Role used for testing')
+        ]
+    }
 ]
 # endregion
 

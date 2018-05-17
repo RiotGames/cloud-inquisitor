@@ -1,53 +1,43 @@
-import os
-import subprocess
-from sys import modules, exit
-if 'flask.app' in modules:
-    print('Flask Module Already Imported! Exiting to prevent destruction of possibly existing data')
-    exit(-1)
+import re
 
-from flask_script import Manager
-
-os.environ['CINQ_SETTINGS'] = '../settings/testconfig.py'
-from cloud_inquisitor import app, db, register_views
-from cloud_inquisitor.plugins.commands import setup
-
+import cloud_inquisitor
+import cloud_inquisitor.utils
+import cloud_inquisitor.wrappers
 import pytest
+from tests.libs.exceptions import TestSetupError
+from tests.libs.util_mocks import __check_auth, get_mocked_session, send_notification
+from tests.service import *
 
 
-@pytest.fixture(scope='session', autouse=True)
-def prepare_app():
-    create_db_and_user()
-    # python3 manage.py db upgrade
-    db.drop_all()
-    db.create_all()
-
-    # python3 manage.py setup
-    manager = Manager(app)
-    manager.add_command('setup', setup.Setup)
-    manager.handle('manage.py', ['setup', '--headless'])
-
-    app.reload_dbconfig()
-    register_views()
-
-    yield  # Wait until tests are done
-    cleanup()
+def patch_cinq_func():
+    setattr(cloud_inquisitor, 'get_aws_session', get_mocked_session)
+    setattr(cloud_inquisitor, 'get_local_aws_session', get_mocked_session)
+    setattr(cloud_inquisitor.utils, 'send_notification', send_notification)
+    setattr(cloud_inquisitor.wrappers.check_auth, '__check_auth', __check_auth)
 
 
-def create_db_and_user():
-    """Database contains JSON datatype, which requires Postgres DB available"""
-    # sudo mysql -u root -e "create database cloud_inquisitor; grant ALL on cloud_inquisitor.* to 'cloud_inquisitor'@'localhost' identified by 'changeme';" || true # noqa
-    try:
-        output = subprocess.check_output('sudo mysql -u root -e ' +
-                                         '"drop database if exists cinq_tests; ' +
-                                         'create database cinq_tests; ' +
-                                         'grant ALL on cinq_tests.* to \'cinq_tests\'@\'localhost\' ' +
-                                         'identified by \'changeme\';"',
-                                         shell=True, stderr=subprocess.STDOUT)
-        print(output)
-    except subprocess.CalledProcessError as e:
-        print(e.output)
+def pre_test_checks():
+    s = re.match('^mysql://.+/(.+)?$', cloud_inquisitor.app_config.database_uri, re.IGNORECASE)
+    if not s:
+        raise TestSetupError('Cannot locate Database URI in the app config!')
+    if not s.groups()[0] == 'cinq_throwaway_testdb':
+        raise TestSetupError(
+            '''STOP! Cinq tests will wipe certain tables of your database. 
+            Please do the following and try again:
+            1. Make a clone of your database and name it "cinq_throwaway_testdb"
+            2. Modify the "database_uri" attribute in ~/.cinq/config.json to match your change'''
+        )
 
 
-def cleanup():
-    db.session.remove()
-    db.drop_all()  # Comment out to help investigate tests not cleaning up their own test data
+@pytest.fixture()
+def cinq_test_service():
+    cts = CinqTestService()
+    cts.setup()
+
+    yield cts
+
+    cts.shut_down()
+
+
+pre_test_checks()
+patch_cinq_func()

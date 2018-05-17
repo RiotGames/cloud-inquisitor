@@ -24,6 +24,34 @@ def validate_contacts(contacts):
             raise Exception('Unsupported notification type: {}'.format(contact['type']))
 
 
+def add_account(
+        account_name, account_number, account_contacts,
+        is_enabled=True, ad_groupbase=None, required_groups=None,
+        update_account_id=None, auto_commit=True
+):
+    """
+    Add or update an account.
+    if update_account_id is None, we add a new account; Otherwise we update the account with update_account_id
+    """
+    if update_account_id:
+        acct = db.Account.find_one(Account.account_id == update_account_id)
+    else:
+        acct = Account(
+            account_name,
+            account_number,
+            account_contacts,
+            is_enabled,
+            ad_groupbase
+        )
+    acct.required_groups = required_groups if required_groups else {}
+
+    db.session.add(acct)
+    if auto_commit:
+        db.session.commit()
+
+    return acct
+
+
 class AccountList(BaseView):
     URLS = ['/api/v1/account']
     MENU_ITEMS = [
@@ -86,16 +114,14 @@ class AccountList(BaseView):
         if db.Account.filter_by(account_name=args['accountName']).count() > 0:
             raise Exception('Account already exists')
 
-        acct = Account(
-            args['accountName'],
-            args['accountNumber'].zfill(12),
-            args['contacts'],
-            args['enabled'],
-            args['adGroupBase']
+        acct = add_account(
+            account_name=args['accountName'],
+            account_number=args['accountNumber'].zfill(12),
+            account_contacts=args['contacts'],
+            is_enabled=args['enabled'],
+            ad_groupbase=args['adGroupBase'],
+            required_groups=json.dumps(args['requiredGroups'])
         )
-        acct.required_groups = json.dumps(args['requiredGroups'])
-        db.session.add(acct)
-        db.session.commit()
 
         # Add the newly created account to the session so we can see it right away
         session['accounts'].append(acct.account_id)
@@ -142,16 +168,15 @@ class AccountDetail(BaseView):
         if not args['contacts']:
             raise Exception('You must provide at least one contact')
 
-        acct = db.Account.find_one(Account.account_id == accountId)
-        acct.account_name = args['accountName']
-        acct.account_number = args['accountNumber'].zfill(12)
-        acct.contacts = args['contacts']
-        acct.enabled = args['enabled']
-        acct.required_roles = args['requiredRoles']
-        acct.ad_group_base = args['adGroupBase']
-
-        db.session.add(acct)
-        db.session.commit()
+        acct = add_account(
+            account_name=args['accountName'],
+            account_number=args['accountNumber'].zfill(12),
+            account_contacts=args['contacts'],
+            is_enabled=args['enabled'],
+            ad_groupbase=args['adGroupBase'],
+            required_groups=json.dumps(args['requiredGroups']),
+            update_account_id=accountId
+        )
         auditlog(event='account.update', actor=session['user'].username, data=args)
 
         return self.make_response({'message': 'Object updated', 'account': acct.to_json(is_admin=True)})
@@ -207,17 +232,16 @@ class AccountImportExport(BaseView):
                         HTTP.BAD_REQUEST
                     )
 
-                if not acct:
-                    acct = Account()
-
-                acct.account_number = acctData['accountNumber']
-                acct.contacts = acctData['contacts']
-                acct.account_type = acctData['accountType']
-                acct.ad_group_base = acctData['adGroupBase']
-                acct.enabled = acctData['enabled']
-                acct.required_roles = acctData['requiredRoles']
-
-                db.session.add(acct)
+                add_account(
+                    account_name=args['accountName'],
+                    account_number=args['accountNumber'].zfill(12),
+                    account_contacts=args['contacts'],
+                    is_enabled=args['enabled'],
+                    ad_groupbase=args['adGroupBase'],
+                    required_groups=json.dumps(args['requiredGroups']),
+                    update_account_id=None if not acct else acct.account_id,
+                    auto_commit=False
+                )
 
             db.session.commit()
             auditlog(event='account.import', actor=session['user'].username, data={})
