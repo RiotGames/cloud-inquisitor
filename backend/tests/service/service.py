@@ -94,24 +94,22 @@ class CinqTestService(object):
 
     ''' DB related routines '''
 
-    def add_test_account(self, **kwargs):
-        self.test_account = Account()
-        self.test_account.account_name = kwargs.get('account_name', CINQ_TEST_ACCOUNT_NAME)
-        self.test_account.account_number = kwargs.get('account_number', CINQ_TEST_ACCOUNT_NO)
-        self.test_account.contacts = kwargs.get(
-            'contacts',
-            [{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}]
-        )
-        self.test_account.enabled = kwargs.get('is_enabled', 1)
-        self.test_account.ad_group_base = kwargs.get('ad_groupbase', None)
-        self.test_account.required_roles = kwargs.get('required_groups', [])
+    def add_test_account(self, required_roles=None, **kwargs):
+        self.test_account = Account(**kwargs)
+        self.test_account.required_roles = required_roles if required_roles else []
 
         db.session.add(self.test_account)
         db.session.commit()
 
     def reset_db_data(self):
         empty_tables(Account, Issue, Resource)
-        self.add_test_account()
+        self.add_test_account(
+            name=CINQ_TEST_ACCOUNT_NAME,
+            account_number=CINQ_TEST_ACCOUNT_NO,
+            contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
+            enabled=True,
+            ad_group_base=None
+        )
 
     def reset_db_config(self):
         empty_tables(ConfigItem)
