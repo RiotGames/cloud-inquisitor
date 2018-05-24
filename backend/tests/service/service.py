@@ -3,7 +3,6 @@ import subprocess
 from cloud_inquisitor.config import dbconfig, apply_config
 from cloud_inquisitor.constants import NS_CINQ_TEST
 from cloud_inquisitor.database import db
-from cloud_inquisitor.plugins.views.accounts import add_account
 from cloud_inquisitor.schema import ConfigItem, Issue, Account, Resource
 from tests.libs.exceptions import TestSetupError
 from tests.libs.util_db import empty_tables, has_resource, get_resource, modify_resource
@@ -96,16 +95,19 @@ class CinqTestService(object):
     ''' DB related routines '''
 
     def add_test_account(self, **kwargs):
-        if kwargs:
-            self.test_account = add_account(**kwargs)
-        else:
-            self.test_account = add_account(
-                account_name=CINQ_TEST_ACCOUNT_NAME,
-                account_number=CINQ_TEST_ACCOUNT_NO,
-                account_contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
-                is_enabled=1,
-                auto_commit=True
-            )
+        self.test_account = Account()
+        self.test_account.account_name = kwargs.get('account_name', CINQ_TEST_ACCOUNT_NAME)
+        self.test_account.account_number = kwargs.get('account_number', CINQ_TEST_ACCOUNT_NO)
+        self.test_account.contacts = kwargs.get(
+            'contacts',
+            [{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}]
+        )
+        self.test_account.enabled = kwargs.get('is_enabled', 1)
+        self.test_account.ad_group_base = kwargs.get('ad_groupbase', None)
+        self.test_account.required_roles = kwargs.get('required_groups', [])
+
+        db.session.add(self.test_account)
+        db.session.commit()
 
     def reset_db_data(self):
         empty_tables(Account, Issue, Resource)
