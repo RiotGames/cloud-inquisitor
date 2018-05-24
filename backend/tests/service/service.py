@@ -3,7 +3,6 @@ import subprocess
 from cloud_inquisitor.config import dbconfig, apply_config
 from cloud_inquisitor.constants import NS_CINQ_TEST
 from cloud_inquisitor.database import db
-from cloud_inquisitor.plugins.views.accounts import add_account
 from cloud_inquisitor.schema import ConfigItem, Issue, Account, Resource
 from tests.libs.exceptions import TestSetupError
 from tests.libs.util_db import empty_tables, has_resource, get_resource, modify_resource
@@ -95,21 +94,22 @@ class CinqTestService(object):
 
     ''' DB related routines '''
 
-    def add_test_account(self, **kwargs):
-        if kwargs:
-            self.test_account = add_account(**kwargs)
-        else:
-            self.test_account = add_account(
-                account_name=CINQ_TEST_ACCOUNT_NAME,
-                account_number=CINQ_TEST_ACCOUNT_NO,
-                account_contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
-                is_enabled=1,
-                auto_commit=True
-            )
+    def add_test_account(self, required_roles=None, **kwargs):
+        self.test_account = Account(**kwargs)
+        self.test_account.required_roles = required_roles if required_roles else []
+
+        db.session.add(self.test_account)
+        db.session.commit()
 
     def reset_db_data(self):
         empty_tables(Account, Issue, Resource)
-        self.add_test_account()
+        self.add_test_account(
+            name=CINQ_TEST_ACCOUNT_NAME,
+            account_number=CINQ_TEST_ACCOUNT_NO,
+            contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
+            enabled=True,
+            ad_group_base=None
+        )
 
     def reset_db_config(self):
         empty_tables(ConfigItem)
