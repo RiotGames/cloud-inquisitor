@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.dialects.mysql import INTEGER as Integer, JSON
 from sqlalchemy.orm import foreign, relationship
 
@@ -59,7 +59,13 @@ class IssueProperty(Model, BaseModelMixin):
     __tablename__ = 'issue_properties'
 
     property_id = Column(Integer(unsigned=True), primary_key=True, autoincrement=True)
-    issue_id = Column(String(256), nullable=False, primary_key=True, index=True)
+    issue_id = Column(
+        String(256),
+        ForeignKey('issues.issue_id', name='fk_issue_properties_issue_id', ondelete='CASCADE'),
+        nullable=False,
+        primary_key=True,
+        index=True
+    )
     name = Column(String(50), nullable=False, index=True)
     value = Column(JSON, nullable=False)
 
