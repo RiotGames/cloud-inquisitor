@@ -1,0 +1,25 @@
+{% if data['not_fixed'] %}
+    The following instances are not compliant with the Required Tagging standards:
+    {% for issue in data['not_fixed'] %}
+        *Account:* `{{ issue['resource'].account.account_name }}`
+        *Region:* `{{ issue['resource'].location }}`
+        *Resource ID:* `{{ issue['resource'].resource_id }}`
+		*Resource Type:* `{{ issue['issue'].resource_type }}`
+        *Missing Tags:* {{ ', '.join(issue['missing_tags']) }}
+        *Notes:* {{ issue['notes'] | slack_quote_join }}
+        *Alert:* {{ issue['action_description'] }}
+
+    {% endfor %}
+{% endif %}
+{% if data['fixed'] %}
+    Instances that are not tagged appropriately within a month of being detected as non-compliant *will be shutdown automatically* until tags have been added. To prevent this from happening have the owners of the instances to tag their assets correctly.
+
+    The following instances are now compliant with the Required Tags standards and are no longer subject to being stopped:
+    {% for issue in data['fixed'] %}
+        *Account:* `{{ issue['resource'].account.account_name }}`
+        *Region:* `{{ issue['resource'].location }}`
+        *Resource ID:* `{{ issue['resource'].resource_id }}`
+		*Resource Type:* `{{ issue['issue'].resource_type }}`
+
+    {% endfor %}
+{% endif %}
