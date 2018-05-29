@@ -1,0 +1,126 @@
+<div>
+    {% if data['not_fixed'] %}
+    <div>
+        <p>
+            The following instances are not compliant with the Required Tagging standards.
+        </p>
+        <p>
+            Resources that are not tagged appropriately within a month of being detected as non-compliant will be
+            stopped automatically until tags have been added.
+            To prevent this from happening have the owners of the instances to tag their assets correctly.
+        </p>
+
+        <div>
+            <h2>Issues</h2>
+            <table style="border: 0px; border-spacing: 0px;">
+                <thead>
+                <tr>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">
+                        Resource
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 150px; text-align: left; padding: 4px;">
+                        Resource Type
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 150px; text-align: left; padding: 4px;">
+                        Account
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 125px; text-align: left; padding: 4px;">
+                        Region
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">
+                        Missing tags
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">
+                        Notes
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">
+                        Alert
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for issue in data['not_fixed'] %}
+                <tr>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ issue['resource'].resource_id }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ issue['issue'].resource_type }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ issue['resource'].account.account_name }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ issue['resource'].location }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ ', '.join(issue['missing_tags']) }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {% if issue['notes'] %}
+                        {% for note in issue['notes'] %}
+                        <p>{{ note }}</p>
+                        {% endfor %}
+                        {% else %}
+                        <i>No Notes</i>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ issue['action_description'] }}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% if data['fixed'] %}
+    <div>
+        <p>
+            The following instances are now compliant with the Required Tags standards and are no longer subject to
+            being stopped.
+        </p>
+
+        <div>
+            <h2>Fixed Issues</h2>
+            <table style="border: 0px; border-spacing: 0px;">
+                <thead>
+                <tr>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 400px; text-align: left; padding: 4px;">
+                        Resource
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 400px; text-align: left; padding: 4px;">
+                        Resource Type
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 150px; text-align: left; padding: 4px;">
+                        Account
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 125px; text-align: left; padding: 4px;">
+                        Region
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for issue in data['fixed'] %}
+                <tr>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ issue['resource'].resource_id }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ issue['issue'].resource_type }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ issue['resource'].account.account_name }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {{ issue['resource'].location }}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>

@@ -1,7 +1,0 @@
-The following resources are now compliant with the Required Tags standards and are no longer subject to stopping or removal.
-{% for resource in resources %}
-    *Account:* `{{ resource.instance.account.account_name }}`
-    *Region:* `{{ resource.instance.location }}`
-    *Resource ID:* `{{ resource.instance.get_name_or_instance_id(True) }}`
-
-{% endfor %}

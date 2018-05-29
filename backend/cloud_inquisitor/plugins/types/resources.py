@@ -281,6 +281,25 @@ class BaseResource(ABC):
     # endregion
 
     # region Instance methods
+    def get_owner_emails(self, partial_owner_match=True):
+        """Return a list of email addresses associated with the instance, based on tags
+
+        Returns:
+            List of email addresses if any, else None
+        """
+        for tag in self.tags:
+            if tag.key.lower() == 'owner':
+                rgx = re.compile(RGX_EMAIL_VALIDATION_PATTERN, re.I)
+                if partial_owner_match:
+                    match = rgx.findall(tag.value)
+                    if match:
+                        return [NotificationContact('email', email) for email in match]
+                else:
+                    match = rgx.match(tag.value)
+                    if match:
+                        return [NotificationContact('email', email) for email in match.groups()]
+        return None
+
     def get_property(self, name):
         """Return a named property for a resource, if available. Will raise an `AttributeError` if the property
         does not exist
@@ -608,24 +627,6 @@ class EC2Instance(BaseResource):
 
         return self.id
 
-    def get_owner_emails(self, partial_owner_match=True):
-        """Return a list of email addresses associated with the instance, based on tags
-
-        Returns:
-            List of email addresses if any, else None
-        """
-        for tag in self.tags:
-            if tag.key.lower() == 'owner':
-                rgx = re.compile(RGX_EMAIL_VALIDATION_PATTERN, re.I)
-                if partial_owner_match:
-                    match = rgx.findall(tag.value)
-                    if match:
-                        return [NotificationContact('email', email) for email in match]
-                else:
-                    match = rgx.match(tag.value)
-                    if match:
-                        return [NotificationContact('email', email) for email in match.groups()]
-        return None
 
     @classmethod
     def search_by_age(cls, *, limit=100, page=1, accounts=None, locations=None, age=720,

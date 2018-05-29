@@ -8,7 +8,7 @@ from sqlalchemy.orm import aliased
 
 from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import IssueException
-from cloud_inquisitor.plugins.types.resources import EC2Instance, EBSVolume
+from cloud_inquisitor.plugins.types.resources import Resource, EBSVolume
 from cloud_inquisitor.schema import IssueProperty, Issue, IssueType
 from cloud_inquisitor.utils import to_camelcase, parse_date
 
@@ -239,13 +239,22 @@ class RequiredTagsIssue(BaseIssue):
 
     # region Object properties
     @property
-    def instance_id(self):
+    def resource_id(self):
         """Returns the EC2 Instance ID that has issues
 
         Returns:
             `str`
         """
-        return self.get_property('instance_id').value
+        return self.get_property('resource_id').value
+
+    @property
+    def created(self):
+        """The time the resource was created
+
+        Returns:
+            `datetime`
+        """
+        return self.get_property('created').value
 
     @property
     def account_id(self):
@@ -284,15 +293,6 @@ class RequiredTagsIssue(BaseIssue):
         return parse_date(self.get_property('last_change').value)
 
     @property
-    def next_change(self):
-        """Returns the `datetime` of the next change to the object, or None if not set
-
-        Returns:
-            `datetime`,`None`
-        """
-        return parse_date(self.get_property('next_change').value)
-
-    @property
     def shutdown_on(self):
         """Returns the `datetime` the instance will be shutdown if not fixed, or None if not set
 
@@ -320,13 +320,26 @@ class RequiredTagsIssue(BaseIssue):
         return self.get_property('notes').value
 
     @property
-    def instance(self):
+    def resource(self):
         """Return the instance object for the issue
 
         Returns:
-            `EC2Instance`
+            `Resource`
         """
-        return EC2Instance.get(self.instance_id)
+        return Resource.get(self.resource_id)
+
+    @property
+    def last_alert(self):
+        """Returns the last time an action was taken on the resource
+
+        Returns:
+             `String`
+        """
+        return self.get_property('last_alert').value
+
+    @property
+    def resource_type(self):
+        return self.get_property('resource_type').value
     # endregion
 
     def update(self, data):
@@ -340,14 +353,22 @@ class RequiredTagsIssue(BaseIssue):
         Returns:
             `bool`
         """
-        updated = self.set_property('missing_tags', data['missing_tags'])
-        updated |= self.set_property('notes', data['notes'])
-        updated |= self.set_property('state', data['state'])
+        updated = False
+        if 'missing_tags' in data:
+            updated |= self.set_property('missing_tags', data['missing_tags'])
+
+        if 'notes' in data:
+            updated |= self.set_property('notes', data['notes'])
+
+        if 'state' in data:
+            updated |= self.set_property('state', data['state'])
+
+        if 'last_alert' in data:
+            updated |= self.set_property('last_alert', data['last_alert'])
 
         if updated:
             now = datetime.now()
             self.set_property('last_change', now)
-            self.set_property('next_change', data['next_change'])
 
         return updated
 
