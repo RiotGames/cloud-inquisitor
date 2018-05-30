@@ -45,10 +45,27 @@ class retry(__wrapper):
     fails to execute without raising an exception 3 times, the exception is re-raised
     """
 
-    def __call__(self, *args, **kwargs):
-        tries, delay, backoff = 3, 2, 2
+    def __init__(self, *args):
+        super().__init__(*args)
+        self._tries = 2
+        self._delay = 4
+        self._backoff = 2
 
-        while tries > 0:
+    def __backoff(self):
+        self._tries -= 1
+
+        if self._tries <= 0:
+            return False
+
+        time.sleep(self._delay)
+        self._delay *= self._backoff
+
+        return True
+
+    def __call__(self, *args, **kwargs):
+        self._tries = 2
+
+        while self._tries > 0:
             try:
                 return self.func(*args, **kwargs)
             except ClientError as ex:
@@ -61,12 +78,14 @@ class retry(__wrapper):
                     ))
                     break
                 else:
-                    tries -= 1
-                    if tries <= 0:
+                    if not self.__backoff():
                         raise
 
-                    time.sleep(delay)
-                    delay *= backoff
+            except OSError:
+                self.log.exception('Retrying after OSError')
+                if not self.__backoff():
+                    raise
+
             except EndpointConnectionError as ex:
                 self.log.error(ex)
                 break
