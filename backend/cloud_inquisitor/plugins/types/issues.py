@@ -401,7 +401,7 @@ class RequiredTagsIssue(BaseIssue):
 
     def to_json(self):
         data = super().to_json()
-        data['instance'] = self.instance
+        data['resource'] = self.resource
 
         return data
 
