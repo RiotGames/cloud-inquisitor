@@ -3,64 +3,32 @@
 echo "----- START | Initialization phase 1 -----"
 apt-get update
 apt-get upgrade -y
-apt-get install -y curl build-essential apt-transport-https ca-certificates git libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client nginx python3-dev software-properties-common swig
+DEBIAN_FRONTEND=noninteractive apt-get install -y curl build-essential apt-transport-https ca-certificates git libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client mysql-server nginx python3-dev software-properties-common swig
+mysql -u root -e "create database cinq_dev; grant all privileges on *.* to 'cinq'@'localhost' identified by 'secretpass';" || true
 
 curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-
-add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 
 apt-get update
-apt-get install -y docker-ce nodejs
+apt-get install -y nodejs
 
 curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
 python3 /tmp/get-pip.py
 pip3 install -U virtualenv
 
-curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-
-sudo -u `logname` -H sh -c 'mkdir -p ~/.cinq/ssl'
-mkdir -p /proj/docker
+sudo -u ${SUDO_USER} -H sh -c 'mkdir -p ~/.cinq/ssl'
 mkdir -p /proj/tmp
 echo "----- END | Initialization phase 1 -----"
 
-echo "----- START | Docker configurations -----"
-cat >/proj/docker/docker-compose.yml <<EOL
-version: '3'
-
-services:
-
-  cinq-dev-db:
-    image: mysql:5.7
-    container_name: cinq_db
-    restart: always
-    ports:
-      - "127.0.0.1:3306:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=mypassword
-      - MYSQL_DATABASE=cinq_dev
-      - MYSQL_USER=${DB_USER:-cinq}
-      - MYSQL_PASSWORD=${DB_PASS:-changeme}
-    volumes:
-      - "../volumes/cinq-dev-db:/var/lib/mysql"
-EOL
-usermod -aG docker `logname`
-pushd /proj/docker
-docker-compose up 1>/dev/null 2>/dev/null &
-popd
-echo "----- END | Docker configurations -----"
-
 echo "----- START | Initialization phase 2 -----"
-chown -R `logname`:`logname` /proj
+chown -R ${SUDO_USER}:${SUDO_USER} /proj
 pushd /proj
 echo "----- END | Initialization phase 2 -----"
 
 echo "----- START | Frontend setup -----"
-sudo -u `logname` -H git clone https://github.com/RiotGames/cinq-frontend.git
+sudo -u ${SUDO_USER} -H git clone https://github.com/RiotGames/cinq-frontend.git
 pushd cinq-frontend
-sudo -u `logname` -H npm i
-sudo -u `logname` -H node_modules/.bin/gulp build.dev
+sudo -u ${SUDO_USER} -H npm i
+sudo -u ${SUDO_USER} -H node_modules/.bin/gulp build.dev
 popd
 echo "----- END | Frontend setup -----"
 
@@ -130,10 +98,10 @@ echo "----- END | NGINX setup -----"
 
 echo "----- START | Backend setup -----"
 mkdir -p /var/log/cloud-inquisitor/
-chown -R `logname`:`logname` /var/log/cloud-inquisitor/
+chown -R ${SUDO_USER}:${SUDO_USER} /var/log/cloud-inquisitor/
 
-sudo -u `logname` -H virtualenv cinq-dev
-sudo -u `logname` -H git clone https://github.com/RiotGames/cloud-inquisitor.git
+sudo -u ${SUDO_USER} -H virtualenv cinq-dev
+sudo -u ${SUDO_USER} -H git clone https://github.com/RiotGames/cloud-inquisitor.git
 
 cat >/proj/tmp/config.json <<EOL
 {
@@ -149,7 +117,7 @@ cat >/proj/tmp/config.json <<EOL
         "secret_key": "YOUR_AWS_SECRET_KEY_HERE"
     },
 
-    "database_uri": "mysql://cinq:changeme@127.0.0.1:3306/cinq_dev",
+    "database_uri": "mysql://cinq:secretpass@127.0.0.1:3306/cinq_dev",
 
     "flask": {
         "secret_key": "random_generated_string",
@@ -308,11 +276,11 @@ popd
 
 sudo -H cp /proj/tmp/logging.json ~/.cinq
 sudo -H cp /proj/tmp/config.json ~/.cinq
-sudo -H chown -R `logname`:`logname` ~/.cinq
+sudo -H chown -R ${SUDO_USER}:${SUDO_USER} ~/.cinq
 
 pushd /proj/cloud-inquisitor/backend
-sudo -u `logname` -H /proj/cinq-dev/bin/pip3 install -e .
-sudo -u `logname` -H /proj/cinq-dev/bin/cloud-inquisitor db upgrade
+sudo -u ${SUDO_USER} -H /proj/cinq-dev/bin/pip3 install -e .
+sudo -u ${SUDO_USER} -H /proj/cinq-dev/bin/cloud-inquisitor db upgrade
 popd
 
 echo "----- END | Backend setup -----"
