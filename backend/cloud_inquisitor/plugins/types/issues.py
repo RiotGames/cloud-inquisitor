@@ -465,6 +465,19 @@ class DomainHijackIssue(BaseIssue):
             `datetime`,`None`
         """
         return parse_date(self.get_property('end').value)
+
+    @property
+    def last_alert(self):
+        """Returns a timestamp for the last time an alert was sent for this hijacking event
+
+        Returns:
+            `datetime`,`None`
+        """
+        try:
+            return parse_date(self.get_property('last_alert').value)
+
+        except AttributeError:
+            return None
     # endregion
 
     def update(self, data):
@@ -479,8 +492,16 @@ class DomainHijackIssue(BaseIssue):
             `bool`
         """
         # If the instance was terminated, remove it
-        updated = self.set_property('state', data['state'])
-        updated |= self.set_property('end', data['end'])
+        updated = False
+
+        if 'state' in data:
+            updated = self.set_property('state', data['state'])
+
+        if 'end' in data:
+            updated |= self.set_property('end', data['end'])
+
+        if 'last_alert' in data:
+            updated |= self.set_property('last_alert', data['last_alert'])
 
         return updated
 
