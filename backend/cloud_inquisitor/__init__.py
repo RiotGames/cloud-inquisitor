@@ -8,6 +8,7 @@ from pkg_resources import iter_entry_points
 from werkzeug.local import LocalProxy
 
 from cloud_inquisitor.constants import PLUGIN_NAMESPACES
+from cloud_inquisitor.exceptions import InquisitorError
 from cloud_inquisitor.utils import get_user_data_configuration, read_config
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,10 @@ def get_aws_session(account):
         :obj:`boto3:boto3.session.Session`
     """
     from cloud_inquisitor.config import dbconfig
+    from cloud_inquisitor.plugins.types.accounts import AWSAccount
+
+    if not isinstance(account, AWSAccount):
+        raise InquisitorError('Non AWSAccount  passed to get_aws_session, got {}'.format(account.__class__.__name__))
 
     # If no keys are on supplied for the account, use sts.assume_role instead
     session = get_local_aws_session()
@@ -101,6 +106,12 @@ def get_aws_regions(*, force=False):
         __regions = sorted(list({x['region'] for x in data['prefixes'] if not rgx.search(x['region'])}))
 
     return __regions
+
+
+def get_plugin_by_name(ns, name):
+    for plugin in CINQ_PLUGINS[ns]['plugins']:
+        if plugin.name == name:
+            return plugin.load()
 
 
 # Check if the user has opted to use userdata based configuration for DB, and load it if needed

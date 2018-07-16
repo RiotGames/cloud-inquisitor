@@ -18,6 +18,7 @@ PLUGIN_NAMESPACES = munchify({
     'notifier': 'cloud_inquisitor.plugins.notifiers',
     'schedulers': 'cloud_inquisitor.plugins.schedulers',
     'types': 'cloud_inquisitor.plugins.types',
+    'accounts': 'cloud_inquisitor.plugins.types.accounts',
     'view': 'cloud_inquisitor.plugins.views'
 })
 # endregion

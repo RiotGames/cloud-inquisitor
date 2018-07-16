@@ -8,14 +8,25 @@ from sqlalchemy.sql import func, and_
 from cloud_inquisitor.constants import ROLE_USER, AccountTypes
 from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
+from cloud_inquisitor.plugins.types.accounts import AWSAccount
 from cloud_inquisitor.plugins.types.issues import RequiredTagsIssue
 from cloud_inquisitor.plugins.types.resources import EC2Instance
-from cloud_inquisitor.schema import Account, Resource, ResourceType, ResourceProperty, IssueProperty, Issue, IssueType
+from cloud_inquisitor.schema import (
+    Account,
+    Resource,
+    ResourceType,
+    ResourceProperty,
+    IssueProperty,
+    Issue,
+    IssueType,
+    AccountType
+)
 from cloud_inquisitor.utils import MenuItem
 from cloud_inquisitor.wrappers import check_auth, rollback
 
 reqtag_type_id = IssueType.get(RequiredTagsIssue.issue_type).issue_type_id
 ec2_type_id = ResourceType.get(EC2Instance.resource_type).resource_type_id
+aws_account_type_id = AccountType.get(AWSAccount.account_type).account_type_id
 
 
 class StatsGet(BaseView):
@@ -34,11 +45,7 @@ class StatsGet(BaseView):
     @check_auth(ROLE_USER)
     def get(self):
         rfc26 = []
-        accounts = db.Account.find(
-            Account.enabled == True, # NOQA
-            Account.account_id.in_(session['accounts'])
-        )
-
+        accounts = list(AWSAccount.get_all(include_disabled=False).values())
         instances_by_account = self._get_instances_by_account()
         issues_by_account = self._get_issues_by_account()
 
@@ -58,10 +65,9 @@ class StatsGet(BaseView):
             })
 
         instances = self._get_instance_counts()
-
         instances_by_states = self._get_instances_by_state()
-
         instance_states = {x[0]: x[1] for x in instances_by_states}
+
         if instances:
             public_ips = float(self._get_public_ip_instances()) / instances * 100
         else:
@@ -85,7 +91,7 @@ class StatsGet(BaseView):
             .join(acct_alias, Issue.issue_id == acct_alias.issue_id)
             .join(Account, acct_alias.value == Account.account_id)
             .filter(
-                Account.account_type == AccountTypes.AWS,
+                Account.account_type_id == aws_account_type_id,
                 Account.enabled == 1,
                 Issue.issue_type_id == reqtag_type_id,
                 acct_alias.name == 'account_id'
@@ -102,7 +108,7 @@ class StatsGet(BaseView):
             .join(Account, Resource.account_id == Account.account_id)
             .filter(
                 Resource.resource_type_id == ec2_type_id,
-                Account.account_type == AccountTypes.AWS,
+                Account.account_type_id == aws_account_type_id,
                 Account.enabled == 1
             )
             .group_by(Account.account_name)

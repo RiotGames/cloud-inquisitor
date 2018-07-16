@@ -2,16 +2,18 @@ import json
 import re
 from base64 import b64encode
 
+from cloud_inquisitor.exceptions import InquisitorError
 from flask import session, Response, current_app
-from sqlalchemy import desc
 
-from cloud_inquisitor.constants import ROLE_ADMIN, HTTP, ROLE_USER, AccountTypes
+from cloud_inquisitor import get_plugin_by_name
+from cloud_inquisitor.constants import ROLE_ADMIN, HTTP, ROLE_USER, AccountTypes, PLUGIN_NAMESPACES
 from cloud_inquisitor.database import db
 from cloud_inquisitor.json_utils import InquisitorJSONEncoder, InquisitorJSONDecoder
 from cloud_inquisitor.log import auditlog
 from cloud_inquisitor.plugins import BaseView
+from cloud_inquisitor.plugins.types.accounts import BaseAccount
 from cloud_inquisitor.schema import Account
-from cloud_inquisitor.utils import MenuItem
+from cloud_inquisitor.utils import MenuItem, from_camelcase
 from cloud_inquisitor.wrappers import rollback, check_auth
 
 
@@ -40,12 +42,10 @@ class AccountList(BaseView):
     @check_auth(ROLE_USER)
     def get(self):
         """List all accounts"""
-        qry = db.Account.order_by(desc(Account.enabled), Account.account_name)
+        _, accounts = BaseAccount.search()
 
         if ROLE_ADMIN not in session['user'].roles:
-            qry = qry.filter(Account.account_id.in_(session['accounts']))  # NOQA
-
-        accounts = qry.all()
+            accounts = list(filter(lambda acct: acct.account_id in session['accounts'], accounts))
 
         if accounts:
             return self.make_response({
@@ -63,16 +63,20 @@ class AccountList(BaseView):
     def post(self):
         """Create a new account"""
         self.reqparse.add_argument('accountName', type=str, required=True)
-        self.reqparse.add_argument('accountNumber', type=str, required=True)
+        self.reqparse.add_argument('accountType', type=str, required=True)
         self.reqparse.add_argument('contacts', type=dict, required=True, action='append')
         self.reqparse.add_argument('enabled', type=int, required=True, choices=(0, 1))
         self.reqparse.add_argument('requiredGroups', type=str, action='append', default=())
-        self.reqparse.add_argument('adGroupBase', type=str, default=None)
+        self.reqparse.add_argument('properties', type=dict, required=True)
         args = self.reqparse.parse_args()
+
+        account_class = get_plugin_by_name(PLUGIN_NAMESPACES['accounts'], args['accountType'])
+        if not account_class:
+            raise InquisitorError('Invalid account type: {}'.format(args['accountType']))
 
         validate_contacts(args['contacts'])
 
-        for key in ('accountName', 'accountNumber', 'contacts', 'enabled'):
+        for key in ('accountName', 'accountType', 'contacts', 'enabled'):
             value = args[key]
             if type(value) == str:
                 value = value.strip()
@@ -83,18 +87,19 @@ class AccountList(BaseView):
             else:
                 raise ValueError('Invalid type: {} for value {} for argument {}'.format(type(value), value, key))
 
-        if db.Account.filter_by(account_name=args['accountName']).count() > 0:
-            raise Exception('Account already exists')
+        class_properties = {from_camelcase(key): value for key, value in args['properties'].items()}
+        for prop in account_class.class_properties:
+            if prop['key'] not in class_properties:
+                raise InquisitorError('Missing required property {}'.format(prop))
 
-        acct = Account(
-            args['accountName'],
-            args['accountNumber'].zfill(12),
-            args['contacts'],
-            args['enabled'],
-            args['adGroupBase']
+        acct = account_class.create(
+            account_name=args['accountName'],
+            contacts=args['contacts'],
+            enabled=args['enabled'],
+            required_roles=args['requiredGroups'],
+            properties=class_properties,
+            auto_commit=False
         )
-        acct.required_groups = json.dumps(args['requiredGroups'])
-        db.session.add(acct)
         db.session.commit()
 
         # Add the newly created account to the session so we can see it right away
@@ -111,7 +116,7 @@ class AccountDetail(BaseView):
     @check_auth(ROLE_ADMIN)
     def get(self, accountId):
         """Fetch a single account"""
-        account = db.Account.find_one(Account.account_id == accountId)
+        account = BaseAccount.get(accountId)
         if account:
             return self.make_response({
                 'message': None,
@@ -128,12 +133,17 @@ class AccountDetail(BaseView):
     def put(self, accountId):
         """Update an account"""
         self.reqparse.add_argument('accountName', type=str, required=True)
-        self.reqparse.add_argument('accountNumber', type=str, required=True)
+        self.reqparse.add_argument('accountType', type=str, required=True)
         self.reqparse.add_argument('contacts', type=dict, required=True, action='append')
         self.reqparse.add_argument('enabled', type=int, required=True, choices=(0, 1))
         self.reqparse.add_argument('requiredRoles', type=str, action='append', default=())
-        self.reqparse.add_argument('adGroupBase', type=str, default=None)
+        self.reqparse.add_argument('properties', type=dict, required=True)
         args = self.reqparse.parse_args()
+
+        account_class = get_plugin_by_name(PLUGIN_NAMESPACES['accounts'], args['accountType'])
+        if not account_class:
+            raise InquisitorError('Invalid account type: {}'.format(args['accountType']))
+
         validate_contacts(args['contacts'])
 
         if not args['accountName'].strip():
@@ -142,25 +152,31 @@ class AccountDetail(BaseView):
         if not args['contacts']:
             raise Exception('You must provide at least one contact')
 
-        acct = db.Account.find_one(Account.account_id == accountId)
-        acct.account_name = args['accountName']
-        acct.account_number = args['accountNumber'].zfill(12)
-        acct.contacts = args['contacts']
-        acct.enabled = args['enabled']
-        acct.required_roles = args['requiredRoles']
-        acct.ad_group_base = args['adGroupBase']
+        class_properties = {from_camelcase(key): value for key, value in args['properties'].items()}
+        for prop in account_class.class_properties:
+            if prop['key'] not in class_properties:
+                raise InquisitorError('Missing required property {}'.format(prop))
 
-        db.session.add(acct)
-        db.session.commit()
+        account = account_class.get(accountId)
+        if account.account_type != args['accountType']:
+            raise InquisitorError('You cannot change the type of an account')
+
+        account.account_name = args['accountName']
+        account.contacts = args['contacts']
+        account.enabled = args['enabled']
+        account.required_roles = args['requiredRoles']
+        account.update(**args['properties'])
+        account.save()
+
         auditlog(event='account.update', actor=session['user'].username, data=args)
 
-        return self.make_response({'message': 'Object updated', 'account': acct.to_json(is_admin=True)})
+        return self.make_response({'message': 'Object updated', 'account': account.to_json(is_admin=True)})
 
     @rollback
     @check_auth(ROLE_ADMIN)
     def delete(self, accountId):
         """Delete an account"""
-        acct = db.Account.find_one(Account.account_id == accountId)
+        acct = BaseAccount.get(accountId)
         if not acct:
             raise Exception('No such account found')
 
