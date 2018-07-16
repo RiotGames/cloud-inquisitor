@@ -26,5 +26,9 @@ class IssueException(InquisitorError):
     """Exception class for issue types"""
 
 
+class AccountException(InquisitorError):
+    """Exception class for Account types"""
+
+
 class SchedulerError(InquisitorError):
     """Exception class for scheduler plugins"""

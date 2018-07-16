@@ -7,7 +7,7 @@ from flask_script import Option
 
 from cloud_inquisitor import get_aws_session, app_config, get_local_aws_session
 from cloud_inquisitor.plugins.commands import BaseCommand
-from cloud_inquisitor.schema import Account
+from cloud_inquisitor.plugins.types.accounts import BaseAccount
 
 
 class UserData(BaseCommand):
@@ -55,7 +55,7 @@ class UserData(BaseCommand):
                     print('you must set the kms_account_name setting in your configuration file to the name of the '
                           'account that is able to decrypt the user data')
                     return
-                acct = Account.get(kms_account_name)
+                acct = BaseAccount.get(kms_account_name)
                 if not acct:
                     print('You must add the {} account to the system for this to work'.format(kms_account_name))
                     return

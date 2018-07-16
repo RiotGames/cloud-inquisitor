@@ -9,18 +9,17 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.attributes import QueryableAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 
-from cloud_inquisitor.constants import ROLE_ADMIN, SchedulerStatus, AccountTypes
+from cloud_inquisitor.constants import SchedulerStatus
 from cloud_inquisitor.database import Model, db
 from cloud_inquisitor.exceptions import SchedulerError
 from cloud_inquisitor.utils import (
     isoformat,
     to_camelcase,
-    deprecated,
-    NotificationContact
+    deprecated
 )
 
 __all__ = (
-    'BaseModelMixin', 'Account', 'LogEvent', 'Email', 'ConfigNamespace', 'ConfigItem', 'Role', 'User',
+    'BaseModelMixin', 'LogEvent', 'Email', 'ConfigNamespace', 'ConfigItem', 'Role', 'User',
     'UserRole', 'AuditLog', 'SchedulerBatch', 'SchedulerJob', 'Template'
 )
 
@@ -72,157 +71,6 @@ class BaseModelMixin(object):
                     output[to_camelcase(attrName)] = value
 
         return output
-
-
-class Account(Model, BaseModelMixin):
-    """Account object class
-
-    Attributes:
-        account_id (int): Unique internal ID for the account
-        account_name (string): Name of the account
-        account_number (int): Unique AWS provided account number
-        contacts (:obj:`list` of :obj:`str`): List of contacts for the account
-        ad_group_base (str): The base name of the AD Groups used for SAML federation
-        enabled (bool): If True (default value) the account will be included in all collections, reports etc
-        required_roles (`list` of `str`): List of roles required to see information about the account
-    """
-    __tablename__ = 'accounts'
-
-    account_id = Column(Integer, primary_key=True, autoincrement=True)
-    account_name = Column(String(64), nullable=False, unique=True)
-    account_number = Column(String(12), nullable=False, unique=True)
-    account_type = Column(String(50), nullable=False, server_default=AccountTypes.AWS)
-    contacts = Column(JSON, nullable=False)
-    ad_group_base = Column(String(64), nullable=True)
-    enabled = Column(SmallInteger, nullable=False, default=1)
-    required_roles = Column(JSON, nullable=True)
-
-    def __init__(self, name=None, account_number=None, contacts=None, enabled=True, ad_group_base=None):
-        """
-
-        Args:
-            name (str): Name of the account
-            account_number (int): Unique account identifier
-            contacts (:obj:`list` of :obj:`dict`): List of contacts for the account
-            enabled (bool): If True (default value) the account will be included in all collections, reports etc.
-            ad_group_base (str): The base name of the AD Groups used for SAML federation
-        """
-        self.account_name = name
-        self.account_number = account_number
-        self.contacts = contacts
-        self.ad_group_base = ad_group_base
-        self.enabled = 1 if enabled else 0
-        self.required_roles = []
-
-    def __str__(self):
-        return self.account_name
-
-    def to_json(self, is_admin=False):
-        """Returns a dict representation of the object
-
-        Args:
-            is_admin (`bool`): If true, include information about the account that should be avaiable only to admins
-
-        Returns:
-            `dict`
-        """
-        if is_admin:
-            return {
-                'accountId': self.account_id,
-                'accountName': self.account_name,
-                'accountNumber': self.account_number,
-                'accountType': self.account_type,
-                'contacts': self.contacts,
-                'adGroupBase': self.ad_group_base,
-                'enabled': True if self.enabled == 1 else False,
-                'requiredRoles': self.required_roles
-            }
-        else:
-            return {
-                'accountId': self.account_id,
-                'accountName': self.account_name,
-                'contacts': self.contacts
-            }
-
-    def user_has_access(self, user):
-        """Check if a user has access to view information for the account
-
-        Args:
-            user (:obj:`User`): User object to check
-
-        Returns:
-            True if user has access to the account, else false
-        """
-        if ROLE_ADMIN in user.roles:
-            return True
-
-        # Non-admin users should only see active accounts
-        if self.enabled:
-            if not self.required_roles or len(self.required_roles) == 0:
-                return True
-
-            for role in self.required_roles:
-                if role in user.roles:
-                    return True
-
-        return False
-
-    def delete(self, auto_commit=True):
-        """Delete the account and all of its resources from the database
-
-        Args:
-             auto_commit (`bool`): Automatically commit the change to the database. Default: `True`
-
-        Returns:
-            `None`
-        """
-        log.info('Deleting account {}'.format(self.account_name))
-        db.session.delete(self)
-        if auto_commit:
-            db.session.commit()
-
-    def get_contacts(self):
-        return [NotificationContact(contact['type'], contact['value']) for contact in self.contacts]
-
-    @classmethod
-    def get(cls, account):
-        """Return an Account object by name
-
-        Args:
-            account (str): Name of the account to lookup
-
-        Returns:
-            Account object or None if not found
-        """
-        if isinstance(account, str):
-            return getattr(db, cls.__name__).find_one(
-                Account.account_name == account
-            )
-
-        elif isinstance(account, int):
-            return getattr(db, cls.__name__).find_one(
-                Account.account_number == account
-            )
-
-        elif isinstance(account, cls):
-            return account
-
-        else:
-            return None
-
-    @classmethod
-    def get_by_id(cls, account_id):
-        """Returns an Account object based on the account_id
-
-        Args:
-            account_id (int): ID of the account to fetch
-
-        Returns:
-            :obj:`Account`
-        """
-        return getattr(db, cls.__name__).find_one({
-            'account_id': account_id
-        })
 
 
 class LogEvent(Model, BaseModelMixin):
@@ -582,8 +430,7 @@ class AuditLog(Model, BaseModelMixin):
         Returns:
             `None`
         """
-        if 'auditlog' not in locals():
-            from cloud_inquisitor.log import auditlog
+        from cloud_inquisitor.log import auditlog
 
         auditlog(event=event, actor=actor, data=data)
 

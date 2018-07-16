@@ -5,7 +5,8 @@ from sqlalchemy.dialects.mysql import INTEGER as Integer, JSON
 from sqlalchemy.orm import foreign, relationship
 
 from cloud_inquisitor.database import db, Model
-from cloud_inquisitor.schema.base import BaseModelMixin, Account
+from cloud_inquisitor.schema import Account
+from cloud_inquisitor.schema.base import BaseModelMixin
 
 __all__ = ('Tag', 'ResourceType', 'ResourceProperty', 'Resource', 'ResourceMapping')
 
@@ -143,7 +144,7 @@ class Resource(Model, BaseModelMixin):
 
     resource_id = Column(String(256), primary_key=True)
     account_id = Column(
-        Integer,
+        Integer(unsigned=True),
         ForeignKey('accounts.account_id', name='fk_resource_account_id', ondelete='CASCADE'),
         index=True
     )
