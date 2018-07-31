@@ -1,5 +1,6 @@
 {
     "log_level": "INFO",
+    "test_mode": false,
 
     "use_user_data": APP_USE_USER_DATA,
     "kms_account_name": "APP_KMS_ACCOUNT_NAME",

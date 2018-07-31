@@ -20,13 +20,8 @@ def pre_test_checks():
     s = re.match('^mysql://.+/(.+)?$', cloud_inquisitor.app_config.database_uri, re.IGNORECASE)
     if not s:
         raise TestSetupError('Cannot locate Database URI in the app config!')
-    if not s.groups()[0] == 'cinq_throwaway_testdb':
-        raise TestSetupError(
-            '''STOP! Cinq tests will wipe certain tables of your database. 
-            Please do the following and try again:
-            1. Make a clone of your database and name it "cinq_throwaway_testdb"
-            2. Modify the "database_uri" attribute in ~/.cinq/config.json to match your change'''
-        )
+    if not cloud_inquisitor.app_config.test_mode:
+        raise TestSetupError('Test mode not enabled!')
 
 
 @pytest.fixture()
