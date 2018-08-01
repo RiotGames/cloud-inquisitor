@@ -32,7 +32,7 @@ install_files:
 	chown -R ${SUDO_USER}:${SUDO_USER} /var/log/cloud-inquisitor/
 	mkdir -p $(PATH_CINQ)
 	sudo git clone https://github.com/RiotGames/cinq-frontend.git $(PATH_FRONTEND)
-	sudo git clone https://github.com/RiotGames/cloud-inquisitor.git $(PATH_BACKEND)
+	sudo git clone https://github.com/HTTP500/cloud-inquisitor.git $(PATH_BACKEND)
 	chown -R ${SUDO_USER}:${SUDO_USER} $(PATH_CINQ)
 	cd $(PATH_FRONTEND); sudo -u ${SUDO_USER} -H npm i; sudo -u ${SUDO_USER} -H node_modules/.bin/gulp build.dev
 	sudo -u ${SUDO_USER} -H virtualenv --python=$(PATH_PYTHON) $(PATH_VENV)
