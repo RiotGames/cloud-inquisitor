@@ -6,6 +6,9 @@ matrix:
   - name: "Test with Python 3.5"
     python: "3.5"
     env: PATH_PYTHON=/home/travis/virtualenv/python3.5/bin/python
+  - name: "Test with Python 3.6"
+    python: "3.6"
+    env: PATH_PYTHON=/home/travis/virtualenv/python3.6/bin/python
 addons:
   apt:
     update: true
