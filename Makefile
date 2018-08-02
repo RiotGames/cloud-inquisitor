@@ -52,7 +52,7 @@ init_services:
 	service nginx restart
 
 init_cinq:
-	cd $(PATH_BACKEND)/backend; sudo -u ${SUDO_USER} -H $(PATH_VENV)/bin/pip3 install -e .; sudo -u ${SUDO_USER} -H $(PATH_VENV)/bin/cloud-inquisitor db upgrade
+	cd $(PATH_BACKEND)/backend; sudo -u ${SUDO_USER} -H $(PATH_VENV)/bin/pip3 install -e .; sudo -u ${SUDO_USER} -H $(PATH_VENV)/bin/cloud-inquisitor db upgrade; sudo -u ${SUDO_USER} -H $(PATH_VENV)/bin/cloud-inquisitor setup
 
 enable_test:
 	echo "WARNING: Running Cinq test will DESTROY your data in your database. Please make sure you run it on a dedicated test environment"
