@@ -1,6 +1,14 @@
 dist: trusty
 sudo: required
 language: python
+branches:
+  only:
+    - master
+    - staging
+    - /^dev-.*$/
+env:
+  global:
+    - PATH_BACKEND=.
 matrix:
   include:
   - name: "Test with Python 3.5"
