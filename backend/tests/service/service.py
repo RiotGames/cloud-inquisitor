@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 from cloud_inquisitor import get_plugin_by_name
 from cloud_inquisitor.config import apply_config
@@ -49,7 +50,11 @@ class CinqTestService(object):
         if service in service_lut.keys():
             if self.servers[service]:
                 self.stop_mocking_service(service)
-            self.servers[service] = subprocess.Popen(['moto_server', service, '-p{}'.format(port)])
+            self.servers[service] = subprocess.Popen([
+                '{}/bin/moto_server'.format(sys.base_exec_prefix),
+                service,
+                '-p{}'.format(port)
+            ])
 
     def start_mocking_services(self, *args):
         """

@@ -1,5 +1,5 @@
-from config import dbconfig
-from constants import NS_CINQ_TEST
+from cloud_inquisitor.config import dbconfig
+from cloud_inquisitor.constants import NS_CINQ_TEST
 from tests.libs.util_cinq import aws_get_client, run_aws_collector
 from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
 

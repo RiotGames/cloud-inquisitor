@@ -1,8 +1,9 @@
-from cloud_inquisitor.config import dbconfig
-from cloud_inquisitor.constants import NS_CINQ_TEST
+from cloud_inquisitor.config import dbconfig, DBCJSON
+from cloud_inquisitor.constants import NS_CINQ_TEST, NS_AUDITOR_REQUIRED_TAGS
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
 from tests.libs.util_cinq import aws_get_client, run_aws_collector
 from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
+from utils import NotificationContact
 
 
 def test_audit(cinq_test_service):
@@ -12,7 +13,10 @@ def test_audit(cinq_test_service):
     """
 
     # Prep
-    recipient = dbconfig.get('test_email', NS_CINQ_TEST)
+    recipient = NotificationContact(
+        type='email',
+        value=dbconfig.get('test_email', NS_CINQ_TEST)
+    )
     cinq_test_service.start_mocking_services('ec2')
     account = cinq_test_service.add_test_account(
         account_type='AWS',
@@ -22,6 +26,10 @@ def test_audit(cinq_test_service):
             'account_number': CINQ_TEST_ACCOUNT_NO
         }
     )
+
+    db_setting = dbconfig.get('audit_scope', NS_AUDITOR_REQUIRED_TAGS)
+    db_setting['enabled'] = ['aws_ec2_instance']
+    dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'audit_scope', DBCJSON(db_setting))
 
     # Add resources
     client = aws_get_client('ec2')
@@ -38,8 +46,7 @@ def test_audit(cinq_test_service):
     assert auditor._cinq_test_notices == {}
 
     # Test 2 --- Test if auditor will pick up non-compliant instances correctly
-
-    ''' Modify resources' property'''
+    ''' Modify resource property'''
     assert cinq_test_service.modify_resource(
         resource['Instances'][0]['InstanceId'],
         'launch_date',
@@ -47,7 +54,7 @@ def test_audit(cinq_test_service):
     ) is True
 
     auditor.run()
-    notice = auditor._cinq_test_notices
+    notices = auditor._cinq_test_notices
 
-    assert recipient in notice
-    assert auditor._cinq_test_notices[recipient]['issues'][0].instance_id == resource['Instances'][0]['InstanceId']
+    assert recipient in notices
+    assert notices[recipient]['not_fixed'][0]['resource'].resource_id == resource['Instances'][0]['InstanceId']
