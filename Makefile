@@ -88,7 +88,7 @@ enable_test:
 
 do_test:
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]
-	cd ${PATH_BACKEND}/backend/tests; sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest
+	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest ${PATH_BACKEND}/backend
 
 setup_localdev: install_libs install_services install_files init_services init_cinq
 
