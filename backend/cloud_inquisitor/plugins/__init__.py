@@ -14,7 +14,7 @@ from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import HTTP, UNAUTH_MESSAGE
 from cloud_inquisitor.json_utils import InquisitorJSONEncoder
 
-Worker = namedtuple('Worker', ('name', 'interval', ' entry_point '))
+Worker = namedtuple('Worker', ('name', 'interval', 'entry_point'))
 
 
 class CollectorType(Enum):
