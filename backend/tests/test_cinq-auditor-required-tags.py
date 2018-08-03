@@ -1,9 +1,9 @@
 from cloud_inquisitor.config import dbconfig, DBCJSON
 from cloud_inquisitor.constants import NS_CINQ_TEST, NS_AUDITOR_REQUIRED_TAGS
+from cloud_inquisitor.utils import NotificationContact
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
 from tests.libs.util_cinq import aws_get_client, run_aws_collector
 from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
-from utils import NotificationContact
 
 
 def test_audit(cinq_test_service):
