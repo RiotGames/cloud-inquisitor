@@ -6,7 +6,7 @@ setuptools.setup(
         'root': '..'
     },
 
-    entry_point s={
+    entry_points={
         'console_scripts': [
             'cloud-inquisitor = cloud_inquisitor.cli:cli'
         ],
