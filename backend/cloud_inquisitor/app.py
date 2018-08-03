@@ -162,8 +162,8 @@ def initialize():
             if info['name'] == 'commands':
                 continue
 
-            for ep in info['plugins']:
-                _cls = ep.load()
+            for entry_point in info['plugins']:
+                _cls = entry_point.load()
                 if hasattr(_cls, 'ns'):
                     ns_name = '{}: {}'.format(info['name'].capitalize(), _cls.name)
                     if not isinstance(_cls.options, abstractproperty):
@@ -275,8 +275,8 @@ class CINQFlask(Flask):
             `None`
         """
         try:
-            for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.types']['plugins']:
-                cls = ep.load()
+            for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.types']['plugins']:
+                cls = entry_point.load()
                 self.types[ResourceType.get(cls.resource_type).resource_type_id] = cls
                 logger.debug('Registered resource type {}'.format(cls.__name__))
         except SQLAlchemyError as ex:
@@ -289,8 +289,8 @@ class CINQFlask(Flask):
             `list` of `dict`
         """
         notifiers = {}
-        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.notifiers']['plugins']:
-            cls = ep.load()
+        for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.notifiers']['plugins']:
+            cls = entry_point.load()
             notifiers[cls.notifier_type] = cls.validation
 
         return notifiers
@@ -312,8 +312,8 @@ class CINQApi(Api):
         self.add_resource(LoginRedirectView, '/auth/login')
         self.add_resource(LogoutRedirectView, '/auth/logout')
 
-        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.auth']['plugins']:
-            cls = ep.load()
+        for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.auth']['plugins']:
+            cls = entry_point.load()
             app.available_auth_systems[cls.name] = cls
 
             if app.register_auth_system(cls):
@@ -328,8 +328,8 @@ class CINQApi(Api):
             logger.error('No auth systems active, please enable an auth system and then start the system again')
             sys.exit(-1)
 
-        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.views']['plugins']:
-            view = ep.load()
+        for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.views']['plugins']:
+            view = entry_point.load()
             self.add_resource(view, *view.URLS)
             app.register_menu_item(view.MENU_ITEMS)
 

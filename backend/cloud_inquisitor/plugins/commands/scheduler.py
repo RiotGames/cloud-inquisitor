@@ -31,8 +31,8 @@ class BaseSchedulerCommand(BaseCommand):
             `list` of :obj:`BaseScheduler`
         """
         if not self.scheduler_plugins:
-            for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.schedulers']['plugins']:
-                cls = ep.load()
+            for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.schedulers']['plugins']:
+                cls = entry_point.load()
                 self.scheduler_plugins[cls.__name__] = cls
                 if cls.__name__ == self.active_scheduler:
                     self.log.debug('Scheduler loaded: {} in module {}'.format(cls.__name__, cls.__module__))

@@ -32,9 +32,9 @@ def drop_db():
 
 
 # Load custom commands
-for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.commands']['plugins']:
-    cls = ep.load()
-    manager.add_command(ep.name, cls)
+for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.commands']['plugins']:
+    cls = entry_point.load()
+    manager.add_command(entry_point.name, cls)
 
 
 def cli():

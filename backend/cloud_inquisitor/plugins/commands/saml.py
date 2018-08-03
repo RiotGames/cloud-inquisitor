@@ -28,9 +28,9 @@ class ImportSAML(BaseCommand):
     )
 
     def run(self, **kwargs):
-        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.auth']['plugins']:
-            if ep.module_name == 'cinq_auth_onelogin_saml':
-                cls = ep.load()
+        for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.auth']['plugins']:
+            if entry_point.module_name == 'cinq_auth_onelogin_saml':
+                cls = entry_point.load()
                 config_namespace = cls.ns
                 break
         else:

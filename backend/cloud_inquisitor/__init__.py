@@ -128,5 +128,5 @@ for name, ns in PLUGIN_NAMESPACES.items():
         'plugins': []
     }
 
-    for ep in iter_entry_points(ns):
-        CINQ_PLUGINS[ns]['plugins'].append(ep)
+    for entry_point in iter_entry_points(ns):
+        CINQ_PLUGINS[ns]['plugins'].append(entry_point)

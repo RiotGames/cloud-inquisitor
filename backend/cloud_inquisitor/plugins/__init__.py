@@ -14,7 +14,7 @@ from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import HTTP, UNAUTH_MESSAGE
 from cloud_inquisitor.json_utils import InquisitorJSONEncoder
 
-Worker = namedtuple('Worker', ('name', 'interval', 'ep'))
+Worker = namedtuple('Worker', ('name', 'interval', ' entry_point '))
 
 
 class CollectorType(Enum):
@@ -158,33 +158,33 @@ class BaseScheduler(BasePlugin, ABC):
         Returns:
             `None`
         """
-        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.collectors']['plugins']:
-            cls = ep.load()
+        for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.collectors']['plugins']:
+            cls = entry_point.load()
             if cls.enabled():
                 self.log.debug('Collector loaded: {} in module {}'.format(cls.__name__, cls.__module__))
                 self.collectors.setdefault(cls.type, []).append(Worker(
                     cls.name,
                     cls.interval,
                     {
-                        'name': ep.name,
-                        'module_name': ep.module_name,
-                        'attrs': ep.attrs
+                        'name': entry_point.name,
+                        'module_name': entry_point.module_name,
+                        'attrs': entry_point.attrs
                     }
                 ))
             else:
                 self.log.debug('Collector disabled: {} in module {}'.format(cls.__name__, cls.__module__))
 
-        for ep in CINQ_PLUGINS['cloud_inquisitor.plugins.auditors']['plugins']:
-            cls = ep.load()
+        for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.auditors']['plugins']:
+            cls = entry_point.load()
             if cls.enabled():
                 self.log.debug('Auditor loaded: {} in module {}'.format(cls.__name__, cls.__module__))
                 self.auditors.append(Worker(
                     cls.name,
                     cls.interval,
                     {
-                        'name': ep.name,
-                        'module_name': ep.module_name,
-                        'attrs': ep.attrs
+                        'name': entry_point.name,
+                        'module_name': entry_point.module_name,
+                        'attrs': entry_point.attrs
                     }
                 ))
             else:
