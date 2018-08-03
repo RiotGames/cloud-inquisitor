@@ -42,8 +42,8 @@ class MetaData(BaseView):
         })
 
     def __get_account_types(self):
-        for ep in CINQ_PLUGINS[PLUGIN_NAMESPACES['accounts']]['plugins']:
-            cls = ep.load()
+        for entry_point in CINQ_PLUGINS[PLUGIN_NAMESPACES['accounts']]['plugins']:
+            cls = entry_point.load()
             yield {
                 'name': cls.account_type,
                 'properties': [

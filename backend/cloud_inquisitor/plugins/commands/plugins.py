@@ -23,7 +23,7 @@ class ListPlugins(BaseCommand):
         self.log.info('--- List of Plugins ---')
         for ns, info in CINQ_PLUGINS.items():
             self.log.info('  {} Plugins:'.format(info['name'].capitalize()))
-            for ep in info['plugins']:
-                self.log.info('    {} from {}'.format(ep.attrs[0], ep.module_name))
+            for entry_point in info['plugins']:
+                self.log.info('    {} from {}'.format(entry_point.attrs[0], entry_point.module_name))
             self.log.info('')
         self.log.info('--- End list of Plugins ---')
