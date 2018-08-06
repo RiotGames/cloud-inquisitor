@@ -3,6 +3,7 @@ from cloud_inquisitor.constants import NS_CINQ_TEST
 from cloud_inquisitor.utils import NotificationContact
 from tests.libs.cinq_test_cls import MockEBSAuditor
 from tests.libs.util_cinq import run_aws_collector, aws_get_client
+from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
 
 
 def test_audit(cinq_test_service):
@@ -14,6 +15,14 @@ def test_audit(cinq_test_service):
     # Prep
     recipient = NotificationContact('email', dbconfig.get('test_email', NS_CINQ_TEST))
     cinq_test_service.start_mocking_services('ec2')
+    account = cinq_test_service.add_test_account(
+        account_type='AWS',
+        account_name=CINQ_TEST_ACCOUNT_NAME,
+        contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
+        properties={
+            'account_number': CINQ_TEST_ACCOUNT_NO
+        }
+    )
 
     # Add resources
     client = aws_get_client('ec2')
@@ -23,7 +32,7 @@ def test_audit(cinq_test_service):
     )
 
     # Collect resource
-    run_aws_collector(cinq_test_service.test_account)
+    run_aws_collector(account)
 
     # Start auditor
     auditor = MockEBSAuditor()
@@ -32,6 +41,6 @@ def test_audit(cinq_test_service):
     auditor.run()
     notice = auditor._cinq_test_notices
 
-    assert notice[recipient]['issues'][0].volume_id.value == resource['VolumeId']
+    assert notice[recipient][0].volume_id.value == resource['VolumeId']
 
     # TODO: More tests

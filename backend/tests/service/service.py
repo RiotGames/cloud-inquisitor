@@ -1,21 +1,20 @@
 import subprocess
+import sys
 
-from cloud_inquisitor.config import dbconfig, apply_config
-from cloud_inquisitor.constants import NS_CINQ_TEST
+from cloud_inquisitor import get_plugin_by_name
+from cloud_inquisitor.config import apply_config
+from cloud_inquisitor.constants import PLUGIN_NAMESPACES
 from cloud_inquisitor.database import db
 from cloud_inquisitor.schema import ConfigItem, Issue, Account, Resource
 from tests.libs.exceptions import TestSetupError
 from tests.libs.util_db import empty_tables, has_resource, get_resource, modify_resource
 from tests.libs.util_misc import verify
 from tests.libs.util_mocks import service_lut
-from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
 
 
 class CinqTestService(object):
     def __init__(self):
         self.default_dbconfig = [ns.to_json() for ns in db.ConfigNamespace.find()]
-
-        self.test_account = None
 
         self.scheduler = None
         self.api_server = None
@@ -51,7 +50,11 @@ class CinqTestService(object):
         if service in service_lut.keys():
             if self.servers[service]:
                 self.stop_mocking_service(service)
-            self.servers[service] = subprocess.Popen(['moto_server', service, '-p{}'.format(port)])
+            self.servers[service] = subprocess.Popen([
+                '{}/bin/moto_server'.format(sys.base_exec_prefix),
+                service,
+                '-p{}'.format(port)
+            ])
 
     def start_mocking_services(self, *args):
         """
@@ -94,22 +97,30 @@ class CinqTestService(object):
 
     ''' DB related routines '''
 
-    def add_test_account(self, required_roles=None, **kwargs):
-        self.test_account = Account(**kwargs)
-        self.test_account.required_roles = required_roles if required_roles else []
+    def add_test_account(
+            self, account_type, account_name, contacts=None, enabled=True, required_groups=None, properties=None
+    ):
+        if not contacts:
+            contacts = []
+        if not required_groups:
+            required_groups = []
+        if not properties:
+            properties = {}
 
-        db.session.add(self.test_account)
-        db.session.commit()
+        account_class = get_plugin_by_name(PLUGIN_NAMESPACES['accounts'], account_type)
+        return account_class(
+            account_class.create(
+                account_name=account_name,
+                contacts=contacts,
+                enabled=enabled,
+                required_roles=required_groups,
+                properties=properties,
+                auto_commit=True
+            )
+        )
 
     def reset_db_data(self):
         empty_tables(Account, Issue, Resource)
-        self.add_test_account(
-            name=CINQ_TEST_ACCOUNT_NAME,
-            account_number=CINQ_TEST_ACCOUNT_NO,
-            contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
-            enabled=True,
-            ad_group_base=None
-        )
 
     def reset_db_config(self):
         empty_tables(ConfigItem)

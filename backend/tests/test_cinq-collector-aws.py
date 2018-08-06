@@ -1,4 +1,7 @@
+from cloud_inquisitor.config import dbconfig
+from cloud_inquisitor.constants import NS_CINQ_TEST
 from tests.libs.util_cinq import aws_get_client, run_aws_collector
+from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
 
 
 def test_collect(cinq_test_service):
@@ -9,13 +12,21 @@ def test_collect(cinq_test_service):
 
     # Prep
     cinq_test_service.start_mocking_services('ec2')
+    account = cinq_test_service.add_test_account(
+        account_type='AWS',
+        account_name=CINQ_TEST_ACCOUNT_NAME,
+        contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
+        properties={
+            'account_number': CINQ_TEST_ACCOUNT_NO
+        }
+    )
 
     # Add resources
     client = aws_get_client('ec2')
     resource = client.run_instances(ImageId='i-10000', MinCount=1, MaxCount=1)
 
     # Start collector
-    run_aws_collector(cinq_test_service.test_account)
+    run_aws_collector(account)
 
     # verify
     assert cinq_test_service.has_resource('non-exist-id') is False
