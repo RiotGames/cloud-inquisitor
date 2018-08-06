@@ -41,6 +41,6 @@ def test_audit(cinq_test_service):
     auditor.run()
     notice = auditor._cinq_test_notices
 
-    assert notice[recipient]['issues'][0].volume_id.value == resource['VolumeId']
+    assert notice[recipient][0].volume_id.value == resource['VolumeId']
 
     # TODO: More tests
