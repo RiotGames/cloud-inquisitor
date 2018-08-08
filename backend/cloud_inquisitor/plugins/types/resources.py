@@ -25,6 +25,7 @@ from cloud_inquisitor.utils import (
 
 class BaseResource(ABC):
     """Base type object for resource objects"""
+
     def __init__(self, resource):
         self.resource = resource
         self.log = logging.getLogger(self.__class__.__module__)
@@ -102,6 +103,7 @@ class BaseResource(ABC):
     @abstractmethod
     def resource_name(self):
         """Human friendly name of the resource type"""
+
     # endregion
 
     @abstractmethod
@@ -278,6 +280,7 @@ class BaseResource(ABC):
         qry = qry.offset((page - 1) * limit if page > 1 else 0)
 
         return total, [cls(x) for x in qry.all()]
+
     # endregion
 
     # region Instance methods
@@ -574,6 +577,7 @@ class EC2Instance(BaseResource):
                 func.JSON_CONTAINS(ResourceProperty.value, func.JSON_QUOTE(self.id))
             ).all()
         ]
+
     # endregion
 
     def update(self, data):
@@ -627,7 +631,6 @@ class EC2Instance(BaseResource):
 
         return self.id
 
-
     @classmethod
     def search_by_age(cls, *, limit=100, page=1, accounts=None, locations=None, age=720,
                       properties=None, include_disabled=False):
@@ -659,7 +662,7 @@ class EC2Instance(BaseResource):
         age_alias = aliased(ResourceProperty)
         qry = (
             qry.join(age_alias, Resource.resource_id == age_alias.resource_id)
-            .filter(
+                .filter(
                 age_alias.name == 'launch_date',
                 cast(func.JSON_UNQUOTE(age_alias.value), DATETIME) < datetime.now() - timedelta(days=age)
             )
@@ -710,6 +713,7 @@ class BeanStalk(BaseResource):
     def cname(self):
         """Returns the DNS CNAME of the Elastic BeanStalk"""
         return self.get_property('cname').value
+
     # endregion
 
     def update(self, data):
@@ -761,6 +765,7 @@ class CloudFrontDist(BaseResource):
             `str`
         """
         return self.get_property('type').value
+
     # endregion
 
     def update(self, data):
@@ -928,6 +933,7 @@ class EBSSnapshot(BaseResource):
             `str`
         """
         return self.get_property('volume_size').value
+
     # endregion
 
     def update(self, data):
@@ -1045,6 +1051,7 @@ class EBSVolume(BaseResource):
             `str`
         """
         return self.get_property('volume_type').value
+
     # endregion
 
     def update(self, data):
@@ -1138,6 +1145,7 @@ class AMI(BaseResource):
             `str`
         """
         return self.get_property('state').value
+
     # endregion
 
     def update(self, data):
@@ -1214,6 +1222,7 @@ class DNSZone(BaseResource):
     @property
     def records(self):
         return [DNSRecord(res) for res in self.children]
+
     # endregion
 
     # region Instance methods
@@ -1326,6 +1335,7 @@ class DNSRecord(BaseResource):
             :obj:`DNSZone`
         """
         return DNSZone(self.parents[0])
+
     # endregion
 
     def update(self, data):
