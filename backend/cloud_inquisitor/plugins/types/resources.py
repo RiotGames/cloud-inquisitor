@@ -791,6 +791,16 @@ class S3Bucket(BaseResource):
 
     # region Object properties
     @property
+    def acl(self):
+        """Returns the S3 Legacy Bucket Permissions.
+
+        Returns:
+            `dict`
+
+        """
+        return self.get_property('acl').value
+
+    @property
     def creation_date(self):
         """Returns the date and time the bucket was created.
 
@@ -798,10 +808,47 @@ class S3Bucket(BaseResource):
             `str`
         """
         return self.get_property('creation_date').value
+
+    @property
+    def lifecycle_config(self):
+        """Returns the bucket lifecycle configuration.
+
+        Returns:
+            `dict`
+
+        """
+        return self.get_property('lifecycle_config').value
+
+    @property
+    def bucket_policy(self):
+        """ Returns the S3 Bucket Policy applied if any
+
+        Returns:
+            `json`
+
+        """
+        return self.get_property('bucket_policy').value
+
+    def website_enabled(self):
+        """ Returns whether website hosting is enabled on the bucket
+
+        Returns:
+            `bool`
+
+
+        """
+        return self.get_property('website_enabled').value
+
     # endregion
 
-    def update(self, data):
-        updated = False
+    def update(self, data, properties):
+
+        updated = self.set_property('location', properties['location'])
+        updated |= self.set_property('acl', properties['acl'])
+        updated |= self.set_property('creation_date', data.creation_date)
+        updated |= self.set_property('lifecycle_config', properties['lifecycle_config'])
+        updated |= self.set_property('bucket_policy', properties['bucket_policy'])
+        updated |= self.set_property('website_enabled', properties['website_enabled'])
 
         with suppress(ClientError):
             tags = {t['Key']: t['Value'] for t in data.Tagging().tag_set}
