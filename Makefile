@@ -69,9 +69,8 @@ init_services:
 	service nginx restart
 
 init_cinq:
-
-	# Target is not backend means this is a build job for plugins, therefore we need to pip install plugin as well
-	if [ "${PATH_BACKEND}" != "." ]; then \
+	# If setup.py exists in the current directory, we are probably testing against a plugin. In this case we need to pip install it
+	if [ -f ./setup.py ]; then \
 		sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -e .; \
 	fi
 
