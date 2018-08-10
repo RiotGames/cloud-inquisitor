@@ -17,7 +17,7 @@ class MetaData(BaseView):
     @check_auth(ROLE_USER)
     def get(self):
         _, accts = BaseAccount.search(account_ids=session['accounts'])
-        accounts = [acct.to_json(is_admin=ROLE_ADMIN in session['user'].roles) for acct in accts]
+        accounts = [acct.to_dict(is_admin=ROLE_ADMIN in session['user'].roles) for acct in accts]
         account_types = list(self.__get_account_types())
 
         menu_items = {}
@@ -37,7 +37,7 @@ class MetaData(BaseView):
             'menuItems': menu_items,
             'accountTypes': account_types,
             'resourceTypes': {v.resource_name: k for k, v in current_app.types.items()},
-            'currentUser': session['user'].to_json(),
+            'currentUser': session['user'].to_dict(),
             'notifiers': [{'type': k, 'validation': v} for k, v in current_app.notifiers.items()],
         })
 

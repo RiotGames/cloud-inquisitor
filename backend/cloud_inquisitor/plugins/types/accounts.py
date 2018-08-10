@@ -87,7 +87,7 @@ class BaseAccount(ABC):
             self.log.exception('Failed deleting account: {}'.format(self.id))
             db.session.rollback()
 
-    def to_json(self, is_admin=False):
+    def to_dict(self, is_admin=False):
         """Returns a dict representation of the object
 
         Args:

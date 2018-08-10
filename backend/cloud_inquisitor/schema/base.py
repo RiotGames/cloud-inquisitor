@@ -34,7 +34,7 @@ class BaseModelMixin(object):
     def __tablename__(cls):
         return cls.__name__.lower()
 
-    def to_json(self):
+    def to_dict(self):
         """Exports the object to a JSON friendly dict
 
         Returns:
@@ -53,11 +53,11 @@ class BaseModelMixin(object):
             if issubclass(type(attr), QueryableAttribute):
                 # List of Model, BaseModelMixin objects (one-to-many relationship)
                 if issubclass(value_class, InstrumentedList):
-                    output[to_camelcase(attrName)] = [x.to_json() for x in value]
+                    output[to_camelcase(attrName)] = [x.to_dict() for x in value]
 
                 # Model, BaseModelMixin object (one-to-one relationship)
                 elif issubclass(value_class, Model):
-                    output[to_camelcase(attrName)] = value.to_json()
+                    output[to_camelcase(attrName)] = value.to_dict()
 
                 # Datetime object
                 elif isinstance(value, datetime):
@@ -132,7 +132,7 @@ class Email(Model, BaseModelMixin):
     message_html = Column(Text)
     message_text = Column(Text)
 
-    def to_json(self, include_body=False):
+    def to_dict(self, include_body=False):
         """Exports the object to a JSON friendly dict
 
         Args:
@@ -367,7 +367,7 @@ class User(Model, BaseModelMixin):
 
         return user
 
-    def to_json(self):
+    def to_dict(self):
         """Exports the object to a JSON friendly dict
 
         Returns:

@@ -14,7 +14,7 @@ from tests.libs.util_mocks import service_lut
 
 class CinqTestService(object):
     def __init__(self):
-        self.default_dbconfig = [ns.to_json() for ns in db.ConfigNamespace.find()]
+        self.default_dbconfig = [ns.to_dict() for ns in db.ConfigNamespace.find()]
 
         self.scheduler = None
         self.api_server = None

@@ -5,7 +5,7 @@ Revises: 1edcdfbc7780
 Create Date: 2018-07-10 13:26:01.588708
 
 """
-from json import dumps as to_json
+from json import dumps as to_dict
 
 from alembic import op
 import sqlalchemy as sa
@@ -114,7 +114,7 @@ def migrate_data():
                     {
                         'id': acct['account_id'],
                         'name': 'account_number',
-                        'value': to_json(acct['account_number'])
+                        'value': to_dict(acct['account_number'])
                     }
                 )
 
@@ -123,7 +123,7 @@ def migrate_data():
                     {
                         'id': acct['account_id'],
                         'name': 'ad_group_base',
-                        'value': to_json(acct['ad_group_base'] or '')
+                        'value': to_dict(acct['ad_group_base'] or '')
                     }
                 )
                 print('Migrated {} account {}'.format(acct['account_type'], acct['account_name']))

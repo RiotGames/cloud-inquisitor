@@ -84,7 +84,7 @@ class BaseIssue(ABC):
             self.log.exception('Failed deleting issue: {}'.format(self.id))
             db.session.rollback()
 
-    def to_json(self):
+    def to_dict(self):
         return {
             'issueType': self.issue.issue_type_id,
             'issueId': self.id,
@@ -399,8 +399,8 @@ class RequiredTagsIssue(BaseIssue):
         else:
             raise ValueError('Invalid state: {}'.format(self.state))
 
-    def to_json(self):
-        data = super().to_json()
+    def to_dict(self):
+        data = super().to_dict()
         data['resource'] = self.resource
 
         return data
@@ -588,8 +588,8 @@ class EBSVolumeAuditIssue(BaseIssue):
 
         return updated
 
-    def to_json(self):
-        data = super().to_json()
+    def to_dict(self):
+        data = super().to_dict()
         data['volume'] = self.volume
 
         return data

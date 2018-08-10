@@ -151,7 +151,7 @@ class Search(BaseView):
         results = []
         for resource in qry.all():
             cls = current_app.types[resource.resource_type_id]
-            data = cls(resource).to_json()
+            data = cls(resource).to_dict()
             results.append(data)
 
         return self.make_response({

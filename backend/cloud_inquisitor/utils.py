@@ -44,7 +44,7 @@ class MenuItem(object):
         self.args = args or {}
         self.order = order
 
-    def to_json(self):
+    def to_dict(self):
         return {
             'group': self.group,
             'name': self.name,

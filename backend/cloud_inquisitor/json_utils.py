@@ -17,7 +17,7 @@ log = logging.getLogger('JSON')
 class InquisitorJSONEncoder(JSONEncoder):
     """Custom JSON encoding function.
 
-    This class will check if the object being serialized has a function called `to_json()`, and call it if available,
+    This class will check if the object being serialized has a function called `to_dict()`, and call it if available,
     as well as adding a type-hint value to the output dict (`__type` key/value pair)
     """
 
@@ -36,9 +36,9 @@ class InquisitorJSONEncoder(JSONEncoder):
         if issubclass(obj.__class__, Enum.__class__):
             return obj.value
 
-        to_json = getattr(obj, 'to_json', None)
-        if to_json:
-            out = obj.to_json()
+        to_dict = getattr(obj, 'to_dict', None)
+        if to_dict:
+            out = obj.to_dict()
             if issubclass(obj.__class__, Model):
                 out.update({'__type': obj.__class__.__name__})
 

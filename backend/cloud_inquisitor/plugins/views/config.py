@@ -257,7 +257,7 @@ class ConfigImportExport(BaseView):
     @rollback
     @check_auth(ROLE_ADMIN)
     def get(self):
-        out = [ns.to_json() for ns in db.ConfigNamespace.find()]
+        out = [ns.to_dict() for ns in db.ConfigNamespace.find()]
 
         auditlog(event='config.export', actor=session['user'].username, data={})
         return Response(

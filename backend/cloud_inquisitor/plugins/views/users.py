@@ -48,7 +48,7 @@ class UserList(BaseView):
 
         users = qry.all()
         return self.make_response({
-            'users': [x.to_json() for x in users],
+            'users': [x.to_dict() for x in users],
             'userCount': total,
             'authSystems': list(current_app.available_auth_systems.keys()),
             'activeAuthSystem': current_app.active_auth_system.name
@@ -146,7 +146,7 @@ class UserDetails(BaseView):
             return self.make_response('Unable to find the user requested, might have been removed', HTTP.NOT_FOUND)
 
         return self.make_response({
-            'user': user.to_json(),
+            'user': user.to_dict(),
             'roles': roles
         }, HTTP.OK)
 
@@ -234,6 +234,6 @@ class PasswordReset(BaseView):
         db.session.commit()
 
         return self.make_response({
-            'user': user.to_json(),
+            'user': user.to_dict(),
             'newPassword': new_pass if not args['password'] else None
         }, HTTP.OK)

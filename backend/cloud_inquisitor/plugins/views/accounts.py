@@ -50,7 +50,7 @@ class AccountList(BaseView):
         if accounts:
             return self.make_response({
                 'message': None,
-                'accounts': [x.to_json(is_admin=ROLE_ADMIN in session['user'].roles or False) for x in accounts]
+                'accounts': [x.to_dict(is_admin=ROLE_ADMIN in session['user'].roles or False) for x in accounts]
             })
         else:
             return self.make_response({
@@ -120,7 +120,7 @@ class AccountDetail(BaseView):
         if account:
             return self.make_response({
                 'message': None,
-                'account': account.to_json(is_admin=True)
+                'account': account.to_dict(is_admin=True)
             })
         else:
             return self.make_response({
@@ -170,7 +170,7 @@ class AccountDetail(BaseView):
 
         auditlog(event='account.update', actor=session['user'].username, data=args)
 
-        return self.make_response({'message': 'Object updated', 'account': account.to_json(is_admin=True)})
+        return self.make_response({'message': 'Object updated', 'account': account.to_dict(is_admin=True)})
 
     @rollback
     @check_auth(ROLE_ADMIN)
@@ -192,7 +192,7 @@ class AccountImportExport(BaseView):
     @rollback
     @check_auth(ROLE_ADMIN)
     def get(self):
-        out = [ns.to_json(is_admin=True) for ns in db.Account.find()]
+        out = [ns.to_dict(is_admin=True) for ns in db.Account.find()]
 
         auditlog(event='account.export', actor=session['user'].username, data={})
         return Response(

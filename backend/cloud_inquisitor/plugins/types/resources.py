@@ -483,7 +483,7 @@ class BaseResource(ABC):
             self.log.exception('Failed deleting resource: {}'.format(self.id))
             db.session.rollback()
 
-    def to_json(self):
+    def to_dict(self):
         """Return a `dict` representation of the resource, including all properties and tags
 
         Returns:
@@ -674,13 +674,13 @@ class EC2Instance(BaseResource):
 
         return total, [cls(x) for x in qry.all()]
 
-    def to_json(self, with_volumes=True):
-        """Augment the base `to_json` function, adding information about volumes
+    def to_dict(self, with_volumes=True):
+        """Augment the base `to_dict` function, adding information about volumes
 
         Returns:
             `dict`
         """
-        data = super().to_json()
+        data = super().to_dict()
         if with_volumes:
             data['volumes'] = [
                 {
@@ -1275,8 +1275,8 @@ class DNSZone(BaseResource):
 
         return updated
 
-    def to_json(self, with_records=True):
-        data = super().to_json()
+    def to_dict(self, with_records=True):
+        data = super().to_dict()
         if with_records:
             data['recordCount'] = len(self.records)
             data['records'] = self.records

@@ -75,7 +75,7 @@ class EmailGet(BaseView):
             }, HTTP.NOT_FOUND)
 
         return self.make_response({
-            'email': email.to_json(True)
+            'email': email.to_dict(True)
         })
 
     @rollback
