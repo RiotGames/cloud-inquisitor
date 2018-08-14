@@ -211,7 +211,7 @@ class BaseResource(ABC):
         return {res.resource_id: cls(res) for res in qry.all()}
 
     @classmethod
-    def search(cls, *, limit=100, page=1, accounts=None, locations=None,
+    def search(cls, *, limit=100, page=1, accounts=None, locations=None, resources=None,
                properties=None, include_disabled=False, return_query=False):
         """Search for resources based on the provided filters. If `return_query` a sub-class of `sqlalchemy.orm.Query`
         is returned instead of the resource list.
@@ -221,6 +221,7 @@ class BaseResource(ABC):
             page (`int`): Pagination offset for results. Default: 1
             accounts (`list` of `int`): A list of account id's to limit the returned resources to
             locations (`list` of `str`): A list of locations as strings to limit the search for
+            resources ('list' of `str`): A list of resource_ids
             properties (`dict`): A `dict` containing property name and value pairs. Values can be either a str or a list
             of strings, in which case a boolean OR search is performed on the values
             include_disabled (`bool`): Include resources from disabled accounts. Default: False
@@ -246,6 +247,9 @@ class BaseResource(ABC):
 
         if locations:
             qry = qry.filter(Resource.location.in_(locations))
+
+        if resources:
+            qry = qry.filter(Resource.resource_id.in_(resources))
 
         if properties:
             for prop_name, value in properties.items():
@@ -835,10 +839,10 @@ class S3Bucket(BaseResource):
         return self.get_property('bucket_policy').value
 
     def website_enabled(self):
-        """ Returns whether website hosting is enabled on the bucket
+        """ Returns state of website hosting on the bucket
 
         Returns:
-            `bool`
+            `string`
 
 
         """
