@@ -34,6 +34,7 @@ class CinqTestService(object):
         """
         Act as the setup function before calling each test_xxx()
         """
+        self.reset_db_account()
         self.reset_db_data()
 
     def shut_down(self):
@@ -120,7 +121,10 @@ class CinqTestService(object):
         )
 
     def reset_db_data(self):
-        empty_tables(Account, Issue, Resource)
+        empty_tables(Issue, Resource)
+
+    def reset_db_account(self):
+        empty_tables(Account)
 
     def reset_db_config(self):
         empty_tables(ConfigItem)

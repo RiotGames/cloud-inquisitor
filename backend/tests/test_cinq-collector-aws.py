@@ -1,6 +1,6 @@
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_CINQ_TEST
-from tests.libs.util_cinq import aws_get_client, run_aws_collector
+from tests.libs.util_cinq import aws_get_client, collect_resources
 from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
 
 
@@ -26,7 +26,7 @@ def test_collect(cinq_test_service):
     resource = client.run_instances(ImageId='i-10000', MinCount=1, MaxCount=1)
 
     # Start collector
-    run_aws_collector(account)
+    collect_resources(account=account, resource_types=['ec2'])
 
     # verify
     assert cinq_test_service.has_resource('non-exist-id') is False

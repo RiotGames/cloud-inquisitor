@@ -19,8 +19,8 @@ from cloud_inquisitor.utils import (
     to_utc_date,
     is_truthy,
     to_camelcase,
-    NotificationContact
-)
+    NotificationContact,
+    parse_date)
 
 
 class BaseResource(ABC):
@@ -518,7 +518,7 @@ class EC2Instance(BaseResource):
         Returns:
             `datetime`
         """
-        return parser.parse(self.get_property('launch_date').value)
+        return parse_date(self.get_property('launch_date').value)
 
     @property
     def state(self):
@@ -810,13 +810,13 @@ class S3Bucket(BaseResource):
         return self.get_property('acl').value
 
     @property
-    def creation_date(self):
+    def launch_date(self):
         """Returns the date and time the bucket was created.
 
         Returns:
             `str`
         """
-        return self.get_property('creation_date').value
+        return parse_date(self.get_property('creation_date').value)
 
     @property
     def lifecycle_config(self):
