@@ -1,3 +1,5 @@
+import datetime
+
 from cloud_inquisitor.config import dbconfig, DBCJSON
 from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
@@ -18,7 +20,22 @@ def case_1(cinq_test_service, account, recipient):
     # Initialize auditor
     auditor = MockRequiredTagsAuditor()
 
-    # Test 1 --- Test if auditor can pick up non-compliant resources correctly
+    # Test 1 --- Test if auditor respect grace period settings
+    cinq_test_service.modify_resource(
+        resource['Name'],
+        'creation_date',
+        datetime.datetime.utcnow().isoformat()
+    )
+    auditor.run()
+    assert auditor._cinq_test_notices == {}
+
+    # Test 2 --- Test if auditor can pick up non-compliant resources correctly
+    cinq_test_service.modify_resource(
+        resource['Name'],
+        'creation_date',
+        '2000-01-01T00:00:00'
+    )
+
     auditor.run()
     notices = auditor._cinq_test_notices
 

@@ -5,7 +5,6 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 
 from botocore.exceptions import ClientError
-from dateutil import parser
 from flask import session
 from sqlalchemy import func, or_, and_, cast, DATETIME
 from sqlalchemy.exc import SQLAlchemyError
@@ -20,7 +19,8 @@ from cloud_inquisitor.utils import (
     is_truthy,
     to_camelcase,
     NotificationContact,
-    parse_date)
+    parse_date
+)
 
 
 class BaseResource(ABC):
