@@ -7,7 +7,7 @@ from cloud_inquisitor.constants import PLUGIN_NAMESPACES
 from cloud_inquisitor.database import db
 from cloud_inquisitor.schema import ConfigItem, Issue, Account, Resource
 from tests.libs.exceptions import TestSetupError
-from tests.libs.util_db import empty_tables, has_resource, get_resource, modify_resource
+from tests.libs.util_db import empty_tables, has_resource, get_resource, modify_resource, modify_issue
 from tests.libs.util_misc import verify
 from tests.libs.util_mocks import service_lut
 
@@ -25,6 +25,7 @@ class CinqTestService(object):
         self.empty_tables = empty_tables
         self.has_resource = has_resource
         self.get_resource = get_resource
+        self.modify_issue = modify_issue
         self.modify_resource = modify_resource
         self.verify = verify
 

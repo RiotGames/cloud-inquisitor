@@ -32,6 +32,15 @@ NS_AUDITOR_IAM = 'auditor_iam'
 NS_AUDITOR_REQUIRED_TAGS = 'auditor_rfc26'
 NS_AUDITOR_VPC_FLOW_LOGS = 'auditor_vpc_flow_logs'
 
+
+class AuditActions:
+    IGNORE = 'IGNORE'
+    FIX = 'FIX'
+    ALERT = 'ALERT'
+    STOP = 'STOP'
+    REMOVE = 'REMOVE'
+
+
 # Collectors
 NS_COLLECTOR_EC2 = 'collector_ec2'
 
