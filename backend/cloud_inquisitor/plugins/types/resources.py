@@ -510,6 +510,18 @@ class EC2Instance(BaseResource):
     resource_type = 'aws_ec2_instance'
     resource_name = 'EC2 Instance'
 
+    # region Cinq Object properties
+    @property
+    def resource_creation_date(self):
+        """Returns the date and time the bucket was created.
+
+        Returns:
+            `datetime`
+        """
+        return self.launch_date
+
+    # endregion
+
     # region Object properties
     @property
     def launch_date(self):
@@ -798,6 +810,18 @@ class S3Bucket(BaseResource):
     resource_type = 'aws_s3_bucket'
     resource_name = 'S3 Bucket'
 
+    # region Cinq Object properties
+    @property
+    def resource_creation_date(self):
+        """Returns the date and time the bucket was created.
+
+        Returns:
+            `datetime`
+        """
+        return self.creation_date
+
+    # endregion
+
     # region Object properties
     @property
     def acl(self):
@@ -810,11 +834,11 @@ class S3Bucket(BaseResource):
         return self.get_property('acl').value
 
     @property
-    def launch_date(self):
+    def creation_date(self):
         """Returns the date and time the bucket was created.
 
         Returns:
-            `str`
+            `datetime`
         """
         return parse_date(self.get_property('creation_date').value)
 

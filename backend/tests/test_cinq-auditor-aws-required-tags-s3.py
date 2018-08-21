@@ -14,7 +14,7 @@ def case_1(cinq_test_service, account, recipient):
     3. Auditor can remove an empty bucket successfully when the "REMOVE" criteria are met
     """
 
-    bucket_name = dbconfig.get('test_email', NS_CINQ_TEST, 'testbucket')
+    bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
 
     # Add resources
     client = aws_get_client('s3')
@@ -74,7 +74,7 @@ def case_2(cinq_test_service, account, recipient):
     file_obj = StringIO()
     file_obj.write('Test Text')
 
-    bucket_name = dbconfig.get('test_email', NS_CINQ_TEST, 'testbucket')
+    bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
 
     # Add resources
     client = aws_get_client('s3')

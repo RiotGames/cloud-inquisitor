@@ -104,7 +104,7 @@ setuptools.setup(
         'cinq-auditor-domain-hijacking~=2.0.0',
         'cinq-auditor-ebs~=2.0.0',
         'cinq-auditor-iam~=2.0.0',
-        'cinq-auditor-required-tags~=2.0.2',
+        'cinq-auditor-required-tags~=2.0',
         'cinq-auditor-vpc-flowlogs~=2.0.0',
         'cinq-auth-local~=2.0.0',
         'cinq-auth-onelogin-saml~=2.0.0',
