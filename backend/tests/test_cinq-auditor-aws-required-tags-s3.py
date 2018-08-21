@@ -1,7 +1,7 @@
 import datetime
 
 from cloud_inquisitor.config import dbconfig, DBCJSON
-from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, AuditActions
+from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, AuditActions, NS_CINQ_TEST
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
 from tests.libs.util_cinq import setup_test_aws, aws_get_client, collect_resources
 
@@ -14,7 +14,7 @@ def case_1(cinq_test_service, account, recipient):
     3. Auditor can remove an empty bucket successfully when the "REMOVE" criteria are met
     """
 
-    bucket_name = 'testbucket'
+    bucket_name = dbconfig.get('test_email', NS_CINQ_TEST, 'testbucket')
 
     # Add resources
     client = aws_get_client('s3')
@@ -74,7 +74,7 @@ def case_2(cinq_test_service, account, recipient):
     file_obj = StringIO()
     file_obj.write('Test Text')
 
-    bucket_name = 'testbucket'
+    bucket_name = dbconfig.get('test_email', NS_CINQ_TEST, 'testbucket')
 
     # Add resources
     client = aws_get_client('s3')

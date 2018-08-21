@@ -1,7 +1,11 @@
+import logging
+
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_CINQ_TEST
 from cloud_inquisitor.database import db
 from cloud_inquisitor.schema import Resource, ResourceProperty, IssueProperty, Issue
+
+logger = logging.getLogger(__name__)
 
 
 def empty_tables(*args):
@@ -42,6 +46,8 @@ def modify_issue(issue_id, issue_property, value):
             issue.value = value
             db.session.commit()
             return True
+    except Exception as e:
+        logger.error('Failed to modify issue property {}: {}'.format(issue_property, e))
     finally:
         db.session.rollback()
 
@@ -57,6 +63,8 @@ def modify_resource(resource_id, resource_property, value):
             resource.value = value
             db.session.commit()
             return True
+    except Exception as e:
+        logger.error('Failed to modify resource property {}: {}'.format(resource_property, e))
     finally:
         db.session.rollback()
 
