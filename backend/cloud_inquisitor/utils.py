@@ -437,7 +437,7 @@ def get_resource_id(prefix, *data):
     )
 
 
-def parse_date(date_string):
+def parse_date(date_string, ignoretz=True):
     """Parse a string as a date. If the string fails to parse, `None` will be returned instead
 
     >>> parse_date('2017-08-15T18:24:31')
@@ -445,12 +445,13 @@ def parse_date(date_string):
 
     Args:
         date_string (`str`): Date in string format to parse
+        ignoretz (`bool`): If set ``True``, ignore time zones and return a naive :class:`datetime` object.
 
     Returns:
         `datetime`, `None`
     """
     try:
-        return parser.parse(date_string)
+        return parser.parse(date_string, ignoretz=ignoretz)
     except TypeError:
         return None
 

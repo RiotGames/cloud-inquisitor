@@ -1,5 +1,7 @@
 import time
 
+import pytimeparse
+
 
 def verify(verify_function, timeout, *args, **kwargs):
     time_start = time.time()
@@ -10,3 +12,7 @@ def verify(verify_function, timeout, *args, **kwargs):
         time.sleep(1)
 
     return False
+
+
+def parse_literal_time(source_time):
+    return pytimeparse.parse(source_time)

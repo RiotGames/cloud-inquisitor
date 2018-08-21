@@ -5,7 +5,6 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 
 from botocore.exceptions import ClientError
-from dateutil import parser
 from flask import session
 from sqlalchemy import func, or_, and_, cast, DATETIME
 from sqlalchemy.exc import SQLAlchemyError
@@ -19,7 +18,8 @@ from cloud_inquisitor.utils import (
     to_utc_date,
     is_truthy,
     to_camelcase,
-    NotificationContact
+    NotificationContact,
+    parse_date
 )
 
 
@@ -510,6 +510,18 @@ class EC2Instance(BaseResource):
     resource_type = 'aws_ec2_instance'
     resource_name = 'EC2 Instance'
 
+    # region Cinq Object properties
+    @property
+    def resource_creation_date(self):
+        """Returns the date and time the bucket was created.
+
+        Returns:
+            `datetime`
+        """
+        return self.launch_date
+
+    # endregion
+
     # region Object properties
     @property
     def launch_date(self):
@@ -518,7 +530,7 @@ class EC2Instance(BaseResource):
         Returns:
             `datetime`
         """
-        return parser.parse(self.get_property('launch_date').value)
+        return parse_date(self.get_property('launch_date').value)
 
     @property
     def state(self):
@@ -798,6 +810,18 @@ class S3Bucket(BaseResource):
     resource_type = 'aws_s3_bucket'
     resource_name = 'S3 Bucket'
 
+    # region Cinq Object properties
+    @property
+    def resource_creation_date(self):
+        """Returns the date and time the bucket was created.
+
+        Returns:
+            `datetime`
+        """
+        return self.creation_date
+
+    # endregion
+
     # region Object properties
     @property
     def acl(self):
@@ -814,9 +838,9 @@ class S3Bucket(BaseResource):
         """Returns the date and time the bucket was created.
 
         Returns:
-            `str`
+            `datetime`
         """
-        return self.get_property('creation_date').value
+        return parse_date(self.get_property('creation_date').value)
 
     @property
     def lifecycle_config(self):
