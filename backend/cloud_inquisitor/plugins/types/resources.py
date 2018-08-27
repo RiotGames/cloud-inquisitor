@@ -1365,6 +1365,17 @@ class VPC(BaseResource):
         return self.get_property('cidr_v4').value
 
     @property
+    def is_default(self):
+        """ Returns whether the VPC is the Default VPC
+        
+        Returns:
+            `boolean`
+        
+        
+        """
+        return self.get_property('is_default').value
+
+    @property
     def state(self):
         """ Returns the current state of the VPC (pending/available)
 
@@ -1409,6 +1420,7 @@ class VPC(BaseResource):
         """
 
         updated = self.set_property('cidr_v4', data.cidr_block)
+        updated |= self.set_property('is_default', data.is_default)
         updated |= self.set_property('state', data.state)
         updated |= self.set_property('vpc_flow_logs_status', properties['vpc_flow_logs_status'])
         updated |= self.set_property('vpc_flow_logs_log_stream', properties['vpc_flow_logs_log_group'])
