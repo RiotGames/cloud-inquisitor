@@ -71,7 +71,7 @@ class Enforcement(ABC):
         Returns: `integer`
 
         """
-        return self.enforcements.id
+        return self.enforcement.id
 
     @property
     def account_id(self):
@@ -80,7 +80,7 @@ class Enforcement(ABC):
         Returns: `str` : The Resource ID (i.e. instanceID, S3 BucketName)
 
         """
-        return self.enforcements.account_id
+        return self.enforcement.account_id
 
     @property
     def resource_id(self):
@@ -89,7 +89,7 @@ class Enforcement(ABC):
         Returns: `str` : The Resource ID (i.e. instanceID, S3 BucketName)
 
         """
-        return self.enforcements.resource_id
+        return self.enforcement.resource_id
 
     @property
     def location(self):
@@ -98,7 +98,7 @@ class Enforcement(ABC):
         Returns: `str` : The AWS region (i.e. us-west-2)
 
         """
-        return self.enforcements.location
+        return self.enforcement.location
 
     @property
     def action(self):
@@ -107,7 +107,7 @@ class Enforcement(ABC):
         Returns: `str` : Values: (SHUTDOWN, TERMINATED)
 
         """
-        return self.enforcements.action
+        return self.enforcement.action
 
     @property
     def timestamp(self):
@@ -116,4 +116,4 @@ class Enforcement(ABC):
         Returns: `list` : Values : Timestamps in datetime format
 
         """
-        return self.enforcements.timestamp
+        return self.enforcement.timestamp
