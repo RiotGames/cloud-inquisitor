@@ -49,7 +49,7 @@ class Enforcement(ABC):
         return qry
 
     @classmethod
-    def create(cls, account_id, resource_id, action, timestamp):
+    def create(cls, account_id, resource_id, action, timestamp, metrics):
         """ Set properties for an enforcement action"""
 
         enforcement = Enforcements()
@@ -57,6 +57,7 @@ class Enforcement(ABC):
         enforcement.resource_id = resource_id
         enforcement.action = action
         enforcement.timestamp = timestamp
+        enforcement.metrics = metrics
 
         try:
             db.session.add(enforcement)
@@ -117,3 +118,12 @@ class Enforcement(ABC):
 
         """
         return self.enforcement.timestamp
+
+    def metrics(self):
+        """ The metric data for resources subject to enforcement
+
+        Returns: `json`
+
+        """
+
+        return self.enforcement.metrics

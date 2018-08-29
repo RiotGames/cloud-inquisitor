@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, ForeignKey, DateTime, func
+from sqlalchemy import Column, String, ForeignKey, DateTime, func, JSON
 from sqlalchemy.dialects.mysql import INTEGER as Integer
 
 from cloud_inquisitor.database import db, Model
@@ -11,15 +11,11 @@ class Enforcements(Model, BaseModelMixin):
     """ EnforcementAction Object """
     __tablename__ = "enforcements"
     enforcement_id = Column(Integer(unsigned=True), primary_key=True, autoincrement=True)
-    account_id = Column(
-        Integer(unsigned=True),
-        ForeignKey('accounts.account_id', name='fk_account_properties_account_id', ondelete='CASCADE'))
-    resource_id = Column(
-        String(256),
-        ForeignKey('resources.resource_id', name='fk_tag_resource_id', ondelete='CASCADE'),
-        index=True)
+    account_id = Column(Integer(unsigned=True))
+    resource_id = Column(String(256))
     action = Column(String(64))
     timestamp = Column(DateTime(timezone=True), default=func.now())
+    metrics = Column(JSON)
 
     @staticmethod
     def get(enforcement_id):
@@ -42,5 +38,6 @@ class Enforcements(Model, BaseModelMixin):
             self.account_id,
             self.resource_id,
             self.action,
-            self.timestamp
+            self.timestamp,
+            self.metrics
         )
