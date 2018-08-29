@@ -99,7 +99,7 @@ setuptools.setup(
         'PyJWT~=1.5',
         'SQLAlchemy~=1.1',
         'argon2-cffi~=16.3',
-        'boto3~=1.8',
+        'boto3==1.7.84',
         'cinq-auditor-cloudtrail~=2.0.0',
         'cinq-auditor-domain-hijacking~=2.0.0',
         'cinq-auditor-ebs~=2.0.0',
