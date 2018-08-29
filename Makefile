@@ -86,7 +86,7 @@ enable_test:
 	sed -i -E "s/\"test_mode\": ([a-z]+)/\"test_mode\": true/g" ~/.cinq/config.json
 
 do_test:
-	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]
+	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]==1.3.4
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest ${PATH_BACKEND}/backend
 
 setup_localdev: install_libs install_services install_files init_services init_cinq
