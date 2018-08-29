@@ -32,7 +32,7 @@ class Enforcements(Model, BaseModelMixin):
         )
 
     def __repr__(self):
-        return "{}({}, {}, '{}', '{}', '{}')".format(
+        return "{}({}, {}, '{}', '{}', '{}', '{}')".format(
             self.__class__.__name__,
             self.enforcement_id,
             self.account_id,
