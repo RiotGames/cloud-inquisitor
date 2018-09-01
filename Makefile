@@ -1,13 +1,19 @@
 .PHONY: install_libs install_services install_files init_services init_cinq enable_test do_test setup_localdev setup_tarvisci
 
 PATH_CINQ ?= /opt/cinq
-PATH_FRONTEND = ${PATH_CINQ}/cinq-frontend
 PATH_BACKEND ?= ${PATH_CINQ}/cinq-backend
-PATH_VENV = ${PATH_CINQ}/cinq-venv
+PATH_FRONTEND = ${PATH_CINQ}/cinq-frontend
 PATH_PYTHON ?= /usr/bin/python3
-SECRET_KEY ?= $(shell openssl rand -hex 32)
+PATH_VENV = ${PATH_CINQ}/cinq-venv
+APP_CONFIG_BASE_PATH = ~/.cinq
 APP_DB_URI ?= "mysql://cinq:secretpass@127.0.0.1:3306/cinq_dev"
+APP_KMS_ACCOUNT_NAME ?= account
+APP_KMS_REGION ?= us-west-2
+APP_USER_DATA_URI ?= http://169.254.169.254/latest/user-data
 INS_DIR = ${CURDIR}
+SECRET_KEY ?= $(shell openssl rand -hex 32)
+USE_HTTPS ?= false
+USE_USER_DATA ?= false
 
 install_libs_tarvisci:
 	curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
@@ -23,9 +29,11 @@ install_libs:
 	python3 /tmp/get-pip.py
 	pip3 install -U virtualenv
 
-install_services:
-	apt-get update
-	apt-get -qq install mysql-server nginx
+install_service_mysql:
+	apt-get -qq install mysql-server
+
+install_service_nginx:
+	apt-get -qq install nginx
 
 install_files:
 	# Prepare directories
@@ -48,22 +56,30 @@ install_files:
 	sudo -u ${SUDO_USER} -H virtualenv --python=${PATH_PYTHON} ${PATH_VENV}
 
 	# Setup Keys
-	sudo -u ${SUDO_USER} -H sh -c 'mkdir -p ~/.cinq/ssl'
+	sudo -u ${SUDO_USER} -H sh -c 'mkdir -p ${APP_CONFIG_BASE_PATH}/ssl'
 	openssl genrsa -out private.key 2048
-	sudo -H mv private.key ~/.cinq/ssl
+	sudo -H mv private.key ${APP_CONFIG_BASE_PATH}/ssl
 
 	# Prepare Cinq config file
-	sudo -H cp -f ${INS_DIR}/packer/files/logging.json ~/.cinq
-	sed -e "s|APP_DB_URI|${APP_DB_URI}|" -e "s|APP_SECRET_KEY|${SECRET_KEY}|" -e "s|APP_USE_USER_DATA|false|" ${INS_DIR}/packer/files/backend-config.json > ${INS_DIR}/packer/files/config.json
-	sudo -H cp -f ${INS_DIR}/packer/files/config.json ~/.cinq
-	sudo -H chown -R ${SUDO_USER}:${SUDO_USER} ~/.cinq
+	sudo -H cp -f ${INS_DIR}/packer/files/logging.json ${APP_CONFIG_BASE_PATH}
+	sed -e "s|APP_DB_URI|${APP_DB_URI}|g" -e "s|APP_SECRET_KEY|${SECRET_KEY}|g" -e "s|APP_USE_USER_DATA|${USE_USER_DATA}|g" -e "s|APP_KMS_ACCOUNT_NAME|${APP_KMS_ACCOUNT_NAME}|g" -e "s|APP_KMS_REGION|${APP_KMS_REGION}|g" -e "s|APP_USER_DATA_URI|${APP_USER_DATA_URI}|g" ${INS_DIR}/packer/files/backend-config.json > ${INS_DIR}/packer/files/config.json
+	sudo -H cp -f ${INS_DIR}/packer/files/config.json ${APP_CONFIG_BASE_PATH}
+	sudo -H chown -R ${SUDO_USER}:${SUDO_USER} ${APP_CONFIG_BASE_PATH}
 
-init_services:
+init_service_mysql:
 	# Create Cinq MySQL account
 	sudo mysql -u root -e "create database cinq_dev; grant all privileges on *.* to 'cinq'@'localhost' identified by 'secretpass';" || true
 
+init_service_nginx:
 	# NGINX configuration
-	sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" ${INS_DIR}/packer/files/nginx-nossl.conf > /etc/nginx/sites-available/cinq.conf
+	if [ "${USE_HTTPS}" != "false" ]; then \
+		sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" -e "s|APP_CONFIG_BASE_PATH|${PATH_CINQ}|g" ${INS_DIR}/packer/files/nginx-ssl.conf > /etc/nginx/sites-available/cinq.conf; \
+		mkdir -p ${PATH_CINQ}/ssl; \
+		openssl req -x509 -subj "/C=US/ST=CA/O=Your Company/localityName=Your City/commonName=localhost/organizationalUnitName=Operations/emailAddress=someone@example.com" -days 3650 -newkey rsa:2048 -nodes -keyout ${PATH_CINQ}/ssl/cinq-frontend.key -out ${PATH_CINQ}/ssl/cinq-frontend.crt; \
+	else \
+		sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" ${INS_DIR}/packer/files/nginx-nossl.conf > /etc/nginx/sites-available/cinq.conf; \
+	fi
+
 	rm -f /etc/nginx/sites-enabled/default
 	ln -sf /etc/nginx/sites-available/cinq.conf /etc/nginx/sites-enabled/cinq.conf
 	service nginx restart
@@ -83,12 +99,14 @@ init_cinq:
 
 enable_test:
 	echo "WARNING: Running Cinq test will DESTROY your data in your database. Please make sure you run it on a dedicated test environment"
-	sed -i -E "s/\"test_mode\": ([a-z]+)/\"test_mode\": true/g" ~/.cinq/config.json
+	sed -i -E "s/\"test_mode\": ([a-z]+)/\"test_mode\": true/g" ${APP_CONFIG_BASE_PATH}/config.json
 
 do_test:
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]==1.3.4
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest ${PATH_BACKEND}/backend
 
-setup_localdev: install_libs install_services install_files init_services init_cinq
+setup_localdev: install_libs install_service_mysql install_service_nginx install_files init_service_mysql init_service_nginx init_cinq
 
-setup_tarvisci: install_libs_tarvisci install_files init_services init_cinq enable_test
+setup_tarvisci: install_libs_tarvisci install_files init_service_mysql init_service_nginx init_cinq enable_test
+
+setup_server: install_libs install_service_nginx install_files init_service_nginx init_cinq
