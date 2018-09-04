@@ -2,14 +2,14 @@
 
 PATH_CINQ ?= /opt/cinq
 PATH_BACKEND ?= ${PATH_CINQ}/cinq-backend
-PATH_FRONTEND = ${PATH_CINQ}/cinq-frontend
+PATH_FRONTEND ?= ${PATH_CINQ}/cinq-frontend
 PATH_PYTHON ?= /usr/bin/python3
-PATH_VENV = ${PATH_CINQ}/cinq-venv
-APP_CONFIG_BASE_PATH = ~/.cinq
+PATH_VENV ?= ${PATH_CINQ}/cinq-venv
+APP_CONFIG_BASE_PATH ?= ~/.cinq
 APP_DB_URI ?= "mysql://cinq:secretpass@127.0.0.1:3306/cinq_dev"
 APP_KMS_ACCOUNT_NAME ?= account
 APP_KMS_REGION ?= us-west-2
-APP_USER_DATA_URI ?= http://169.254.169.254/latest/user-data
+APP_USER_DATA_URI ?= "http://169.254.169.254/latest/user-data"
 INS_DIR = ${CURDIR}
 SECRET_KEY ?= $(shell openssl rand -hex 32)
 USE_HTTPS ?= false
