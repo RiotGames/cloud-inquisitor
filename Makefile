@@ -2,14 +2,14 @@
 
 PATH_CINQ ?= /opt/cinq
 PATH_BACKEND ?= ${PATH_CINQ}/cinq-backend
-PATH_FRONTEND = ${PATH_CINQ}/cinq-frontend
+PATH_FRONTEND ?= ${PATH_CINQ}/cinq-frontend
 PATH_PYTHON ?= /usr/bin/python3
-PATH_VENV = ${PATH_CINQ}/cinq-venv
-APP_CONFIG_BASE_PATH = ~/.cinq
+PATH_VENV ?= ${PATH_CINQ}/cinq-venv
+APP_CONFIG_BASE_PATH ?= ~/.cinq
 APP_DB_URI ?= "mysql://cinq:secretpass@127.0.0.1:3306/cinq_dev"
 APP_KMS_ACCOUNT_NAME ?= account
 APP_KMS_REGION ?= us-west-2
-APP_USER_DATA_URI ?= http://169.254.169.254/latest/user-data
+APP_USER_DATA_URI ?= "http://169.254.169.254/latest/user-data"
 INS_DIR = ${CURDIR}
 SECRET_KEY ?= $(shell openssl rand -hex 32)
 USE_HTTPS ?= false
@@ -93,7 +93,8 @@ init_cinq:
 	# Install backend
 	cd ${PATH_BACKEND}/backend; sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -e .
 
-	# Initialize Cinq backend
+init_cinq_db:
+	# Initialize Cinq DB
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/cloud-inquisitor db upgrade
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/cloud-inquisitor setup
 
@@ -105,8 +106,8 @@ do_test:
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]==1.3.4
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest ${PATH_BACKEND}/backend
 
-setup_localdev: install_libs install_service_mysql install_service_nginx install_files init_service_mysql init_service_nginx init_cinq
+setup_localdev: install_libs install_service_mysql install_service_nginx install_files init_service_mysql init_service_nginx init_cinq init_cinq_db
 
-setup_tarvisci: install_libs_tarvisci install_files init_service_mysql init_service_nginx init_cinq enable_test
+setup_tarvisci: install_libs_tarvisci install_files init_service_mysql init_service_nginx init_cinq init_cinq_db enable_test
 
-setup_server: install_libs install_service_nginx install_files init_service_nginx init_cinq
+setup_server_install: install_libs install_service_nginx install_files init_service_nginx init_cinq
