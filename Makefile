@@ -56,7 +56,7 @@ install_files:
 	sudo -u ${SUDO_USER} -H virtualenv --python=${PATH_PYTHON} ${PATH_VENV}
 
 	# Setup Keys
-	sudo -u ${SUDO_USER} -H sh -c 'mkdir -p ${APP_CONFIG_BASE_PATH}/ssl'
+	sudo -H sh -c 'mkdir -p ${APP_CONFIG_BASE_PATH}/ssl'
 	openssl genrsa -out private.key 2048
 	sudo -H mv private.key ${APP_CONFIG_BASE_PATH}/ssl
 
