@@ -98,7 +98,6 @@ init_cinq:
 init_cinq_db:
 	# Initialize Cinq DB
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/cloud-inquisitor db upgrade
-	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/cloud-inquisitor setup
 
 enable_supervisor:
 	sed -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" -e "s|APP_PYENV_PATH|${PATH_VENV}|g" -e "s|APP_WORKER_PROCS|${APP_WORKER_PROCS}|g" ${INS_DIR}/packer/files/supervisor.conf > /etc/supervisor/conf.d/cinq.conf
