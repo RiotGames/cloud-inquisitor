@@ -7,7 +7,7 @@
     "kms_region": "APP_KMS_REGION",
     "user_data_url": "APP_USER_DATA_URL",
 
-	"aws_api": {
+    "aws_api": {
         "access_key": "APP_AWS_API_ACCESS_KEY",
         "secret_key": "APP_AWS_API_SECRET_KEY",
         "instance_role_arn": "APP_INSTANCE_ROLE_ARN"
