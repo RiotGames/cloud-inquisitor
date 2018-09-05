@@ -75,9 +75,9 @@ init_service_mysql:
 init_service_nginx:
 	# NGINX configuration
 	if [ "${USE_HTTPS}" != "false" ]; then \
-		sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" -e "s|APP_CONFIG_BASE_PATH|${PATH_CINQ}|g" ${INS_DIR}/packer/files/nginx-ssl.conf > /etc/nginx/sites-available/cinq.conf; \
+		sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" ${INS_DIR}/packer/files/nginx-ssl.conf > /etc/nginx/sites-available/cinq.conf; \
 		mkdir -p ${PATH_CINQ}/ssl; \
-		openssl req -x509 -subj "/C=US/ST=CA/O=Your Company/localityName=Your City/commonName=localhost/organizationalUnitName=Operations/emailAddress=someone@example.com" -days 3650 -newkey rsa:2048 -nodes -keyout ${PATH_CINQ}/ssl/cinq-frontend.key -out ${PATH_CINQ}/ssl/cinq-frontend.crt; \
+		openssl req -x509 -subj "/C=US/ST=CA/O=Your Company/localityName=Your City/commonName=localhost/organizationalUnitName=Operations/emailAddress=someone@example.com" -days 3650 -newkey rsa:2048 -nodes -keyout ${APP_CONFIG_BASE_PATH}/ssl/cinq-frontend.key -out ${APP_CONFIG_BASE_PATH}/ssl/cinq-frontend.crt; \
 	else \
 		sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" ${INS_DIR}/packer/files/nginx-nossl.conf > /etc/nginx/sites-available/cinq.conf; \
 	fi
