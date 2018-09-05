@@ -10,6 +10,8 @@ APP_DB_URI ?= "mysql://cinq:secretpass@127.0.0.1:3306/cinq_dev"
 APP_KMS_ACCOUNT_NAME ?= account
 APP_KMS_REGION ?= us-west-2
 APP_USER_DATA_URI ?= "http://169.254.169.254/latest/user-data"
+APP_AWS_API_ACCESS_KEY ?= false
+APP_AWS_API_SECRET_KEY ?= false
 INS_DIR = ${CURDIR}
 SECRET_KEY ?= $(shell openssl rand -hex 32)
 USE_HTTPS ?= false
@@ -62,7 +64,7 @@ install_files:
 
 	# Prepare Cinq config file
 	sudo -H cp -f ${INS_DIR}/packer/files/logging.json ${APP_CONFIG_BASE_PATH}
-	sed -e "s|APP_DB_URI|${APP_DB_URI}|g" -e "s|APP_SECRET_KEY|${SECRET_KEY}|g" -e "s|APP_USE_USER_DATA|${USE_USER_DATA}|g" -e "s|APP_KMS_ACCOUNT_NAME|${APP_KMS_ACCOUNT_NAME}|g" -e "s|APP_KMS_REGION|${APP_KMS_REGION}|g" -e "s|APP_USER_DATA_URI|${APP_USER_DATA_URI}|g" ${INS_DIR}/packer/files/backend-config.json > ${INS_DIR}/packer/files/config.json
+	sed -e "s|APP_DB_URI|${APP_DB_URI}|g" -e "s|APP_SECRET_KEY|${SECRET_KEY}|g" -e "s|APP_USE_USER_DATA|${USE_USER_DATA}|g" -e "s|APP_KMS_ACCOUNT_NAME|${APP_KMS_ACCOUNT_NAME}|g" -e "s|APP_KMS_REGION|${APP_KMS_REGION}|g" -e "s|APP_USER_DATA_URI|${APP_USER_DATA_URI}|g" -e "s|APP_AWS_API_ACCESS_KEY|${APP_AWS_API_ACCESS_KEY}|g" -e "s|APP_AWS_API_SECRET_KEY|${APP_AWS_API_SECRET_KEY}|g" ${INS_DIR}/packer/files/backend-config.json > ${INS_DIR}/packer/files/config.json
 	sudo -H cp -f ${INS_DIR}/packer/files/config.json ${APP_CONFIG_BASE_PATH}
 	sudo -H chown -R ${SUDO_USER}:${SUDO_USER} ${APP_CONFIG_BASE_PATH}
 
