@@ -108,6 +108,7 @@ enable_test:
 
 do_test:
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]==1.3.4
+	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/cloud-inquisitor setup
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest ${PATH_BACKEND}/backend
 
 clean:
