@@ -41,7 +41,7 @@ install_service_nginx:
 install_files:
 	# Prepare directories
 	mkdir -p /var/log/cloud-inquisitor/
-	chown -R ${SUDO_USER}:${SUDO_USER} /var/log/cloud-inquisitor/
+	chmod -R 777 /var/log/cloud-inquisitor/
 	mkdir -p ${PATH_CINQ}
 
 	# Checkout frontend code
