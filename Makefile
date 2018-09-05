@@ -106,6 +106,10 @@ do_test:
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]==1.3.4
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest ${PATH_BACKEND}/backend
 
+clean:
+	sudo rm -rf ${PATH_CINQ} ${PATH_BACKEND} ${PATH_FRONTEND} ${PATH_VENV} ${APP_CONFIG_BASE_PATH}
+	
+
 setup_localdev: install_libs install_service_mysql install_service_nginx install_files init_service_mysql init_service_nginx init_cinq init_cinq_db
 
 setup_tarvisci: install_libs_tarvisci install_files init_service_mysql init_service_nginx init_cinq init_cinq_db enable_test
