@@ -848,24 +848,15 @@ class S3Bucket(BaseResource):
         """
         return self.get_property('website_enabled').value
 
-    def object_count(self):
-        """ Returns the approximate number of objects in the bucket
+    def metrics(self):
+        """ Returns metric data on the bucket
 
 
         Returns:
-            `string`
+            `json`
 
         """
-        return self.get_property('object_count').value
-
-    def bucket_size(self):
-        """ Returns the approximate size of the entire bucket
-
-        Returns:
-            `string`
-
-        """
-        return self.get_property('bucket_size').value
+        return self.get_property('metrics').value
 
     # endregion
 
