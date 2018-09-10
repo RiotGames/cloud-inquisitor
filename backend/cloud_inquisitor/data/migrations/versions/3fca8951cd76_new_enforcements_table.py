@@ -18,12 +18,13 @@ down_revision = 'cfb0ed4cced9'
 
 def upgrade():
     op.create_table('enforcements',
-      sa.Column('enforcement_id', mysql.INTEGER(unsigned=True), nullable=False),
+      sa.Column('enforcement_id', mysql.INTEGER(unsigned=True), nullable=False, autoincrement=True),
       sa.Column('account_id', mysql.INTEGER(unsigned=True)),
       sa.Column('resource_id', sa.String(length=256), nullable=False),
       sa.Column('action', sa.String(length=64), nullable=False),
       sa.Column('timestamp', mysql.DATETIME(timezone=False), default=func.now()),
-      sa.Column('metrics', mysql.JSON()))
+      sa.Column('metrics', mysql.JSON()),
+      sa.PrimaryKeyConstraint('enforcement_id'))
 
 def downgrade():
     op.drop_table('enforcements')

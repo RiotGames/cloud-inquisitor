@@ -872,6 +872,16 @@ class S3Bucket(BaseResource):
         """
         return self.get_property('website_enabled').value
 
+    def metrics(self):
+        """ Returns metric data on the bucket
+
+
+        Returns:
+            `json`
+
+        """
+        return self.get_property('metrics').value
+
     # endregion
 
     def update(self, data, properties):
@@ -882,6 +892,7 @@ class S3Bucket(BaseResource):
         updated |= self.set_property('lifecycle_config', properties['lifecycle_config'])
         updated |= self.set_property('bucket_policy', properties['bucket_policy'])
         updated |= self.set_property('website_enabled', properties['website_enabled'])
+        updated |= self.set_property('metrics', properties['metrics'])
 
         with suppress(ClientError):
             tags = {t['Key']: t['Value'] for t in data.Tagging().tag_set}

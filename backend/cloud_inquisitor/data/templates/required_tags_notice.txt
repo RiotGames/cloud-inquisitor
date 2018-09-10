@@ -1,5 +1,5 @@
 {% if data['not_fixed'] %}
-    The following instances are not compliant with the Required Tagging standards:
+    The following resources are not compliant with the Required Tagging standards:
     {% for issue in data['not_fixed'] %}
         *Account:* `{{ issue['resource'].account.account_name }}`
         *Region:* `{{ issue['resource'].location }}`
@@ -12,7 +12,7 @@
     {% endfor %}
 {% endif %}
 {% if data['fixed'] %}
-    Instances that are not tagged appropriately within a month of being detected as non-compliant *will be shutdown automatically* until tags have been added. To prevent this from happening have the owners of the instances to tag their assets correctly.
+    Resources that are not tagged appropriately within a month of being detected as non-compliant *will be shutdown automatically* until tags have been added. To prevent this from happening have the owners of the resources to tag their assets correctly.
 
     The following instances are now compliant with the Required Tags standards and are no longer subject to being stopped:
     {% for issue in data['fixed'] %}
