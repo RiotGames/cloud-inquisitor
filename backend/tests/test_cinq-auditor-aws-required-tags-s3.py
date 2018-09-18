@@ -3,15 +3,21 @@ import datetime
 from cloud_inquisitor.config import dbconfig, DBCJSON
 from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, AuditActions, NS_CINQ_TEST
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
+from tests.libs.lib_cinq_auditor_aws_required_tags import s3_upload_file_from_string
 from tests.libs.util_cinq import setup_test_aws, aws_get_client, collect_resources
 
 
 def case_1(cinq_test_service, account, recipient):
     """
-    Test will pass if:
-    1. Auditor can detect non-compliant S3 buckets
-    2. Auditor respect grace period settings
-    3. Auditor can remove an empty bucket successfully when the "REMOVE" criteria are met
+    Test will pass if for an S3 bucket meet the following condition:
+        - Bucket is empty
+        - No Bucket Policy was set
+        - No Lifecycle Policy was set
+
+    The Auditor will:
+        - Detect non-compliant S3 buckets
+        - Respect grace period settings
+        - Be able to remove an empty bucket successfully when the "REMOVE" criteria are met
     """
 
     bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
@@ -66,21 +72,20 @@ def case_1(cinq_test_service, account, recipient):
 
 def case_2(cinq_test_service, account, recipient):
     """
-    Test will pass if:
-    1. Auditor can handle non-empty bucket when the "REMOVE" criteria are met
+    Test will pass if for an S3 bucket meet the following condition:
+        - Bucket is NOT empty
+        - No Bucket Policy was set
+        - No Lifecycle Policy was set
+
+    The Auditor will:
+        - Apply Cinq lifecycle policy to the bucket
     """
-
-    from io import StringIO
-    file_obj = StringIO()
-    file_obj.write('Test Text')
-
-    bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
-
     # Add resources
     client = aws_get_client('s3')
+    bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
     client.create_bucket(Bucket=bucket_name)
     resource = client.list_buckets()['Buckets'][0]
-    client.upload_fileobj(file_obj, bucket_name, 'sample')
+    s3_upload_file_from_string(client, bucket_name, 'sample', 'sample text')
 
     # Collect resources
     collect_resources(account=account, resource_types=['s3'])
@@ -103,9 +108,58 @@ def case_2(cinq_test_service, account, recipient):
     auditor.run()
 
     # Verify if the Lifecycle policy is added
-    assert client.get_bucket_lifecycle_configuration(Bucket=bucket_name)['Rules'][0]['ID'] == 'cloudInquisitor'
-    assert client.get_bucket_lifecycle_configuration(Bucket=bucket_name)['Rules'][0]['Status'] == 'Enabled'
-    assert client.get_bucket_lifecycle_configuration(Bucket=bucket_name)['Rules'][0]['Expiration'] == {'Days': 1}
+    current_policy = client.get_bucket_lifecycle_configuration(Bucket=bucket_name)['Rules'][0]
+    assert current_policy['ID'] == 'cloudInquisitor'
+    assert current_policy['Status'] == 'Enabled'
+    assert current_policy['Expiration'] == {'Days': dbconfig.get('grace_period', NS_AUDITOR_REQUIRED_TAGS, 4)}
+
+
+def case_3(cinq_test_service, account, recipient):
+    """
+    Test will pass if for an S3 bucket meet the following condition:
+        - Bucket is empty
+        - No Bucket Policy was set
+        - No Lifecycle Policy was set
+        - There was no tags doing the initial audit but missing tags were added during the second audit
+
+    The Auditor will:
+        - Detect non-compliant S3 buckets during the first audit
+        - Detect Fixed Buckets correctly
+    """
+    client = aws_get_client('s3')
+    bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
+    client.create_bucket(Bucket=bucket_name)
+    resource = client.list_buckets()['Buckets'][0]
+
+    # Collect resources
+    collect_resources(account=account, resource_types=['s3'])
+
+    # Initialize auditor
+    auditor = MockRequiredTagsAuditor()
+
+    # Setup test case
+    cinq_test_service.modify_resource(
+        resource['Name'],
+        'creation_date',
+        '2000-01-01T00:00:00'
+    )
+    auditor.run()
+
+    notices = auditor._cinq_test_notices
+    assert notices[recipient]['not_fixed'][0]['resource']['resource_id'] == bucket_name
+
+    tagset = [{'Key': x, 'Value': 'value@example.com'} for x in dbconfig.get('required_tags', NS_AUDITOR_REQUIRED_TAGS, [])]
+    client.put_bucket_tagging(
+        Bucket=bucket_name,
+        Tagging={'TagSet': tagset}
+    )
+    collect_resources(account=account, resource_types=['s3'])
+    auditor.run()
+    notices = auditor._cinq_test_notices
+
+    # Verify if the auditor will report the issue fixed
+    assert notices[recipient]['fixed'][0]['action'] == AuditActions.FIXED
+    assert notices[recipient]['fixed'][0]['resource'].resource_id == bucket_name
 
 
 def test_audit(cinq_test_service):
@@ -128,4 +182,8 @@ def test_audit(cinq_test_service):
     # Tests
     case_1(cinq_test_service, account, recipient)
     cinq_test_service.reset_db_data()
+    
     case_2(cinq_test_service, account, recipient)
+    cinq_test_service.reset_db_data()
+
+    case_3(cinq_test_service, account, recipient)
