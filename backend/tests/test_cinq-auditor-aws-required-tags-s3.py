@@ -1,9 +1,12 @@
 import datetime
 
+import pytest
+from botocore.exceptions import ClientError
+
 from cloud_inquisitor.config import dbconfig, DBCJSON
 from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, AuditActions, NS_CINQ_TEST
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
-from tests.libs.lib_cinq_auditor_aws_required_tags import s3_upload_file_from_string
+from tests.libs.lib_cinq_auditor_aws_required_tags import s3_upload_file_from_string, VALID_TAGSET
 from tests.libs.util_cinq import setup_test_aws, aws_get_client, collect_resources
 
 
@@ -100,6 +103,10 @@ def case_2(cinq_test_service, account, recipient):
         '2000-01-01T00:00:00'
     )
     auditor.run()
+
+    with pytest.raises(ClientError):
+        client.get_bucket_lifecycle_configuration(Bucket=bucket_name)['Rules']
+
     cinq_test_service.modify_issue(
         auditor._cinq_test_notices[recipient]['not_fixed'][0]['issue'].id,
         'created',
@@ -112,6 +119,17 @@ def case_2(cinq_test_service, account, recipient):
     assert current_policy['ID'] == 'cloudInquisitor'
     assert current_policy['Status'] == 'Enabled'
     assert current_policy['Expiration'] == {'Days': dbconfig.get('grace_period', NS_AUDITOR_REQUIRED_TAGS, 4)}
+
+    # Verify if the Lifecycle policy will be removed if the tagging issue is fixed
+    client.put_bucket_tagging(
+        Bucket=bucket_name,
+        Tagging={'TagSet': VALID_TAGSET}
+    )
+    collect_resources(account=account, resource_types=['s3'])
+    auditor.run()
+
+    with pytest.raises(ClientError):
+        client.get_bucket_lifecycle_configuration(Bucket=bucket_name)['Rules']
 
 
 def case_3(cinq_test_service, account, recipient):
@@ -147,10 +165,9 @@ def case_3(cinq_test_service, account, recipient):
     notices = auditor._cinq_test_notices
     assert notices[recipient]['not_fixed'][0]['resource']['resource_id'] == bucket_name
 
-    tagset = [{'Key': x, 'Value': 'value@example.com'} for x in dbconfig.get('required_tags', NS_AUDITOR_REQUIRED_TAGS, [])]
     client.put_bucket_tagging(
         Bucket=bucket_name,
-        Tagging={'TagSet': tagset}
+        Tagging={'TagSet': VALID_TAGSET}
     )
     collect_resources(account=account, resource_types=['s3'])
     auditor.run()
@@ -174,11 +191,9 @@ def case_4(cinq_test_service, account, recipient):
     client.create_bucket(Bucket=bucket_name)
     resource = client.list_buckets()['Buckets'][0]
 
-    tagset = [{'Key': x, 'Value': 'value@example.com'} for x in
-              dbconfig.get('required_tags', NS_AUDITOR_REQUIRED_TAGS, [])]
     client.put_bucket_tagging(
         Bucket=bucket_name,
-        Tagging={'TagSet': tagset}
+        Tagging={'TagSet': VALID_TAGSET}
     )
 
     # Collect resources
@@ -205,8 +220,6 @@ def case_5(cinq_test_service, account, recipient):
     import uuid
 
     total_buckets = 1000
-    tagset = [{'Key': x, 'Value': 'value@example.com'} for x in
-              dbconfig.get('required_tags', NS_AUDITOR_REQUIRED_TAGS, [])]
     compliant_buckets = []
     non_compliant_buckets = []
 
@@ -227,7 +240,7 @@ def case_5(cinq_test_service, account, recipient):
         )
         client.put_bucket_tagging(
             Bucket=item,
-            Tagging={'TagSet': tagset}
+            Tagging={'TagSet': VALID_TAGSET}
         )
 
     for item in non_compliant_buckets:
@@ -265,7 +278,7 @@ def test_audit(cinq_test_service):
     cinq_test_service.start_mocking_services('cloudwatch')
 
     # Tests
-    for single_test_case in filter(lambda x: x[0].startswith('case_'), globals().items()):
+    for single_test_case in filter(lambda x: x[0].startswith('case_2'), globals().items()):
         cinq_test_service.start_mocking_services('s3')
         single_test_case[1](cinq_test_service, account, recipient)
         cinq_test_service.reset_db_data()
