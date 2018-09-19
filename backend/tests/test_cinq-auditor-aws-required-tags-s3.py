@@ -26,7 +26,6 @@ def case_1(cinq_test_service, account, recipient):
     # Add resources
     client = aws_get_client('s3')
     client.create_bucket(Bucket=bucket_name)
-    resource = client.list_buckets()['Buckets'][0]
 
     # Collect resources
     collect_resources(account=account, resource_types=['s3'])
@@ -36,7 +35,7 @@ def case_1(cinq_test_service, account, recipient):
 
     # Test 1 --- Test if auditor respect grace period settings
     cinq_test_service.modify_resource(
-        resource['Name'],
+        bucket_name,
         'creation_date',
         datetime.datetime.utcnow().isoformat()
     )
@@ -45,7 +44,7 @@ def case_1(cinq_test_service, account, recipient):
 
     # Test 2 --- Test if auditor can pick up non-compliant resources correctly
     cinq_test_service.modify_resource(
-        resource['Name'],
+        bucket_name,
         'creation_date',
         '2000-01-01T00:00:00'
     )
@@ -53,7 +52,7 @@ def case_1(cinq_test_service, account, recipient):
     auditor.run()
     notices = auditor._cinq_test_notices
 
-    assert resource['Name'] == notices[recipient]['not_fixed'][0]['resource']['resource_id']
+    assert bucket_name == notices[recipient]['not_fixed'][0]['resource']['resource_id']
 
     # Test 3 --- Modify the issue creation date so it will meet the criteria of "remove" action
     cinq_test_service.modify_issue(
@@ -86,7 +85,6 @@ def case_2(cinq_test_service, account, recipient):
     client = aws_get_client('s3')
     bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
     client.create_bucket(Bucket=bucket_name)
-    resource = client.list_buckets()['Buckets'][0]
     s3_upload_file_from_string(client, bucket_name, 'sample', 'sample text')
 
     # Collect resources
@@ -97,7 +95,7 @@ def case_2(cinq_test_service, account, recipient):
 
     # Setup test case
     cinq_test_service.modify_resource(
-        resource['Name'],
+        bucket_name,
         'creation_date',
         '2000-01-01T00:00:00'
     )
@@ -131,7 +129,6 @@ def case_3(cinq_test_service, account, recipient):
     client = aws_get_client('s3')
     bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
     client.create_bucket(Bucket=bucket_name)
-    resource = client.list_buckets()['Buckets'][0]
 
     # Collect resources
     collect_resources(account=account, resource_types=['s3'])
@@ -141,7 +138,7 @@ def case_3(cinq_test_service, account, recipient):
 
     # Setup test case
     cinq_test_service.modify_resource(
-        resource['Name'],
+        bucket_name,
         'creation_date',
         '2000-01-01T00:00:00'
     )
@@ -200,6 +197,56 @@ def case_4(cinq_test_service, account, recipient):
     assert auditor._cinq_test_notices == {}
 
 
+def case_5(cinq_test_service, account, recipient):
+    """
+    Test whether the auditor can handle large volume of Buckets
+    """
+    from random import randint
+    import uuid
+
+    total_buckets = 1000
+    tagset = [{'Key': x, 'Value': 'value@example.com'} for x in
+              dbconfig.get('required_tags', NS_AUDITOR_REQUIRED_TAGS, [])]
+    compliant_buckets = []
+    non_compliant_buckets = []
+
+    client = aws_get_client('s3')
+
+    for i in range(0, total_buckets):
+        bucket_name = uuid.uuid4().hex
+        client.create_bucket(Bucket=bucket_name)
+        compliant_buckets.append(bucket_name) if randint(0, 1) else non_compliant_buckets.append(bucket_name)
+
+    collect_resources(account=account, resource_types=['s3'])
+
+    for item in compliant_buckets:
+        cinq_test_service.modify_resource(
+            item,
+            'creation_date',
+            '2000-01-01T00:00:00'
+        )
+        client.put_bucket_tagging(
+            Bucket=item,
+            Tagging={'TagSet': tagset}
+        )
+
+    for item in non_compliant_buckets:
+        cinq_test_service.modify_resource(
+            item,
+            'creation_date',
+            '2000-01-01T00:00:00'
+        )
+
+    collect_resources(account=account, resource_types=['s3'])
+    auditor = MockRequiredTagsAuditor()
+    auditor.run()
+    for item in auditor._cinq_test_notices[recipient]['not_fixed']:
+        assert item['resource'].resource_id not in compliant_buckets
+        assert item['resource'].resource_id in non_compliant_buckets
+
+    assert len(non_compliant_buckets) == len(auditor._cinq_test_notices[recipient]['not_fixed'])
+
+
 def test_audit(cinq_test_service):
     """
 
@@ -207,8 +254,6 @@ def test_audit(cinq_test_service):
     """
 
     # Prep
-    cinq_test_service.start_mocking_services('s3')
-
     setup_info = setup_test_aws(cinq_test_service)
     recipient = setup_info['recipient']
     account = setup_info['account']
@@ -217,7 +262,11 @@ def test_audit(cinq_test_service):
     db_setting['enabled'] = ['aws_s3_bucket']
     dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'audit_scope', DBCJSON(db_setting))
 
+    cinq_test_service.start_mocking_services('cloudwatch')
+
     # Tests
     for single_test_case in filter(lambda x: x[0].startswith('case_'), globals().items()):
+        cinq_test_service.start_mocking_services('s3')
         single_test_case[1](cinq_test_service, account, recipient)
         cinq_test_service.reset_db_data()
+        cinq_test_service.stop_mocking_services('s3')

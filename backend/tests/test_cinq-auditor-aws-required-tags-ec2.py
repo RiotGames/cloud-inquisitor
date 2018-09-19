@@ -65,4 +65,6 @@ def test_audit(cinq_test_service):
     dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'audit_scope', DBCJSON(db_setting))
 
     # Tests
-    case_1(cinq_test_service, account, recipient)
+    for single_test_case in filter(lambda x: x[0].startswith('case_'), globals().items()):
+        single_test_case[1](cinq_test_service, account, recipient)
+        cinq_test_service.reset_db_data()
