@@ -13,6 +13,7 @@ def case_1(cinq_test_service, account, recipient):
         - Bucket is empty
         - No Bucket Policy was set
         - No Lifecycle Policy was set
+        - No tag was set
 
     The Auditor will:
         - Detect non-compliant S3 buckets
@@ -76,6 +77,7 @@ def case_2(cinq_test_service, account, recipient):
         - Bucket is NOT empty
         - No Bucket Policy was set
         - No Lifecycle Policy was set
+        - No tag was set
 
     The Auditor will:
         - Apply Cinq lifecycle policy to the bucket
@@ -120,7 +122,7 @@ def case_3(cinq_test_service, account, recipient):
         - Bucket is empty
         - No Bucket Policy was set
         - No Lifecycle Policy was set
-        - There was no tags doing the initial audit but missing tags were added during the second audit
+        - There was no tag doing the initial audit but missing tags were added during the second audit
 
     The Auditor will:
         - Detect non-compliant S3 buckets during the first audit
@@ -162,6 +164,42 @@ def case_3(cinq_test_service, account, recipient):
     assert notices[recipient]['fixed'][0]['resource'].resource_id == bucket_name
 
 
+def case_4(cinq_test_service, account, recipient):
+    """
+    Test will pass if for an S3 bucket meet the following condition:
+        - Is compliant
+
+    The Auditor will:
+        - Not mark compliant buckets as non-compliant
+    """
+    client = aws_get_client('s3')
+    bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
+    client.create_bucket(Bucket=bucket_name)
+    resource = client.list_buckets()['Buckets'][0]
+
+    tagset = [{'Key': x, 'Value': 'value@example.com'} for x in
+              dbconfig.get('required_tags', NS_AUDITOR_REQUIRED_TAGS, [])]
+    client.put_bucket_tagging(
+        Bucket=bucket_name,
+        Tagging={'TagSet': tagset}
+    )
+
+    # Collect resources
+    collect_resources(account=account, resource_types=['s3'])
+
+    # Initialize auditor
+    auditor = MockRequiredTagsAuditor()
+
+    # Setup test case
+    cinq_test_service.modify_resource(
+        resource['Name'],
+        'creation_date',
+        '2000-01-01T00:00:00'
+    )
+    auditor.run()
+    assert auditor._cinq_test_notices == {}
+
+
 def test_audit(cinq_test_service):
     """
 
@@ -180,10 +218,6 @@ def test_audit(cinq_test_service):
     dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'audit_scope', DBCJSON(db_setting))
 
     # Tests
-    case_1(cinq_test_service, account, recipient)
-    cinq_test_service.reset_db_data()
-    
-    case_2(cinq_test_service, account, recipient)
-    cinq_test_service.reset_db_data()
-
-    case_3(cinq_test_service, account, recipient)
+    for single_test_case in filter(lambda x: x[0].startswith('case_'), globals().items()):
+        single_test_case[1](cinq_test_service, account, recipient)
+        cinq_test_service.reset_db_data()
