@@ -1,19 +1,16 @@
 import datetime
-import random
-import uuid
 
 import pytest
 from botocore.exceptions import ClientError
 
-from cloud_inquisitor.config import dbconfig, DBCJSON
+from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, AuditActions, NS_CINQ_TEST
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
-from tests.libs.lib_cinq_auditor_aws_required_tags import s3_upload_file_from_string, VALID_TAGSET
+from tests.libs.lib_cinq_auditor_aws_required_tags import s3_upload_file_from_string, VALID_TAGSET, prep_s3_testing
 from tests.libs.util_cinq import setup_test_aws, aws_get_client, collect_resources
-from tests.libs.util_provider_aws import get_aws_regions
 
 
-def case_1(cinq_test_service, account, recipient):
+def test_basic_ops(cinq_test_service):
     """
     Test will pass if for an S3 bucket meet the following condition:
         - Bucket is empty
@@ -26,11 +23,16 @@ def case_1(cinq_test_service, account, recipient):
         - Respect grace period settings
         - Be able to remove an empty bucket successfully when the "REMOVE" criteria are met
     """
+    # Prep
+    setup_info = setup_test_aws(cinq_test_service)
+    recipient = setup_info['recipient']
+    account = setup_info['account']
 
-    bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
+    prep_s3_testing(cinq_test_service)
 
     # Add resources
     client = aws_get_client('s3')
+    bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
     client.create_bucket(Bucket=bucket_name)
 
     # Collect resources
@@ -76,7 +78,7 @@ def case_1(cinq_test_service, account, recipient):
     assert len(client.list_buckets()['Buckets']) == 0
 
 
-def case_2(cinq_test_service, account, recipient):
+def test_remove_non_empty_bucket(cinq_test_service):
     """
     Test will pass if for an S3 bucket meet the following condition:
         - Bucket is NOT empty
@@ -87,6 +89,13 @@ def case_2(cinq_test_service, account, recipient):
     The Auditor will:
         - Apply Cinq lifecycle policy to the bucket
     """
+    # Prep
+    setup_info = setup_test_aws(cinq_test_service)
+    recipient = setup_info['recipient']
+    account = setup_info['account']
+
+    prep_s3_testing(cinq_test_service)
+
     # Add resources
     client = aws_get_client('s3')
     bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
@@ -138,7 +147,7 @@ def case_2(cinq_test_service, account, recipient):
     '''
 
 
-def case_3(cinq_test_service, account, recipient):
+def test_fixed_buckets(cinq_test_service):
     """
     Test will pass if for an S3 bucket meet the following condition:
         - Bucket is empty
@@ -150,6 +159,14 @@ def case_3(cinq_test_service, account, recipient):
         - Detect non-compliant S3 buckets during the first audit
         - Detect Fixed Buckets correctly
     """
+    # Prep
+    setup_info = setup_test_aws(cinq_test_service)
+    recipient = setup_info['recipient']
+    account = setup_info['account']
+
+    prep_s3_testing(cinq_test_service)
+
+    # Add resources
     client = aws_get_client('s3')
     bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
     client.create_bucket(Bucket=bucket_name)
@@ -184,7 +201,7 @@ def case_3(cinq_test_service, account, recipient):
     assert notices[recipient]['fixed'][0]['resource'].resource_id == bucket_name
 
 
-def case_4(cinq_test_service, account, recipient):
+def test_compliant_bucket(cinq_test_service):
     """
     Test will pass if for an S3 bucket meet the following condition:
         - Is compliant
@@ -192,6 +209,14 @@ def case_4(cinq_test_service, account, recipient):
     The Auditor will:
         - Not mark compliant buckets as non-compliant
     """
+
+    # Prep
+    setup_info = setup_test_aws(cinq_test_service)
+    account = setup_info['account']
+
+    prep_s3_testing(cinq_test_service)
+
+    # Add resources
     client = aws_get_client('s3')
     bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
     client.create_bucket(Bucket=bucket_name)
@@ -215,80 +240,3 @@ def case_4(cinq_test_service, account, recipient):
     )
     auditor.run()
     assert auditor._cinq_test_notices == {}
-
-
-def case_5(cinq_test_service, account, recipient):
-    """
-    Test whether the auditor can handle large volume of Buckets from different regions
-    """
-    total_buckets = 1000
-    compliant_buckets = []
-    non_compliant_buckets = []
-
-    client = aws_get_client('s3')
-    regions = get_aws_regions('s3')
-
-    # Workaround for a moto cloudwatch KeyError bug
-    regions.remove('eu-west-3')
-
-    for i in range(0, total_buckets):
-        bucket_name = uuid.uuid4().hex
-        client.create_bucket(
-            Bucket=bucket_name,
-            CreateBucketConfiguration={'LocationConstraint': random.choice(regions)}
-        )
-        compliant_buckets.append(bucket_name) if random.randint(0, 1) else non_compliant_buckets.append(bucket_name)
-
-    collect_resources(account=account, resource_types=['s3'])
-
-    for item in compliant_buckets:
-        cinq_test_service.modify_resource(
-            item,
-            'creation_date',
-            '2000-01-01T00:00:00'
-        )
-        client.put_bucket_tagging(
-            Bucket=item,
-            Tagging={'TagSet': VALID_TAGSET}
-        )
-
-    for item in non_compliant_buckets:
-        cinq_test_service.modify_resource(
-            item,
-            'creation_date',
-            '2000-01-01T00:00:00'
-        )
-
-    collect_resources(account=account, resource_types=['s3'])
-    auditor = MockRequiredTagsAuditor()
-    auditor.run()
-    for item in auditor._cinq_test_notices[recipient]['not_fixed']:
-        assert item['resource'].resource_id not in compliant_buckets
-        assert item['resource'].resource_id in non_compliant_buckets
-
-    assert len(non_compliant_buckets) == len(auditor._cinq_test_notices[recipient]['not_fixed'])
-
-
-def test_audit(cinq_test_service):
-    """
-
-    :return:
-    """
-
-    # Prep
-    setup_info = setup_test_aws(cinq_test_service)
-    recipient = setup_info['recipient']
-    account = setup_info['account']
-
-    db_setting = dbconfig.get('audit_scope', NS_AUDITOR_REQUIRED_TAGS)
-    db_setting['enabled'] = ['aws_s3_bucket']
-    dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'audit_scope', DBCJSON(db_setting))
-
-    cinq_test_service.start_mocking_services('cloudwatch')
-
-    # Tests
-    for single_test_case in filter(lambda x: x[0].startswith('case_'), globals().items()):
-        cinq_test_service.start_mocking_services('s3')
-        single_test_case[1](cinq_test_service, account, recipient)
-        cinq_test_service.reset_db_data()
-        cinq_test_service.stop_mocking_services('s3')
