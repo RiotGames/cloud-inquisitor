@@ -1,25 +1,8 @@
-from cloud_inquisitor.config import dbconfig
-from cloud_inquisitor.constants import NS_CINQ_TEST
-from tests.libs.util_cinq import aws_get_client, collect_resources
-from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
+from tests.libs.util_cinq import aws_get_client, collect_resources, setup_test_aws
 
 
-def test_collect(cinq_test_service):
-    """
-
-    :return:
-    """
-
-    # Prep
+def case_1(cinq_test_service, account, recipient):
     cinq_test_service.start_mocking_services('ec2')
-    account = cinq_test_service.add_test_account(
-        account_type='AWS',
-        account_name=CINQ_TEST_ACCOUNT_NAME,
-        contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
-        properties={
-            'account_number': CINQ_TEST_ACCOUNT_NO
-        }
-    )
 
     # Add resources
     client = aws_get_client('ec2')
@@ -31,3 +14,22 @@ def test_collect(cinq_test_service):
     # verify
     assert cinq_test_service.has_resource('non-exist-id') is False
     assert cinq_test_service.has_resource(resource['Instances'][0]['InstanceId']) is True
+
+    cinq_test_service.stop_mocking_services('ec2')
+
+
+def test_collect(cinq_test_service):
+    """
+
+    :return:
+    """
+
+    # Prep
+    setup_info = setup_test_aws(cinq_test_service)
+    recipient = setup_info['recipient']
+    account = setup_info['account']
+
+    # Tests
+    for single_test_case in filter(lambda x: x[0].startswith('case_'), globals().items()):
+        single_test_case[1](cinq_test_service, account, recipient)
+        cinq_test_service.reset_db_data()

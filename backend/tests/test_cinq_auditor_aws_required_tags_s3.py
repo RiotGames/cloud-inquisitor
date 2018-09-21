@@ -195,7 +195,6 @@ def case_4(cinq_test_service, account, recipient):
     client = aws_get_client('s3')
     bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
     client.create_bucket(Bucket=bucket_name)
-    resource = client.list_buckets()['Buckets'][0]
 
     client.put_bucket_tagging(
         Bucket=bucket_name,
@@ -210,7 +209,7 @@ def case_4(cinq_test_service, account, recipient):
 
     # Setup test case
     cinq_test_service.modify_resource(
-        resource['Name'],
+        bucket_name,
         'creation_date',
         '2000-01-01T00:00:00'
     )

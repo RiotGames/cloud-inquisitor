@@ -1,29 +1,8 @@
-from cloud_inquisitor.config import dbconfig
-from cloud_inquisitor.constants import NS_CINQ_TEST
-from cloud_inquisitor.utils import NotificationContact
 from tests.libs.cinq_test_cls import MockEBSAuditor
-from tests.libs.util_cinq import aws_get_client, collect_resources
-from tests.libs.var_const import CINQ_TEST_ACCOUNT_NAME, CINQ_TEST_ACCOUNT_NO
+from tests.libs.util_cinq import aws_get_client, collect_resources, setup_test_aws
 
 
-def test_audit(cinq_test_service):
-    """
-
-    :return:
-    """
-
-    # Prep
-    recipient = NotificationContact('email', dbconfig.get('test_email', NS_CINQ_TEST))
-    cinq_test_service.start_mocking_services('ec2')
-    account = cinq_test_service.add_test_account(
-        account_type='AWS',
-        account_name=CINQ_TEST_ACCOUNT_NAME,
-        contacts=[{'type': 'email', 'value': dbconfig.get('test_email', NS_CINQ_TEST)}],
-        properties={
-            'account_number': CINQ_TEST_ACCOUNT_NO
-        }
-    )
-
+def case_1(cinq_test_service, account, recipient):
     # Add resources
     client = aws_get_client('ec2')
     resource = client.create_volume(
@@ -43,4 +22,21 @@ def test_audit(cinq_test_service):
 
     assert notice[recipient][0].volume_id.value == resource['VolumeId']
 
-    # TODO: More tests
+
+def test_audit(cinq_test_service):
+    """
+
+    :return:
+    """
+
+    # Prep
+    cinq_test_service.start_mocking_services('ec2')
+
+    setup_info = setup_test_aws(cinq_test_service)
+    recipient = setup_info['recipient']
+    account = setup_info['account']
+
+    # Tests
+    for single_test_case in filter(lambda x: x[0].startswith('case_'), globals().items()):
+        single_test_case[1](cinq_test_service, account, recipient)
+        cinq_test_service.reset_db_data()
