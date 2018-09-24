@@ -34,11 +34,11 @@ NS_AUDITOR_VPC_FLOW_LOGS = 'auditor_vpc_flow_logs'
 
 
 class AuditActions:
-    IGNORE = 'IGNORE'
-    FIX = 'FIX'
     ALERT = 'ALERT'
-    STOP = 'STOP'
+    FIXED = 'FIXED'
+    IGNORE = 'IGNORE'
     REMOVE = 'REMOVE'
+    STOP = 'STOP'
 
 
 # Collectors

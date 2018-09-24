@@ -6,12 +6,24 @@ from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
 from tests.libs.util_cinq import aws_get_client, setup_test_aws, collect_resources
 
 
-def case_1(cinq_test_service, account, recipient):
+def test_basic_ops(cinq_test_service):
     """
     Test will pass if:
     1. Auditor can detect non-compliant EC2 instances
     2. Auditor respect grace period settings
     """
+
+    # Prep
+    cinq_test_service.start_mocking_services('ec2')
+
+    setup_info = setup_test_aws(cinq_test_service)
+    recipient = setup_info['recipient']
+    account = setup_info['account']
+
+    db_setting = dbconfig.get('audit_scope', NS_AUDITOR_REQUIRED_TAGS)
+    db_setting['enabled'] = ['aws_ec2_instance']
+    dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'audit_scope', DBCJSON(db_setting))
+    dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'collect_only', False)
 
     # Add resources
     client = aws_get_client('ec2')
@@ -23,6 +35,7 @@ def case_1(cinq_test_service, account, recipient):
     # Initialize auditor
     auditor = MockRequiredTagsAuditor()
 
+    '''
     # Test 1 --- Test if auditor respect grace period settings
     cinq_test_service.modify_resource(
         resource['Instances'][0]['InstanceId'],
@@ -31,6 +44,7 @@ def case_1(cinq_test_service, account, recipient):
     )
     auditor.run()
     assert auditor._cinq_test_notices == {}
+    '''
 
     # Test 2 --- Test if auditor can pick up non-compliant resources correctly
     ''' Modify resource property'''
@@ -45,24 +59,3 @@ def case_1(cinq_test_service, account, recipient):
 
     assert recipient in notices
     assert notices[recipient]['not_fixed'][0]['resource'].resource_id == resource['Instances'][0]['InstanceId']
-
-
-def test_audit(cinq_test_service):
-    """
-
-    :return:
-    """
-
-    # Prep
-    cinq_test_service.start_mocking_services('ec2')
-
-    setup_info = setup_test_aws(cinq_test_service)
-    recipient = setup_info['recipient']
-    account = setup_info['account']
-
-    db_setting = dbconfig.get('audit_scope', NS_AUDITOR_REQUIRED_TAGS)
-    db_setting['enabled'] = ['aws_ec2_instance']
-    dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'audit_scope', DBCJSON(db_setting))
-
-    # Tests
-    case_1(cinq_test_service, account, recipient)
