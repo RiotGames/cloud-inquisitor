@@ -7,6 +7,8 @@ VALID_TAGSET = [
     {'Key': x, 'Value': 'value@example.com'} for x in dbconfig.get('required_tags', NS_AUDITOR_REQUIRED_TAGS, [])
 ]
 
+IGNORE_TAGSET = [{'Key': dbconfig.get('audit_ignore_tag', NS_AUDITOR_REQUIRED_TAGS), 'Value': 'IGNORED'}]
+
 
 def s3_upload_file_from_string(client, bucket_name, file_name, content):
     file_obj = StringIO()
