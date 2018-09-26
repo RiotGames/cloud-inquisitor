@@ -1,5 +1,3 @@
-import datetime
-
 import pytest
 from botocore.exceptions import ClientError
 
@@ -61,7 +59,6 @@ def test_basic_ops(cinq_test_service):
 
     auditor.run()
     notices = auditor._cinq_test_notices
-
     assert bucket_name == notices[recipient]['not_fixed'][0]['resource']['resource_id']
 
     # Test 3 --- Modify the issue creation date so it will meet the criteria of "remove" action
