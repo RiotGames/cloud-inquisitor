@@ -74,3 +74,31 @@ def test_ignore_tag(cinq_test_service):
 
     auditor.run()
     assert not auditor._cinq_test_notices
+
+
+def test_alert_schedule(cinq_test_service):
+    """
+    Test whether the auditor respects the alert schedule
+    """
+
+    setup_info = setup_test_aws(cinq_test_service)
+    account = setup_info['account']
+
+    prep_s3_testing(cinq_test_service)
+
+    # Add resources
+    client = aws_get_client('s3')
+    bucket_name = dbconfig.get('test_bucket_name', NS_CINQ_TEST, default='testbucket')
+    client.create_bucket(Bucket=bucket_name)
+
+    # Collect resources
+    collect_resources(account=account, resource_types=['s3'])
+
+    # Initialize auditor
+    auditor = MockRequiredTagsAuditor()
+
+    # Test 1 --- The auditor should not alert again as we are not at the next scheduled alert time
+    auditor.run()
+    assert auditor._cinq_test_notices
+    auditor.run()
+    assert not auditor._cinq_test_notices
