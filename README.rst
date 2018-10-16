@@ -14,3 +14,5 @@ Cloud Inquisitor can be used to improve the security posture of your AWS footpri
 * managing `IAM policies <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html>`_ across multiple accounts.
 
 Please see the official docs `here <https://cloud-inquisitor.readthedocs.io/en/latest/>`_ for more information on how to deploy, configure and operate Cloud Inquisitor in your environment.
+
+If you would like to contribute, please check out our `Contributing Guidelines <https://cloud-inquisitor.readthedocs.io/en/latest/contributing.html>`_.
