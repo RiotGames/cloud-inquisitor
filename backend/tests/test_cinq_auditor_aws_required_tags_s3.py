@@ -129,9 +129,6 @@ def test_remove_non_empty_bucket(cinq_test_service):
     current_policy = client.get_bucket_lifecycle_configuration(Bucket=bucket_name)['Rules'][0]
     assert current_policy['ID'] == 'cloudInquisitor'
     assert current_policy['Status'] == 'Enabled'
-    assert current_policy['Expiration'] == {
-        'Days': dbconfig.get('lifecycle_expiration_days', NS_AUDITOR_REQUIRED_TAGS, 3)
-    }
 
     '''
     # Verify if the Lifecycle policy will be removed if the tagging issue is fixed
