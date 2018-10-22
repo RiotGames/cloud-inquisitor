@@ -1,10 +1,10 @@
 import random
 import uuid
 
-from cloud_inquisitor.config import dbconfig, DBCJSON
+from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
-from tests.libs.lib_cinq_auditor_aws_required_tags import VALID_TAGSET, prep_s3_testing, set_audit_scope
+from tests.libs.lib_cinq_auditor_aws_required_tags import VALID_TAGSET, set_audit_scope
 from tests.libs.util_cinq import setup_test_aws, aws_get_client, collect_resources
 from tests.libs.util_provider_aws import get_aws_regions
 
