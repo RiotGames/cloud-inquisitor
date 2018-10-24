@@ -10,7 +10,7 @@ setup_db() {
                 $APP_PYENV_PATH/bin/cloud-inquisitor db upgrade
                 echo ''
                 echo \"Ignore line above about 'Failed loading configuration from database.' It was buffered before creating DB\"
-                $APP_PYENV_PATH/bin/cloud-inquisitor setup --headless
+                $APP_PYENV_PATH/bin/cloud-inquisitor setup
 }
 
 setup_db
