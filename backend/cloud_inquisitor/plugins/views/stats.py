@@ -64,8 +64,10 @@ class StatsGet(BaseView):
 
             rfc26.append({
                 'accountName': acct.account_name,
+                'compliantResources': taggable_resources - missing_tags,
                 'totalInstances': total_instances,
                 'totalBuckets': total_buckets,
+                'taggableResources': taggable_resources,
                 'percent': 100 - pct
             })
 
