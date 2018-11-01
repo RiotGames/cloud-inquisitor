@@ -10,7 +10,7 @@ from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.plugins.types.accounts import AWSAccount
 from cloud_inquisitor.plugins.types.issues import RequiredTagsIssue
-from cloud_inquisitor.plugins.types.resources import EC2Instance
+from cloud_inquisitor.plugins.types.resources import EC2Instance, S3Bucket
 from cloud_inquisitor.schema import (
     Account,
     Resource,
@@ -27,6 +27,7 @@ from cloud_inquisitor.wrappers import check_auth, rollback
 reqtag_type_id = IssueType.get(RequiredTagsIssue.issue_type).issue_type_id
 ec2_type_id = ResourceType.get(EC2Instance.resource_type).resource_type_id
 aws_account_type_id = AccountType.get(AWSAccount.account_type).account_type_id
+s3_type_id = ResourceType.get(S3Bucket.resource_type).resource_type_id
 
 
 class StatsGet(BaseView):
@@ -48,19 +49,25 @@ class StatsGet(BaseView):
         accounts = list(AWSAccount.get_all(include_disabled=False).values())
         instances_by_account = self._get_instances_by_account()
         issues_by_account = self._get_issues_by_account()
+        buckets_by_account = self.get_buckets_by_account()
 
         for acct in accounts:
             missing_tags = issues_by_account[acct.account_name]
             total_instances = instances_by_account[acct.account_name]
+            total_buckets = buckets_by_account[acct.account_name]
+            taggable_resources = total_instances + total_buckets
+
             if missing_tags == 0:
                 pct = 0
             else:
-                pct = float(missing_tags) / total_instances * 100
+                pct = (float(missing_tags) / taggable_resources * 100) if taggable_resources else 100
 
             rfc26.append({
                 'accountName': acct.account_name,
-                'compliantInstances': total_instances - missing_tags,
+                'compliantResources': taggable_resources - missing_tags,
                 'totalInstances': total_instances,
+                'totalBuckets': total_buckets,
+                'taggableResources': taggable_resources,
                 'percent': 100 - pct
             })
 
@@ -88,16 +95,16 @@ class StatsGet(BaseView):
 
         issues = (
             db.query(func.count(Issue.issue_id), Account.account_name)
-            .join(acct_alias, Issue.issue_id == acct_alias.issue_id)
-            .join(Account, acct_alias.value == Account.account_id)
-            .filter(
+                .join(acct_alias, Issue.issue_id == acct_alias.issue_id)
+                .join(Account, acct_alias.value == Account.account_id)
+                .filter(
                 Account.account_type_id == aws_account_type_id,
                 Account.enabled == 1,
                 Issue.issue_type_id == reqtag_type_id,
                 acct_alias.name == 'account_id'
             )
-            .group_by(Account.account_name)
-            .all()
+                .group_by(Account.account_name)
+                .all()
         )
 
         return defaultdict(int, map(reversed, issues))
@@ -105,24 +112,39 @@ class StatsGet(BaseView):
     def _get_instances_by_account(self):
         instances = (
             db.query(func.count(Resource.resource_id), Account.account_name)
-            .join(Account, Resource.account_id == Account.account_id)
-            .filter(
+                .join(Account, Resource.account_id == Account.account_id)
+                .filter(
                 Resource.resource_type_id == ec2_type_id,
                 Account.account_type_id == aws_account_type_id,
                 Account.enabled == 1
             )
-            .group_by(Account.account_name)
-            .all()
+                .group_by(Account.account_name)
+                .all()
         )
 
         return defaultdict(int, map(reversed, instances))
 
+    def _get_buckets_by_account(self):
+        buckets = (
+            db.query(func.count(Resource.resource_id), Account.account_name)
+                .join(Account, Resource.account_id == Account.account_id)
+                .filter(
+                Resource.resource_type_id == s3_type_id,
+                Account.account_type_id == aws_account_type_id,
+                Account.enabled == 1
+            )
+                .group_by(Account.account_name)
+                .all()
+        )
+
+        return defaultdict(int, map(reversed, buckets))
+
     def _get_public_ip_instances(self):
         return (
             db.query(func.count(ResourceProperty.resource_id))
-            .join(Resource, ResourceProperty.resource_id == Resource.resource_id)
-            .join(Account, Resource.account_id == Account.account_id)
-            .filter(
+                .join(Resource, ResourceProperty.resource_id == Resource.resource_id)
+                .join(Account, Resource.account_id == Account.account_id)
+                .filter(
                 Account.account_id.in_(session['accounts']),
                 Account.enabled == 1,
                 and_(
@@ -135,9 +157,9 @@ class StatsGet(BaseView):
     def _get_instances_by_state(self):
         return (
             db.query(ResourceProperty.value, func.count(ResourceProperty.value))
-            .join(Resource, ResourceProperty.resource_id == Resource.resource_id)
-            .join(Account, Resource.account_id == Account.account_id)
-            .filter(
+                .join(Resource, ResourceProperty.resource_id == Resource.resource_id)
+                .join(Account, Resource.account_id == Account.account_id)
+                .filter(
                 Account.account_id.in_(session['accounts']),
                 Account.enabled == 1,
                 Resource.resource_type_id == ec2_type_id,
@@ -148,8 +170,8 @@ class StatsGet(BaseView):
     def _get_instance_counts(self):
         return (
             db.query(func.count(Resource.resource_id))
-            .join(Account, Resource.account_id == Account.account_id)
-            .filter(
+                .join(Account, Resource.account_id == Account.account_id)
+                .filter(
                 Account.account_id.in_(session['accounts']),
                 Account.enabled == 1,
                 Resource.resource_type_id == ec2_type_id
