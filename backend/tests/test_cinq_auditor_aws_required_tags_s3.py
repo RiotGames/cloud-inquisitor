@@ -127,7 +127,7 @@ def test_remove_non_empty_bucket(cinq_test_service):
 
     # Verify if the Lifecycle policy is added
     current_policy = client.get_bucket_lifecycle_configuration(Bucket=bucket_name)['Rules'][0]
-    assert current_policy['ID'] == 'cloudInquisitor'
+    assert current_policy['ID'] == 'cinqRemoveObjectsAndVersions'
     assert current_policy['Status'] == 'Enabled'
 
     '''
