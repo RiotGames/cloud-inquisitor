@@ -49,7 +49,7 @@ class StatsGet(BaseView):
         accounts = list(AWSAccount.get_all(include_disabled=False).values())
         instances_by_account = self._get_instances_by_account()
         issues_by_account = self._get_issues_by_account()
-        buckets_by_account = self.get_buckets_by_account()
+        buckets_by_account = self._get_buckets_by_account()
 
         for acct in accounts:
             missing_tags = issues_by_account[acct.account_name]
