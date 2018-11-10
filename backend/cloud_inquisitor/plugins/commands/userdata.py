@@ -77,7 +77,8 @@ class UserData(BaseCommand):
                 self.output(res['CiphertextBlob'])
             else:
                 res = kms.decrypt(CiphertextBlob=b64decode(data))
-                self.output(json.dumps(json.loads(str(zlib.decompress(res['Plaintext']), 'utf-8')), indent=4))
+                decompressed = str(zlib.decompress(res['Plaintext'], wbits=zlib.MAX_WBITS | 32), 'utf-8')
+                self.output(json.dumps(json.loads(decompressed),indent=4))
 
         except Exception:
             self.log.exception('An error occured while doing userdata.py stuff')

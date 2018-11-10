@@ -1,7 +1,7 @@
 import logging
 import re
 from abc import abstractmethod, ABC
-from contextlib import suppress
+from collections import namedtuple
 from datetime import datetime, timedelta
 
 from botocore.exceptions import ClientError
@@ -10,28 +10,44 @@ from sqlalchemy import func, or_, and_, cast, DATETIME
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import aliased
 
-from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN
+from cloud_inquisitor import get_plugin_by_name
+from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN, PLUGIN_NAMESPACES
 from cloud_inquisitor.database import db
-from cloud_inquisitor.exceptions import ResourceException
+from cloud_inquisitor.exceptions import ResourceException, InquisitorError
 from cloud_inquisitor.schema import Tag, Account, Resource, ResourceType, ResourceProperty
 from cloud_inquisitor.utils import (
     to_utc_date,
     is_truthy,
     to_camelcase,
     NotificationContact,
-    parse_date
+    parse_date,
+    deprecated
 )
+
+
+ResourceProp = namedtuple('ResourceProp', ('key', 'name', 'type', 'show'))
 
 
 class BaseResource(ABC):
     """Base type object for resource objects"""
+    resource_properties = []
 
     def __init__(self, resource):
         self.resource = resource
         self.log = logging.getLogger(self.__class__.__module__)
 
     def __getattr__(self, item):
-        return self.get_property(item)
+        for prop in self.resource_properties:
+            if prop.key == item:
+                if prop.type == 'datetime':
+                    return parse_date(self.get_property(item).value)
+
+                elif prop.type == 'bool':
+                    return is_truthy(self.get_property(item).value)
+
+                return self.get_property(item).value
+
+        raise AttributeError('{} has no attribute {}'.format(self.__class__.__name__, item))
 
     def __str__(self):
         return '<{} resource_id={}>'.format(self.__class__.__name__, self.id)
@@ -106,18 +122,21 @@ class BaseResource(ABC):
 
     # endregion
 
+    # region Static and Class methods
     @abstractmethod
     def update(self, data):
         """Updates the resource object with the information from `data`. The changes will be added to the current
         db.session but will not be commited. The user will need to perform the commit explicitly to save the changes
 
+        Args:
+            data: A data object, specific to the resource
+
         Returns:
             True if resource object was updated, else False
         """
 
-    # region Class methods
-    @classmethod
-    def get(cls, resource_id):
+    @staticmethod
+    def get(resource_id):
         """Returns the class object identified by `resource_id`
 
         Args:
@@ -126,8 +145,15 @@ class BaseResource(ABC):
         Returns:
             EC2 Instance object if found, else None
         """
-        res = Resource.get(resource_id)
-        return cls(res) if res else None
+        resource = Resource.get(resource_id)
+
+        if not resource:
+            return None
+
+        resource_type = ResourceType.get(resource.resource_type_id).resource_type
+        resource_class = get_plugin_by_name(PLUGIN_NAMESPACES['types'], resource_type)
+
+        return resource_class(resource)
 
     @classmethod
     def create(cls, resource_id, *, account_id, properties=None, tags=None, location=None,
@@ -195,6 +221,9 @@ class BaseResource(ABC):
         Returns:
             list of resource objects
         """
+        if cls == BaseResource:
+            raise InquisitorError('get_all on BaseResource is not supported')
+
         qry = db.Resource.filter(
             Resource.resource_type_id == ResourceType.get(cls.resource_type).resource_type_id
         )
@@ -211,6 +240,7 @@ class BaseResource(ABC):
         return {res.resource_id: cls(res) for res in qry.all()}
 
     @classmethod
+    @deprecated('The `search` method is deprecated, please use the `find` function instead')
     def search(cls, *, limit=100, page=1, accounts=None, locations=None, resources=None,
                properties=None, include_disabled=False, return_query=False):
         """Search for resources based on the provided filters. If `return_query` a sub-class of `sqlalchemy.orm.Query`
@@ -285,6 +315,111 @@ class BaseResource(ABC):
 
         return total, [cls(x) for x in qry.all()]
 
+    @classmethod
+    def find(cls, *, limit=100, page=1, accounts=None, locations=None, resources=None,
+             resource_types=None, properties=None, include_disabled=False, return_query=False):
+        """Find resources based on the provided filters.
+
+        If `return_query` a sub-class of `sqlalchemy.orm.Query` is returned instead of the resource list.
+
+        Args:
+            limit (`int`): Number of results to return. Default: 100
+            page (`int`): Pagination offset for results. Default: 1
+            accounts (`list` of `int`): A list of account id's to limit the returned resources to
+            locations (`list` of `str`): A list of locations as strings to limit the search for
+            resources ('list' of `str`): A list of resource_ids
+            resource_types (`list` of `str`): A list of resource types
+            properties (`dict`): A `dict` containing property name and value pairs. Values can be either a str or a list
+            of strings, in which case a boolean OR search is performed on the values
+            include_disabled (`bool`): Include resources from disabled accounts. Default: False
+            return_query (`bool`): Returns the query object prior to adding the limit and offset functions. Allows for
+            sub-classes to amend the search feature with extra conditions. The calling function must handle pagination
+            on its own
+
+        Returns:
+            `list` of `Resource`, `sqlalchemy.orm.Query`
+        """
+        qry = db.Resource.order_by(Resource.resource_type_id, Resource.resource_id)
+
+        if cls != BaseResource or resource_types:
+            qry = qry.join(
+                ResourceType, Resource.resource_type_id == ResourceType.resource_type_id
+            ).filter(
+                ResourceType.resource_type.in_(resource_types or [cls.resource_type])
+            )
+
+        if session:
+            qry = qry.filter(Resource.account_id.in_(session['accounts']))
+
+        if not include_disabled:
+            qry = qry.join(Account, Resource.account_id == Account.account_id).filter(Account.enabled == 1)
+
+        if accounts:
+            qry = qry.filter(Resource.account_id.in_([Account.get(acct).account_id for acct in accounts]))
+
+        if locations:
+            qry = qry.filter(Resource.location.in_(locations))
+
+        if resources:
+            qry = qry.filter(Resource.resource_id.in_(resources))
+
+        if properties:
+            for prop_name, value in properties.items():
+                alias = aliased(ResourceProperty)
+
+                qry = qry.join(alias, Resource.resource_id == alias.resource_id)
+
+                if type(value) == list:
+                    where_clause = []
+                    for item in value:
+                        where_clause.append(alias.value == item)
+
+                    qry = qry.filter(
+                        and_(
+                            alias.name == prop_name,
+                            or_(*where_clause)
+                        ).self_group()
+                    )
+                else:
+                    qry = qry.filter(
+                        and_(
+                            alias.name == prop_name,
+                            alias.value == value
+                        ).self_group()
+                    )
+
+        if return_query:
+            return qry
+
+        total = qry.count()
+        qry = qry.limit(limit)
+        qry = qry.offset((page - 1) * limit if page > 1 else 0)
+
+        return total, list(map(BaseResource.get_typed_resource, qry.all()))
+
+    @staticmethod
+    def get_typed_resource(resource):
+        """Returns a given resource object as the proper type
+
+        Args:
+             resource (BaseResource, str, int): A resource object
+
+        Returns:
+            `resource`
+        """
+        if type(resource) in (int, str):
+            resource = Resource.get(resource)
+
+        elif issubclass(resource.__class__, BaseResource):
+            resource = resource.resource
+
+        resource_type = ResourceType.get(resource.resource_type_id).resource_type
+        resource_class = get_plugin_by_name(PLUGIN_NAMESPACES['types'], resource_type)
+        if not resource_class:
+            raise InquisitorError('Unknown resource type: {}'.format(resource_type))
+
+        return resource_class(resource)
+
     # endregion
 
     # region Instance methods
@@ -307,6 +442,21 @@ class BaseResource(ABC):
                         return [NotificationContact('email', email) for email in match.groups()]
         return None
 
+    def get_name_or_id(self, with_id=False):
+        """Return the value of the Name tag if present, else return the resource id
+
+        Args:
+            with_id (`bool`): Return the ID along with the name
+
+        Returns:
+            `str`
+        """
+        name = self.get_tag('Name')
+        if name and len(name.value.strip()) > 0:
+            return '{0} ({1})'.format(name.value, self.id) if with_id else name.value
+
+        return self.id
+
     def get_property(self, name):
         """Return a named property for a resource, if available. Will raise an `AttributeError` if the property
         does not exist
@@ -323,14 +473,13 @@ class BaseResource(ABC):
 
         raise AttributeError(name)
 
-    def set_property(self, name, value, update_session=True):
+    def set_property(self, name, value):
         """Create or set the value of a property. Returns `True` if the property was created or updated, or `False` if
         there were no changes to the value of the property.
 
         Args:
             name (str): Name of the property to create or update
             value (any): Value of the property. This can be any type of JSON serializable data
-            update_session (bool): Automatically add the change to the SQLAlchemy session. Default: True
 
         Returns:
             `bool`
@@ -353,18 +502,16 @@ class BaseResource(ABC):
             prop.name = name
             prop.value = value
 
-        if update_session:
-            db.session.add(prop)
+        db.session.add(prop)
 
         return True
 
-    def delete_property(self, name, update_session=True):
+    def delete_property(self, name):
         """Removes a property from an object, by the name of the property. Returns `True` if the property was removed or
         `False` if the property didn't exist.
 
         Args:
             name (str): Name of the property to delete
-            update_session (bool): Automatically add the change to the SQLAlchemy session. Default: True
 
         Returns:
             `bool`
@@ -374,8 +521,7 @@ class BaseResource(ABC):
             prop = getattr(self, name)
             self.properties.remove(prop)
 
-            if update_session:
-                db.session.delete(prop)
+            db.session.delete(prop)
 
             return True
         except AttributeError:
@@ -487,13 +633,69 @@ class BaseResource(ABC):
             self.log.exception('Failed deleting resource: {}'.format(self.id))
             db.session.rollback()
 
-    def to_json(self):
+    def update_resource(self, properties, tags=None):
+        """Updates the resource object with the information from `data`. The changes will be added to the current
+        db.session but will not be commited. The user will need to perform the commit explicitly to save the changes
+
+        Args:
+            properties (`dict`): A dictionary of properties to update
+            tags (`dict`): A dictionary of tags to update
+
+        Returns:
+            True if resource object was updated, else False
+        """
+        updated = False
+
+        for prop in self.resource_properties:
+            key = prop.key
+            if key in properties:
+                updated |= self.set_property(key, properties[key])
+
+        if tags is not None:
+            existing_tags = {x.key: x for x in self.tags}
+            for key, value in list(tags.items()):
+                updated |= self.set_tag(key, value)
+
+            # Check for removed tags
+            for key in list(existing_tags.keys()):
+                if key not in tags:
+                    updated |= self.delete_tag(key)
+
+        return updated
+
+    def add_child(self, child):
+        """Add a new child object to the resource
+
+        Args:
+            child (`BaseResource`): Child resource object
+
+        Returns:
+            `None`
+        """
+        self.children.append(child.resource)
+
+    def delete_child(self, child):
+        """Remove a child from the object
+
+        Args:
+            child (`BaseResource`): Child resource object
+
+        Returns:
+            `None`
+        """
+        self.children.remove(child.resource)
+        child.delete()
+
+    def to_json(self, with_children=False):
         """Return a `dict` representation of the resource, including all properties and tags
+
+        Args:
+            with_children (`bool`): Return any child resource objects along with the data
 
         Returns:
             `dict`
         """
-        return {
+        res = {
             'resourceType': self.resource.resource_type_id,
             'resourceId': self.id,
             'accountId': self.resource.account_id,
@@ -502,6 +704,11 @@ class BaseResource(ABC):
             'properties': {to_camelcase(prop.name): prop.value for prop in self.resource.properties},
             'tags': [{'key': t.key, 'value': t.value} for t in self.resource.tags]
         }
+
+        if with_children:
+            res['children'] = self.children
+
+        return res
     # endregion
 
 
@@ -509,73 +716,19 @@ class EC2Instance(BaseResource):
     """EC2 Instance"""
     resource_type = 'aws_ec2_instance'
     resource_name = 'EC2 Instance'
-
-    # region Cinq Object properties
-    @property
-    def resource_creation_date(self):
-        """Returns the date and time the bucket was created.
-
-        Returns:
-            `datetime`
-        """
-        return self.launch_date
-
-    # endregion
+    resource_properties = [
+        ResourceProp(key='launch_date', name='Launch Date', type='datetime', show=True),
+        ResourceProp(key='state', name='State', type='string', show=True),
+        ResourceProp(key='instance_type', name='Instance Type', type='string', show=True),
+        ResourceProp(key='public_ip', name='Public IP', type='string', show=True),
+        ResourceProp(key='public_dns', name='Public DNS', type='string', show=True),
+        ResourceProp(key='created', name='Created', type='datetime', show=False),
+    ]
 
     # region Object properties
     @property
-    def launch_date(self):
-        """Returns the time and date of the last time the instance was started
-
-        Returns:
-            `datetime`
-        """
-        return parse_date(self.get_property('launch_date').value)
-
-    @property
-    def state(self):
-        """Returns the current state of the instance, eg. `running`, `stopped` etc.
-
-        Returns:
-            `str`
-        """
-        return self.get_property('state').value
-
-    @property
-    def instance_type(self):
-        """Returns the instance type, eg. `m4.large`, `r3.xlarge`
-
-        Returns:
-            `str`
-        """
-        return self.get_property('instance_type').value
-
-    @property
-    def public_ip(self):
-        """Returns the publicly accessible IP address. `None` if instance does not have a public address
-
-        Returns:
-            `str`
-        """
-        return self.get_property('public_ip').value
-
-    @property
-    def public_dns(self):
-        """Returns the publicly accessible DNS name. `None` if instance does not have a public address
-
-        Returns:
-            `str`
-        """
-        return self.get_property('public_dns').value
-
-    @property
-    def created(self):
-        """Returns the date and time for when this instance was first discovered
-
-        Returns:
-            `str`
-        """
-        return self.get_property('created').value
+    def resource_creation_date(self):
+        return self.launch_date
 
     @property
     def volumes(self):
@@ -588,14 +741,14 @@ class EC2Instance(BaseResource):
             EBSVolume(res) for res in db.Resource.join(
                 ResourceProperty, Resource.resource_id == ResourceProperty.resource_id
             ).filter(
-                Resource.resource_type_id == ResourceType.get('aws_ebs_volume').resource_type_id,
+                Resource.resource_type_id == ResourceType.get(EBSVolume.resource_type).resource_type_id,
                 ResourceProperty.name == 'attachments',
                 func.JSON_CONTAINS(ResourceProperty.value, func.JSON_QUOTE(self.id))
             ).all()
         ]
-
     # endregion
 
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data):
         """Updates the object information based on live data, if there were any changes made. Any changes will be
         automatically applied to the object, but will not be automatically persisted. You must manually call
@@ -612,25 +765,18 @@ class EC2Instance(BaseResource):
             self.delete(auto_commit=False)
             return True
 
-        updated = self.set_property('launch_date', to_utc_date(data.launch_time).isoformat())
-        updated |= self.set_property('state', data.state['Name'])
-        updated |= self.set_property('instance_type', data.instance_type)
-        updated |= self.set_property('public_ip', data.public_ip_address or None)
-        updated |= self.set_property('public_dns', data.public_dns_name or None)
+        args = {
+            'launch_date': to_utc_date(data.launch_time).isoformat(),
+            'state': data.state['Name'],
+            'instance_type': data.instance_type,
+            'public_ip': data.public_ip_address or None,
+            'public_dns': data.public_dns_name or None,
+        }
 
-        tags = {x['Key']: x['Value'] for x in data.tags or {}}
-        existing_tags = {x.key: x for x in self.tags}
-
-        # Check for new tags
-        for key, value in list(tags.items()):
-            updated |= self.set_tag(key, value)
-
-        # Check for updated or removed tags
-        for key in list(existing_tags.keys()):
-            if key not in tags:
-                updated |= self.delete_tag(key)
-
-        return updated
+        return self.update_resource(
+            properties=args,
+            tags={x['Key']: x['Value'] for x in data.tags or {}}
+        )
 
     def get_name_or_instance_id(self, with_id=False):
         """Returns the name of an instance if existant, else return the instance id
@@ -641,11 +787,24 @@ class EC2Instance(BaseResource):
         Returns:
             Name and/or instance ID of the instance object
         """
-        name = self.get_tag('Name', case_sensitive=False)
-        if name and len(name.value.strip()) > 0:
-            return '{0} ({1})'.format(name.value, self.id) if with_id else name.value
+        super().get_name_or_id(with_id=with_id)
 
-        return self.id
+    @classmethod
+    def search(cls, *, limit=100, page=1, accounts=None, locations=None, resources=None,
+               resource_types=None, properties=None, include_disabled=False, return_query=False):
+        """Wrapper for search method
+
+        TODO: Deprecate this method
+        """
+        return cls.find(
+            limit=limit,
+            page=page,
+            accounts=accounts,
+            locations=locations,
+            properties=properties,
+            include_disabled=include_disabled,
+            return_query=return_query
+        )
 
     @classmethod
     def search_by_age(cls, *, limit=100, page=1, accounts=None, locations=None, age=720,
@@ -668,6 +827,7 @@ class EC2Instance(BaseResource):
         qry = cls.search(
             limit=limit,
             page=page,
+            resource_types=[ResourceType.get(cls.resource_type_id).resource_type],
             accounts=accounts,
             locations=locations,
             properties=properties,
@@ -677,8 +837,7 @@ class EC2Instance(BaseResource):
 
         age_alias = aliased(ResourceProperty)
         qry = (
-            qry.join(age_alias, Resource.resource_id == age_alias.resource_id)
-                .filter(
+            qry.join(age_alias, Resource.resource_id == age_alias.resource_id).filter(
                 age_alias.name == 'launch_date',
                 cast(func.JSON_UNQUOTE(age_alias.value), DATETIME) < datetime.now() - timedelta(days=age)
             )
@@ -690,291 +849,99 @@ class EC2Instance(BaseResource):
 
         return total, [cls(x) for x in qry.all()]
 
-    def to_json(self, with_volumes=True):
-        """Augment the base `to_json` function, adding information about volumes
-
-        Returns:
-            `dict`
-        """
-        data = super().to_json()
-        if with_volumes:
-            data['volumes'] = [
-                {
-                    'volumeId': vol.id,
-                    'volumeType': vol.volume_type,
-                    'size': vol.size
-                } for vol in self.volumes
-            ]
-
-        return data
-
 
 class BeanStalk(BaseResource):
     """Elastic Beanstalk object"""
     resource_type = 'aws_beanstalk'
     resource_name = 'Elastic BeanStalk'
+    resource_properties = [
+        ResourceProp(key='environment_name', name='Environment Name', type='string', show=True),
+        ResourceProp(key='application_name', name='Application Name', type='string', show=True),
+        ResourceProp(key='cname', name='CNAME', type='string', show=True)
+    ]
 
-    # region Object properties
-    @property
-    def environment_name(self):
-        """Returns the Elastic BeanStalk environment name"""
-        return self.get_property('environment_name').value
-
-    @property
-    def application_name(self):
-        """Returns the application name of the Elastic BeanStalk"""
-        return self.get_property('application_name').value
-
-    @property
-    def cname(self):
-        """Returns the DNS CNAME of the Elastic BeanStalk"""
-        return self.get_property('cname').value
-
-    # endregion
-
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data):
-        updated = self.set_property('environment_name', data['environment_name'])
-        updated |= self.set_property('application_name', data['application_name'])
-        updated |= self.set_property('cname', data['cname'])
-
-        return updated
+        return self.update_resource(
+            properties={
+                'environment_name': data['environment_name'],
+                'application_name': data['application_name'],
+                'cname': data['cname']
+            }
+        )
 
 
 class CloudFrontDist(BaseResource):
     """CloudFront Distribution object"""
     resource_type = 'aws_cloudfront_dist'
     resource_name = 'CloudFront Distribution'
+    resource_properties = [
+        ResourceProp(key='domain_name', name='Domain Name', type='string', show=True),
+        ResourceProp(key='origins', name='Origins', type='list', show=True),
+        ResourceProp(key='enabled', name='Enabled', type='bool', show=True),
+        ResourceProp(key='type', name='Type', type='string', show=True),
+    ]
 
-    # region Object properties
-    @property
-    def domain_name(self):
-        """Returns the domain name of the CloudFront distribution
-
-        Returns:
-            `str`
-        """
-        return self.get_property('domain_name').value
-
-    @property
-    def origins(self):
-        """Returns the list of origins for the distribution
-
-        Returns:
-            `list` of `str`
-        """
-        return self.get_property('origins').value
-
-    @property
-    def enabled(self):
-        """Return `True` if the distribution is enabled, else `False`
-
-        Returns:
-            `bool`
-        """
-        return is_truthy(self.get_property('enabled').value)
-
-    @property
-    def type(self):
-        """Returns the type of distribution. Currently supported: `web` and `rtmp`
-
-        Returns:
-            `str`
-        """
-        return self.get_property('type').value
-
-    # endregion
-
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data):
+        properties = {
+            'domain_name': data['name'],
+            'origins': data['origins'],
+            'enabled': data['enabled'],
+            'type': data['type']
+        }
         tags = data.pop('tags')
-        existing_tags = {x.key: x for x in self.tags}
 
-        updated = self.set_property('domain_name', data['name'])
-        updated |= self.set_property('origins', data['origins'])
-        updated |= self.set_property('enabled', data['enabled'])
-        updated |= self.set_property('type', data['type'])
-
-        # Check for new tags
-        for key, value in list(tags.items()):
-            updated |= self.set_tag(key, value)
-
-        # Check for updated or removed tags
-        for key in list(existing_tags.keys()):
-            if key not in tags:
-                updated |= self.delete_tag(key)
-
-        return updated
+        return self.update_resource(properties=properties, tags=tags)
 
 
 class S3Bucket(BaseResource):
     """S3 Bucket object"""
     resource_type = 'aws_s3_bucket'
     resource_name = 'S3 Bucket'
+    resource_properties = [
+        ResourceProp(key='creation_date', name='Creation Date', type='datetime', show=True),
+        ResourceProp(key='bucket_policy', name='Bucket Policy', type='json', show=True),
+        ResourceProp(key='website_enabled', name='Website Enabled', type='bool', show=True),
+        ResourceProp(key='metrics', name='Bucket Metrics', type='json', show=True),
+    ]
 
-    # region Cinq Object properties
     @property
     def resource_creation_date(self):
-        """Returns the date and time the bucket was created.
-
-        Returns:
-            `datetime`
-        """
         return self.creation_date
 
-    # endregion
-
-    # region Object properties
-    @property
-    def acl(self):
-        """Returns the S3 Legacy Bucket Permissions.
-
-        Returns:
-            `dict`
-
-        """
-        return self.get_property('acl').value
-
-    @property
-    def creation_date(self):
-        """Returns the date and time the bucket was created.
-
-        Returns:
-            `datetime`
-        """
-        return parse_date(self.get_property('creation_date').value)
-
-    @property
-    def lifecycle_config(self):
-        """Returns the bucket lifecycle configuration.
-
-        Returns:
-            `dict`
-
-        """
-        return self.get_property('lifecycle_config').value
-
-    @property
-    def bucket_policy(self):
-        """ Returns the S3 Bucket Policy applied if any
-
-        Returns:
-            `json`
-
-        """
-        return self.get_property('bucket_policy').value
-
-    def website_enabled(self):
-        """ Returns state of website hosting on the bucket
-
-        Returns:
-            `string`
-
-
-        """
-        return self.get_property('website_enabled').value
-
-    def metrics(self):
-        """ Returns metric data on the bucket
-
-
-        Returns:
-            `json`
-
-        """
-        return self.get_property('metrics').value
-
-    # endregion
-
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data, properties):
+        properties = {
+            'location': properties['location'],
+            'creation_date': data.creation_date,
+            'bucket_policy': properties['bucket_policy'],
+            'website_enabled': properties['website_enabled'],
+            'metrics': properties['metrics']
+        }
 
-        updated = self.set_property('location', properties['location'])
-        updated |= self.set_property('acl', properties['acl'])
-        updated |= self.set_property('creation_date', data.creation_date)
-        updated |= self.set_property('lifecycle_config', properties['lifecycle_config'])
-        updated |= self.set_property('bucket_policy', properties['bucket_policy'])
-        updated |= self.set_property('website_enabled', properties['website_enabled'])
-        updated |= self.set_property('metrics', properties['metrics'])
-
-        with suppress(ClientError):
+        try:
             tags = {t['Key']: t['Value'] for t in data.Tagging().tag_set}
-            existing_tags = {x.key: x for x in self.tags}
+        except ClientError:
+            tags = None
 
-            # Check for new tags
-            for key, value in list(tags.items()):
-                updated |= self.set_tag(key, value)
-
-            # Check for updated or removed tags
-            for key in list(existing_tags.keys()):
-                if key not in tags:
-                    updated |= self.delete_tag(key)
-
-        return updated
+        return self.update_resource(properties=properties, tags=tags)
 
 
 class EBSSnapshot(BaseResource):
     """EBS Snapshot object"""
     resource_type = 'aws_ebs_snapshot'
     resource_name = 'EBS Snapshot'
+    resource_properties = [
+        ResourceProp(key='state', name='State', type='string', show=True),
+        ResourceProp(key='state_message', name='State Message', type='string', show=True),
+        ResourceProp(key='encrypted', name='Encrypted', type='string', show=True),
+        ResourceProp(key='kms_key_id', name='KMS Key ID', type='string', show=True),
+        ResourceProp(key='volume_id', name='Volume ID', type='string', show=True),
+        ResourceProp(key='volume_size', name='Volume Size', type='string', show=True),
+    ]
 
-    # region Object properties
-    @property
-    def state(self):
-        """Returns the current state of the snapshot
-
-        Returns:
-            `str`
-        """
-        return self.get_property('state').value
-
-    @property
-    def state_message(self):
-        """Returns information about the current state
-
-        Returns:
-            `str`
-        """
-        return self.get_property('state_message').value
-
-    @property
-    def encrypted(self):
-        """Returns `True` if the snapshot is encrypted with KMS, else `False`
-
-        Returns:
-            `bool`
-        """
-        return is_truthy(self.get_property('encrypted').value)
-
-    @property
-    def kms_key_id(self):
-        """Returns the ARN of the KMS key used to encrypt the snapshot (if applicable, else `None`)
-
-        Returns:
-            `str`
-        """
-        return self.get_property('kms_key_id').value
-
-    @property
-    def volume_id(self):
-        """Returns the ID of the volume used to create the snapshot
-
-        Returns:
-            `str`
-        """
-        return self.get_property('volume_id').value
-
-    @property
-    def volume_size(self):
-        """Returns the size of the original volume used to create the snapshot.
-
-        *NOTE*
-        Snapshots are stored compressed, so the `volume_size` does not reflect the true size of the snapshot itself.
-
-        Returns:
-            `str`
-        """
-        return self.get_property('volume_size').value
-
-    # endregion
-
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data):
         """Updates the object information based on live data, if there were any changes made. Any changes will be
         automatically applied to the object, but will not be automatically persisted. You must manually call
@@ -986,22 +953,14 @@ class EBSSnapshot(BaseResource):
         Returns:
             True if there were any changes to the object, else false
         """
-        updated = self.set_property('state', data.state)
-        updated |= self.set_property('state_message', data.state_message)
 
-        tags = {x['Key']: x['Value'] for x in data.tags or {}}
-        existing_tags = {x.key: x for x in self.tags}
-
-        # Check for new tags
-        for key, value in list(tags.items()):
-            updated |= self.set_tag(key, value)
-
-        # Check for updated or removed tags
-        for key in list(existing_tags.keys()):
-            if key not in tags:
-                updated |= self.delete_tag(key)
-
-        return updated
+        return self.update_resource(
+            properties={
+                'state': data.state,
+                'state_message': data.state_message
+            },
+            tags={x['Key']: x['Value'] for x in data.tags or {}}
+        )
 
 
 class EBSVolume(BaseResource):
@@ -1009,90 +968,19 @@ class EBSVolume(BaseResource):
     resource_type = 'aws_ebs_volume'
     resource_name = 'EBS Volume'
 
-    # region Object properties
-    @property
-    def create_time(self):
-        """Returns the date and time of volume creation
+    resource_properties = [
+        ResourceProp(key='create_time', name='Creation Time', type='datetime', show=True),
+        ResourceProp(key='state', name='State', type='string', show=True),
+        ResourceProp(key='iops', name='IOPS', type='string', show=True),
+        ResourceProp(key='encrypted', name='Encrypted', type='bool', show=True),
+        ResourceProp(key='kms_key_id', name='KMS Key ID', type='string', show=True),
+        ResourceProp(key='snapshot_id', name='Snapshot ID', type='string', show=True),
+        ResourceProp(key='size', name='Size', type='string', show=True),
+        ResourceProp(key='attachments', name='Attachments', type='dict', show=True),
+        ResourceProp(key='volume_type', name='Volume Type', type='string', show=True),
+    ]
 
-        Returns:
-            `str`
-        """
-        return self.get_property('create_time').value
-
-    @property
-    def state(self):
-        """Returns the current state of the snapshot
-
-        Returns:
-            `str`
-        """
-        return self.get_property('state').value
-
-    @property
-    def iops(self):
-        """Returns the provisioned IOPS (if applicable)
-
-        Returns:
-            `str`
-        """
-        return self.get_property('iops').value
-
-    @property
-    def encrypted(self):
-        """Returns `True` if the snapshot is encrypted with KMS, else `False`
-
-        Returns:
-            `bool`
-        """
-        return is_truthy(self.get_property('encrypted').value)
-
-    @property
-    def kms_key_id(self):
-        """Returns the ARN of the KMS key used to encrypt the snapshot (if applicable, else `None`)
-
-        Returns:
-            `str`
-        """
-        return self.get_property('kms_key_id').value
-
-    @property
-    def snapshot_id(self):
-        """Returns the ID of the snapshot used to create the volume (if applicable)
-
-        Returns:
-            `str`
-        """
-        return self.get_property('snapshot_id').value
-
-    @property
-    def size(self):
-        """Returns the size of the volume
-
-        Returns:
-            `str`
-        """
-        return self.get_property('size').value
-
-    @property
-    def attachments(self):
-        """Returns a list of the IDs of the instances the volume is attached to
-
-        Returns:
-            `list` of `str`
-        """
-        return self.get_property('attachments').value
-
-    @property
-    def volume_type(self):
-        """Returns the type of volume, eg. `gp2` or `io1`
-
-        Returns:
-            `str`
-        """
-        return self.get_property('volume_type').value
-
-    # endregion
-
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data):
         """Updates the object information based on live data, if there were any changes made. Any changes will be
         automatically applied to the object, but will not be automatically persisted. You must manually call
@@ -1104,22 +992,13 @@ class EBSVolume(BaseResource):
         Returns:
             True if there were any relevant changes to the object, else false
         """
-        updated = self.set_property('state', data.state)
-        updated |= self.set_property('attachments', sorted(attachment['InstanceId'] for attachment in data.attachments))
-
-        tags = {x['Key']: x['Value'] for x in data.tags or {}}
-        existing_tags = {x.key: x for x in self.tags}
-
-        # Check for new tags
-        for key, value in list(tags.items()):
-            updated |= self.set_tag(key, value)
-
-        # Check for updated or removed tags
-        for key in list(existing_tags.keys()):
-            if key not in tags:
-                updated |= self.delete_tag(key)
-
-        return updated
+        return self.update_resource(
+            properties={
+                'state': data.state,
+                'attachments': sorted(attachment['InstanceId'] for attachment in data.attachments)
+            },
+            tags={x['Key']: x['Value'] for x in data.tags or {}}
+        )
 
     def __str__(self):
         return '{}: {}GB @ {}'.format(self.id, self.size, self.state)
@@ -1129,64 +1008,16 @@ class AMI(BaseResource):
     """AMI object"""
     resource_type = 'aws_ami'
     resource_name = 'AMI'
+    resource_properties = [
+        ResourceProp(key='architecture', name='Architecture', type='string', show=True),
+        ResourceProp(key='creation_date', name='Creation Date', type='datetime', show=True),
+        ResourceProp(key='description', name='Description', type='string', show=True),
+        ResourceProp(key='name', name='Name', type='string', show=True),
+        ResourceProp(key='platform', name='Platform', type='string', show=True),
+        ResourceProp(key='state', name='State', type='string', show=True)
+    ]
 
-    # region Object properties
-    @property
-    def architecture(self):
-        """Returns the architecture of the AMI, eg. `x86_64`
-
-        Returns:
-            `str`
-        """
-        return self.get_property('architecture').value
-
-    @property
-    def creation_date(self):
-        """Returns the date and time the image was created
-
-        Returns:
-            `str`
-        """
-        return self.get_property('creation_date').value
-
-    @property
-    def description(self):
-        """Returns the description of the AMI
-
-        Returns:
-            `str`
-        """
-        return self.get_property('description').value
-
-    @property
-    def name(self):
-        """Returns the name of the image
-
-        Returns:
-            `str`
-        """
-        return self.get_property('name').value
-
-    @property
-    def platform(self):
-        """Returns the platform of the image, eg. `Linux` or `Windows`
-
-        Returns:
-            `str`
-        """
-        return self.get_property('platform').value
-
-    @property
-    def state(self):
-        """Returns the state of the image, eg `available` or `pending`
-
-        Returns:
-            `str`
-        """
-        return self.get_property('state').value
-
-    # endregion
-
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data):
         """Updates the object information based on live data, if there were any changes made. Any changes will be
         automatically applied to the object, but will not be automatically persisted. You must manually call
@@ -1198,73 +1029,34 @@ class AMI(BaseResource):
         Returns:
             True if there were any changes to the object, else false
         """
-        updated = self.set_property('description', data.description)
-        updated |= self.set_property('state', data.state)
-
-        tags = {x['Key']: x['Value'] for x in data.tags or {}}
-        existing_tags = {x.key: x for x in self.tags}
-
-        # Check for new tags
-        for key, value in list(tags.items()):
-            updated |= self.set_tag(key, value)
-
-        # Check for updated or removed tags
-        for key in list(existing_tags.keys()):
-            if key not in tags:
-                updated |= self.delete_tag(key)
-
-        return updated
+        return self.update_resource(
+            properties={
+                'description': data.description,
+                'state': data.state
+            },
+            tags={x['Key']: x['Value'] for x in data.tags or {}}
+        )
 
 
 class DNSZone(BaseResource):
     """DNS Zone object"""
     resource_type = 'dns_zone'
     resource_name = 'DNS Zone'
+    resource_properties = [
+        ResourceProp(key='name', name='Name', type='string', show=True),
+        ResourceProp(key='source', name='Source', type='string', show=True),
+        ResourceProp(key='private_zone', name='Private Zone', type='string', show=True),
+        ResourceProp(key='comment', name='Comment', type='string', show=True),
+    ]
 
     # region Object properties
     @property
-    def name(self):
-        """Returns the FQDN of the zone
-
-        Returns:
-            `str`
-        """
-        return self.get_property('domain_name').value
-
-    @property
-    def source(self):
-        """Returns the source of the DNS zone, ex: `AWS/<account_name>` or `CloudFlare`
-
-        Returns:
-            `str`
-        """
-        return self.get_property('source').value
-
-    @property
-    def private_zone(self):
-        """Returns `True` if the zone is only available internally (no Internet access), else `False`
-
-        Returns:
-            `bool`
-        """
-        return is_truthy(self.get_property('private_zone').value)
-
-    @property
-    def comment(self):
-        """Returns the comment for the hosted zone
-
-        Returns:
-            `str`
-        """
-        return self.get_property('comment').value
-
-    @property
     def records(self):
         return [DNSRecord(res) for res in self.children]
-
     # endregion
 
     # region Instance methods
+    @deprecated('`add_record` is deprecated, please use `add_child`')
     def add_record(self, record):
         """Add
 
@@ -1274,8 +1066,9 @@ class DNSZone(BaseResource):
         Returns:
             `None`
         """
-        self.children.append(record.resource)
+        self.add_child(record)
 
+    @deprecated('`delete_record` is deprecated, please use `delete_child`')
     def delete_record(self, record):
         """Remove a DNSRecord
 
@@ -1285,9 +1078,9 @@ class DNSZone(BaseResource):
         Returns:
             `None`
         """
-        self.children.remove(record.resource)
-        record.delete()
+        self.delete_child(record)
 
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data):
         """Updates the object information based on live data, if there were any changes made. Any changes will be
         automatically applied to the object, but will not be automatically persisted. You must manually call
@@ -1299,28 +1092,16 @@ class DNSZone(BaseResource):
         Returns:
             True if there were any changes to the object, else false
         """
-        updated = self.set_property('comment', data['comment'])
-
-        tags = data['tags']
-        existing_tags = {x.key: x for x in self.tags}
-        # Check for new tags
-        for key, value in list(tags.items()):
-            updated |= self.set_tag(key, value)
-
-        # Check for updated or removed tags
-        for key in list(existing_tags.keys()):
-            if key not in tags:
-                updated |= self.delete_tag(key)
-
-        return updated
+        return self.update_resource(
+            properties={
+                'comment': data['comment']
+            },
+            tags=data['tags']
+        )
 
     def to_json(self, with_records=True):
-        data = super().to_json()
-        if with_records:
-            data['recordCount'] = len(self.records)
-            data['records'] = self.records
-
-        return data
+        # TODO: Fix code using this function so it can be removed in favor of BaseResource.to_json
+        return super().to_json(with_children=with_records)
     # endregion
 
 
@@ -1328,45 +1109,16 @@ class DNSRecord(BaseResource):
     """DNS Record object"""
     resource_type = 'dns_record'
     resource_name = 'DNS Record'
+    resource_properties = [
+        ResourceProp(key='name', name='Name', type='string', show=True),
+        ResourceProp(key='type', name='Type', type='string', show=True),
+        ResourceProp(key='ttl', name='TTL', type='string', show=True),
+        ResourceProp(key='value', name='Value', type='string', show=True),
+    ]
 
     # region Object properties
     @property
-    def name(self):
-        """Returns the name of the resource record
-
-        Returns:
-            `str`
-        """
-        return self.get_property('name').value
-
-    @property
-    def type(self):
-        """Returns the resource record type, eg. `A`, `CNAME` and `MX`
-
-        Returns:
-            `str`
-        """
-        return self.get_property('type').value
-
-    @property
-    def ttl(self):
-        """Returns the resource record Time-To-Live (TTL)
-
-        Returns:
-            `str`
-        """
-        return self.get_property('ttl').value
-
-    @property
-    def value(self):
-        """Returns the value of the resource record set, as a list of targets
-
-        Returns:
-            `list` of `str`
-        """
-        return self.get_property('value').value
-
-    @property
+    @deprecated('`zone` is deprecated, please use `parents`')
     def zone(self):
         """Returns the DNSZone that the record is hosted in
 
@@ -1377,70 +1129,24 @@ class DNSRecord(BaseResource):
 
     # endregion
 
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data):
-        updated = self.set_property('value', data['value'])
-
-        return updated
+        return self.update_resource(properties={'value': data['value']})
 
 
 class VPC(BaseResource):
     """VPC Object"""
     resource_type = 'aws_vpc'
     resource_name = 'VPC'
+    resource_properties = [
+        ResourceProp(key='cidr_v4', name='IPv4 CIDR', type='string', show=True),
+        ResourceProp(key='is_default', name='Default VPC', type='bool', show=True),
+        ResourceProp(key='state', name='STate', type='string', show=True),
+        ResourceProp(key='vpc_flow_logs_status', name='VPC Flow Log Status', type='string', show=True),
+        ResourceProp(key='vpc_flow_logs_log_group', name='VPC Flow Log Group', type='string', show=True),
+    ]
 
-    # region Object properties
-    @property
-    def cidr_v4(self):
-        """ Returns the IPv4 CIDR block associated with the VPC
-
-        Returns:
-            `str`
-
-        """
-        return self.get_property('cidr_v4').value
-
-    @property
-    def is_default(self):
-        """ Returns whether the VPC is the Default VPC
-        
-        Returns:
-            `boolean`
-        
-        
-        """
-        return self.get_property('is_default').value
-
-    @property
-    def state(self):
-        """ Returns the current state of the VPC (pending/available)
-
-        Returns:
-            `str`
-
-        """
-        return self.get_property('state').value
-
-    @property
-    def vpc_flow_logs_status(self):
-        """ Returns the configured state of VPC Flow Logs
-
-        Returns:
-            `str`
-
-        """
-        return self.get_property('vpc_flow_logs_status').value
-
-    def vpc_flow_logs_log_group(self):
-        """ Returns the CloudWatch Log Group associated with the VPC Flow Logs
-
-        Returns:
-            `str`
-
-        """
-        return self.get_property('vpc_flow_logs_log_stream').value
-
-    # end of region
-
+    @deprecated('`update` is deprecated, please use `update_resource` instead')
     def update(self, data, properties):
         """Updates the object information based on live data, if there were any changes made. Any changes will be
         automatically applied to the object, but will not be automatically persisted. You must manually call
@@ -1453,23 +1159,15 @@ class VPC(BaseResource):
         Returns:
             True if there were any changes to the object, else false
         """
+        properties = {
+            'cidr_v4': data.cidr_block,
+            'is_default': data.is_default,
+            'state': data.state,
+            'vpc_flow_logs_status': properties['vpc_flow_logs_status'],
+            'vpc_flow_logs_group': properties['vpc_flow_logs_log_group']
+        }
 
-        updated = self.set_property('cidr_v4', data.cidr_block)
-        updated |= self.set_property('is_default', data.is_default)
-        updated |= self.set_property('state', data.state)
-        updated |= self.set_property('vpc_flow_logs_status', properties['vpc_flow_logs_status'])
-        updated |= self.set_property('vpc_flow_logs_log_stream', properties['vpc_flow_logs_log_group'])
-
-        tags = {x['Key']: x['Value'] for x in data.tags or {}}
-        existing_tags = {x.key: x for x in self.tags}
-
-        # Check for new tags
-        for key, value in list(tags.items()):
-            updated |= self.set_tag(key, value)
-
-        # Check for updated or removed tags
-        for key in list(existing_tags.keys()):
-            if key not in tags:
-                updated |= self.delete_tag(key)
-
-        return updated
+        return self.update_resource(
+            properties=properties,
+            tags={x['Key']: x['Value'] for x in data.tags or {}}
+        )

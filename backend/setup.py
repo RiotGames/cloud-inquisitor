@@ -26,16 +26,16 @@ setuptools.setup(
         ],
 
         'cloud_inquisitor.plugins.types': [
-            'ami_type = cloud_inquisitor.plugins.types.resources:AMI',
-            'beanstalk_type = cloud_inquisitor.plugins.types.resources:BeanStalk',
-            'cloudfrontdist_type = cloud_inquisitor.plugins.types.resources:CloudFrontDist',
-            'dnsrecord_type = cloud_inquisitor.plugins.types.resources:DNSRecord',
-            'dnszone_type = cloud_inquisitor.plugins.types.resources:DNSZone',
-            'ebssnapshot_type = cloud_inquisitor.plugins.types.resources:EBSSnapshot',
-            'ebsvolume_type = cloud_inquisitor.plugins.types.resources:EBSVolume',
-            'ec2instance_type = cloud_inquisitor.plugins.types.resources:EC2Instance',
-            's3bucket_type = cloud_inquisitor.plugins.types.resources:S3Bucket',
-            'vpc_type = cloud_inquisitor.plugins.types.resources:VPC'
+            'aws_ami = cloud_inquisitor.plugins.types.resources:AMI',
+            'aws_beanstalk = cloud_inquisitor.plugins.types.resources:BeanStalk',
+            'aws_cloudfront_dist = cloud_inquisitor.plugins.types.resources:CloudFrontDist',
+            'aws_ebs_snapshot = cloud_inquisitor.plugins.types.resources:EBSSnapshot',
+            'aws_ebs_volume = cloud_inquisitor.plugins.types.resources:EBSVolume',
+            'aws_ec2_instance = cloud_inquisitor.plugins.types.resources:EC2Instance',
+            'aws_s3_bucket = cloud_inquisitor.plugins.types.resources:S3Bucket',
+            'aws_vpc = cloud_inquisitor.plugins.types.resources:VPC',
+            'dns_record = cloud_inquisitor.plugins.types.resources:DNSRecord',
+            'dns_zone = cloud_inquisitor.plugins.types.resources:DNSZone',
         ],
 
         'cloud_inquisitor.plugins.types.accounts': [
@@ -91,9 +91,8 @@ setuptools.setup(
         'Flask-Compress~=1.4',
         'Flask-Migrate~=2.1',
         'Flask-RESTful~=0.3',
-        'Flask-SQLAlchemy~=2.2',
         'Flask-Script~=2.0',
-        'Flask~=0.12',
+        'Flask~=0.12.2',
         'Jinja2~=2.9',
         'MarkupSafe~=1.0',
         'PyJWT~=1.5',

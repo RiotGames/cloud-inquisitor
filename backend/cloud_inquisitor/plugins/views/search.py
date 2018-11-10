@@ -91,7 +91,11 @@ class Search(BaseView):
             qry = qry.filter(Resource.resource_type_id.in_(args['resourceTypes']))
 
         if resource_ids:
-            qry = qry.filter(Resource.resource_id.in_(resource_ids))
+            id_rgx = '|'.join([x.lower() for x in resource_ids])
+            if not is_truthy(args['partial']):
+                id_rgx = '^({0})$'.format(id_rgx)
+
+            qry = qry.filter(Resource.resource_id.op('regexp')(id_rgx.lower()))
 
         if args['accounts']:
             qry = qry.filter(Resource.account_id.in_(args['accounts']))

@@ -74,7 +74,7 @@ class ResourceType(Model, BaseModelMixin):
         be created in the database and returned
 
         Args:
-            resource_type (str): Resource type name
+            resource_type (str, int, ResourceType): Resource type name
 
         Returns:
             :obj:`ResourceType`
