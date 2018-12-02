@@ -370,15 +370,15 @@ class User(Model, BaseModelMixin):
     def to_json(self):
         """Exports the object to a JSON friendly dict
 
+        This method uses the base `to_json` method, but strips the password from the response
+
         Returns:
-            Dict representation of the object
+            `dict`
         """
-        return {
-            'userId': self.user_id,
-            'username': self.username,
-            'roles': self.roles,
-            'authSystem': self.auth_system
-        }
+        data = super().to_json()
+        del data['password']
+
+        return data
 
 
 class UserRole(Model, BaseModelMixin):

@@ -19,6 +19,7 @@ class MetaData(BaseView):
         _, accts = BaseAccount.search(account_ids=session['accounts'])
         accounts = [acct.to_json(is_admin=ROLE_ADMIN in session['user'].roles) for acct in accts]
         account_types = list(self.__get_account_types())
+        resource_types = list(self.__get_resource_types())
 
         menu_items = {}
         groups = sorted(current_app.menu_items, key=lambda x: (
@@ -37,17 +38,37 @@ class MetaData(BaseView):
             'menuItems': menu_items,
             'accountTypes': account_types,
             'resourceTypes': {v.resource_name: k for k, v in current_app.types.items()},
+            'resourceTypeInfo': resource_types,
             'currentUser': session['user'].to_json(),
             'notifiers': [{'type': k, 'validation': v} for k, v in current_app.notifiers.items()],
         })
 
-    def __get_account_types(self):
+    @staticmethod
+    def __get_account_types():
         for entry_point in CINQ_PLUGINS[PLUGIN_NAMESPACES['accounts']]['plugins']:
             cls = entry_point.load()
             yield {
                 'name': cls.account_type,
                 'properties': [
                     {key: to_camelcase(value) if key == 'key' else value for key, value in prop.items()}
-                        for prop in cls.class_properties
+                    for prop in cls.class_properties
                 ]
+            }
+
+    @staticmethod
+    def __get_resource_types():
+        for type_id, cls in current_app.types.items():
+            properties = []
+            for prop in cls.resource_properties:
+                properties.append({
+                    'key': to_camelcase(prop.key),
+                    'name': prop.name,
+                    'type': prop.type,
+                    'show': prop.show
+                })
+            yield {
+                'name': cls.resource_name,
+                'resourceTypeId': type_id,
+                'resourceType': cls.resource_type,
+                'properties': properties
             }

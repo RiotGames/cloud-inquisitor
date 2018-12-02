@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from cloud_inquisitor.constants import PLUGIN_NAMESPACES
+from cloud_inquisitor.constants import PLUGIN_NAMESPACES, RGX_EMAIL_VALIDATION_PATTERN
 from sqlalchemy import and_, or_, desc
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import aliased
@@ -342,14 +342,16 @@ class AWSAccount(BaseAccount):
             'type': 'string',
             'name': 'Account Number',
             'default': '',
-            'required': True
+            'required': True,
+            'pattern': '^\d{12}$'
         },
         {
             'key': 'ad_group_base',
             'type': 'string',
             'name': 'AD Group Base',
             'default': '',
-            'required': False
+            'required': False,
+            'pattern': None
         }
     ]
 
@@ -383,14 +385,16 @@ class AXFRAccount(BaseAccount):
             'name': 'Server',
             'type': 'string',
             'default': '',
-            'required': True
+            'required': True,
+            'pattern': None
         },
         {
-            'key' :'domains',
+            'key': 'domains',
             'name': 'Domains',
             'type': 'array',
             'default': [],
-            'required': True
+            'required': True,
+            'pattern': r'(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{0,62}[a-zA-Z0-9]\.)+[a-zA-Z]{2,63}$)'
         }
     ]
 
@@ -412,21 +416,24 @@ class CloudFlareAccount(BaseAccount):
             'name': 'API Endpoint',
             'type': 'string',
             'default': '',
-            'required': True
+            'required': True,
+            'pattern': None
         },
         {
             'key': 'api_key',
             'name': 'API Key',
             'type': 'string',
             'default': '',
-            'required': True
+            'required': True,
+            'pattern': None
         },
         {
             'key': 'email',
             'name': 'Email',
             'type': 'string',
             'default': '',
-            'required': True
+            'required': True,
+            'pattern': RGX_EMAIL_VALIDATION_PATTERN
         }
     ]
 

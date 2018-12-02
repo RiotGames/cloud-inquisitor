@@ -3,11 +3,10 @@ import os
 from base64 import b64encode, b64decode
 from gzip import zlib
 
-from flask_script import Option
-
-from cloud_inquisitor import get_aws_session, app_config, get_local_aws_session
+import boto3
+from cloud_inquisitor import app_config, get_local_aws_session
 from cloud_inquisitor.plugins.commands import BaseCommand
-from cloud_inquisitor.plugins.types.accounts import BaseAccount
+from flask_script import Option
 
 
 class UserData(BaseCommand):
@@ -49,18 +48,17 @@ class UserData(BaseCommand):
                 data = kwargs['data']
 
             session = get_local_aws_session()
-            if session.get_credentials().method != 'iam-role':
-                kms_account_name = app_config.kms_account_name
-                if not kms_account_name:
-                    print('you must set the kms_account_name setting in your configuration file to the name of the '
-                          'account that is able to decrypt the user data')
-                    return
-                acct = BaseAccount.get(kms_account_name)
-                if not acct:
-                    print('You must add the {} account to the system for this to work'.format(kms_account_name))
-                    return
-
-                session = get_aws_session(acct)
+            if session.get_credentials().method != 'iam-role' and app_config.aws_api.instance_role_arn:
+                sts = session.client('sts')
+                sts_creds = sts.assume_role(
+                    RoleArn=app_config.aws_api.instance_role_arn,
+                    RoleSessionName='cloud-inquisitor-user-data'
+                )
+                session = boto3.Session(
+                    sts_creds['Credentials']['AccessKeyId'],
+                    sts_creds['Credentials']['SecretAccessKey'],
+                    sts_creds['Credentials']['SessionToken']
+                )
 
             kms = session.client('kms', region_name=self.dbconfig.get('region', self.ns, 'us-west-2'))
             if kwargs['mode'] == 'encrypt':

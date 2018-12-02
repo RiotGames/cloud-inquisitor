@@ -287,3 +287,24 @@ class ConfigImportExport(BaseView):
                 'Error importing configuration data: {}'.format(ex),
                 HTTP.SERVER_ERROR
             )
+
+
+class ConfigListV2(BaseView):
+    URLS = ['/api/v2/config']
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def post(self):
+        """Create a new config item"""
+        args = request.json
+
+        if not self.dbconfig.namespace_exists(args['namespacePrefix']):
+            return self.make_response('The namespace doesnt exist', HTTP.NOT_FOUND)
+
+        if self.dbconfig.key_exists(args['namespacePrefix'], args['key']):
+            return self.make_response('This config item already exists', HTTP.CONFLICT)
+
+        self.dbconfig.set(args['namespacePrefix'], args['key'], _to_dbc_class(args), description=args['description'])
+        auditlog(event='configItem.create', actor=session['user'].username, data=args)
+
+        return self.make_response('Config item added', HTTP.CREATED)

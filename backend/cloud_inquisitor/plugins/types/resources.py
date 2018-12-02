@@ -14,7 +14,7 @@ from cloud_inquisitor import get_plugin_by_name
 from cloud_inquisitor.constants import RGX_EMAIL_VALIDATION_PATTERN, PLUGIN_NAMESPACES
 from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import ResourceException, InquisitorError
-from cloud_inquisitor.schema import Tag, Account, Resource, ResourceType, ResourceProperty
+from cloud_inquisitor.schema import Tag, Account, Resource, ResourceType, ResourceProperty, ResourceMapping
 from cloud_inquisitor.utils import (
     to_utc_date,
     is_truthy,
@@ -316,19 +316,20 @@ class BaseResource(ABC):
         return total, [cls(x) for x in qry.all()]
 
     @classmethod
-    def find(cls, *, limit=100, page=1, accounts=None, locations=None, resources=None,
-             resource_types=None, properties=None, include_disabled=False, return_query=False):
+    def find(cls, *, limit=100, page=0, accounts=None, locations=None, resources=None,
+             resource_types=None, parent_id=None, properties=None, include_disabled=False, return_query=False):
         """Find resources based on the provided filters.
 
         If `return_query` a sub-class of `sqlalchemy.orm.Query` is returned instead of the resource list.
 
         Args:
             limit (`int`): Number of results to return. Default: 100
-            page (`int`): Pagination offset for results. Default: 1
+            page (`int`): Pagination offset for results. Default: 0
             accounts (`list` of `int`): A list of account id's to limit the returned resources to
             locations (`list` of `str`): A list of locations as strings to limit the search for
             resources ('list' of `str`): A list of resource_ids
             resource_types (`list` of `str`): A list of resource types
+            parent_id (`str`): ID of parent resource. If set, only return child objects of `parent_id`
             properties (`dict`): A `dict` containing property name and value pairs. Values can be either a str or a list
             of strings, in which case a boolean OR search is performed on the values
             include_disabled (`bool`): Include resources from disabled accounts. Default: False
@@ -363,6 +364,11 @@ class BaseResource(ABC):
         if resources:
             qry = qry.filter(Resource.resource_id.in_(resources))
 
+        if parent_id:
+            qry = qry.join(ResourceMapping, Resource.resource_id == ResourceMapping.child).filter(
+                ResourceMapping.parent == parent_id
+            )
+
         if properties:
             for prop_name, value in properties.items():
                 alias = aliased(ResourceProperty)
@@ -393,7 +399,7 @@ class BaseResource(ABC):
 
         total = qry.count()
         qry = qry.limit(limit)
-        qry = qry.offset((page - 1) * limit if page > 1 else 0)
+        qry = qry.offset(page * limit if page > 0 else 0)
 
         return total, list(map(BaseResource.get_typed_resource, qry.all()))
 
@@ -876,8 +882,9 @@ class CloudFrontDist(BaseResource):
     resource_type = 'aws_cloudfront_dist'
     resource_name = 'CloudFront Distribution'
     resource_properties = [
+        ResourceProp(key='arn', name='ARN', type='string', show=True),
         ResourceProp(key='domain_name', name='Domain Name', type='string', show=True),
-        ResourceProp(key='origins', name='Origins', type='list', show=True),
+        ResourceProp(key='origins', name='Origins', type='json', show=True),
         ResourceProp(key='enabled', name='Enabled', type='bool', show=True),
         ResourceProp(key='type', name='Type', type='string', show=True),
     ]
@@ -1101,7 +1108,7 @@ class DNSZone(BaseResource):
 
     def to_json(self, with_records=True):
         # TODO: Fix code using this function so it can be removed in favor of BaseResource.to_json
-        return super().to_json(with_children=with_records)
+        return super().to_json()
     # endregion
 
 
