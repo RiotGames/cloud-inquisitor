@@ -287,6 +287,7 @@ def generate_jwt_token(user, authsys, **kwargs):
     token = {
         'auth_system': authsys,
         'exp': time.time() + dbconfig.get('session_expire_time'),
+        'user': user.to_json(),
         'roles': [role.name for role in user.roles]
     }
 
@@ -483,7 +484,7 @@ def get_user_data_configuration():
 
     if res.status_code == 200:
         data = kms.decrypt(CiphertextBlob=b64decode(res.content))
-        kms_config = json.loads(zlib.decompress(data['Plaintext']).decode('utf-8'))
+        kms_config = json.loads(zlib.decompress(data['Plaintext'], wbits=zlib.MAX_WBITS | 32).decode('utf-8'))
 
         app_config.database_uri = kms_config['db_uri']
     else:

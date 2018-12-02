@@ -210,7 +210,6 @@ class PasswordReset(BaseView):
     def put(self, user_id):
         self.reqparse.add_argument('password', type=str, required=False)
         args = self.reqparse.parse_args()
-        auditlog(event='user.passwordReset', actor=session['user'].username, data=args)
 
         user = db.User.find_one(User.user_id == user_id)
         if not user:
@@ -233,7 +232,149 @@ class PasswordReset(BaseView):
         db.session.add(user)
         db.session.commit()
 
+        args['password'] = '*REDACTED*'
+        auditlog(event='user.passwordReset', actor=session['user'].username, data=args)
+
         return self.make_response({
             'user': user.to_json(),
             'newPassword': new_pass if not args['password'] else None
+        }, HTTP.OK)
+
+
+class UserListV2(BaseView):
+    URLS = ['/api/v2/users']
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def get(self):
+        """List all users"""
+        self.reqparse.add_argument('page', type=int, default=1)
+        self.reqparse.add_argument('count', type=int, default=50, choices=[25, 50, 100])
+        self.reqparse.add_argument('authSystem', type=str, default=None, action='append')
+        args = self.reqparse.parse_args()
+
+        qry = db.User.order_by(User.username)
+        if args['authSystem']:
+            qry = qry.filter(User.auth_system.in_(args['authSystem']))
+
+        total = qry.count()
+        qry = qry.limit(args['count'])
+
+        if (args['page'] - 1) > 0:
+            offset = (args['page'] - 1) * args['count']
+            qry = qry.offset(offset)
+
+        users = qry.all()
+        return self.make_response({
+            'users': [x.to_json() for x in users],
+            'userCount': total,
+            'authSystems': list(current_app.available_auth_systems.keys()),
+            'activeAuthSystem': current_app.active_auth_system.name
+        })
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def post(self):
+        """Create a new user"""
+        self.reqparse.add_argument('username', type=str, required=True)
+        self.reqparse.add_argument('authSystem', type=str, required=True)
+        self.reqparse.add_argument('roles', type=str, action='append', default=[])
+        args = self.reqparse.parse_args()
+        auditlog(event='user.create', actor=session['user'].username, data=args)
+
+        user = db.User.find_one(
+            User.username == args['username'],
+            User.auth_system == args['authSystem']
+        )
+        roles = []
+        if user:
+            return self.make_response('User already exists', HTTP.BAD_REQUEST)
+
+        if args['authSystem'] not in current_app.available_auth_systems:
+            return self.make_response(
+                'The {} auth system does not allow local edits'.format(args['authSystem']),
+                HTTP.BAD_REQUEST
+            )
+
+        if current_app.available_auth_systems[args['authSystem']].readonly:
+            return self.make_response(
+                'You cannot create users for the {} auth system as it is handled externally'.format(args['authSystem']),
+                HTTP.BAD_REQUEST
+            )
+
+        for roleName in args['roles']:
+            role = db.Role.find_one(Role.name == roleName)
+
+            if not role:
+                return self.make_response('No such role {}'.format(roleName), HTTP.BAD_REQUEST)
+
+            if roleName == ROLE_ADMIN and ROLE_ADMIN not in session['user'].roles:
+                self.log.error('User {} tried to grant admin privileges to {}'.format(
+                    session['user'].username,
+                    args['username']
+                ))
+
+                return self.make_response('You do not have permission to grant admin privileges', HTTP.FORBIDDEN)
+
+            roles.append(role)
+
+        auth_sys = current_app.available_auth_systems[args['authSystem']]
+        password = generate_password()
+
+        user = User()
+        user.username = args['username']
+        user.password = hash_password(password)
+        user.auth_system = auth_sys.name
+        db.session.add(user)
+        db.session.commit()
+        db.session.refresh(user)
+        User.add_role(user, roles)
+
+        return self.make_response({
+            'message': 'User {}/{} has been created'.format(user.auth_system, user.username),
+            'user': user,
+            'password': password
+        })
+
+
+class PasswordResetV2(BaseView):
+    URLS = ['/api/v2/user/password/<int:user_id>']
+
+    @rollback
+    @check_auth(ROLE_USER)
+    def put(self, user_id):
+        if user_id == session['user'].user_id:
+            self.reqparse.add_argument('password', type=str, required=True)
+            args = self.reqparse.parse_args
+            password = args['password']
+            provided = True
+        else:
+            password = generate_password()
+            provided = False
+
+        user = db.User.find_one(User.user_id == user_id)
+        if not user:
+            return self.make_response('User not found', HTTP.NOT_FOUND)
+
+        if ROLE_ADMIN not in session['user'].roles and user_id != session['user'].user_id:
+            self.log.warning('{} tried to change the password for another user'.format(session['user'].user_id))
+            return self.make_response('You cannot change other users passwords', HTTP.FORBIDDEN)
+
+        authsys = current_app.available_auth_systems[user.auth_system]
+        if authsys.readonly:
+            return self.make_response(
+                'You cannot reset passwords for the {} based users'.format(authsys.name),
+                HTTP.FORBIDDEN
+            )
+
+        user.password = hash_password(password)
+        db.session.add(user)
+        db.session.commit()
+
+        auditlog(event='user.passwordReset', actor=session['user'].username, data={'password': '*REDACTED*'})
+
+        return self.make_response({
+            'message': 'Password reset for {}/{}'.format(user.auth_system, user.username),
+            'user': user.to_json(),
+            'password': password if not provided else None
         }, HTTP.OK)

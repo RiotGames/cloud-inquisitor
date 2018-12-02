@@ -15,6 +15,7 @@ from cloud_inquisitor.plugins.types.accounts import BaseAccount
 from cloud_inquisitor.schema import Account
 from cloud_inquisitor.utils import MenuItem, from_camelcase
 from cloud_inquisitor.wrappers import rollback, check_auth
+from flask_restful import inputs
 
 
 def validate_contacts(contacts):
@@ -110,13 +111,13 @@ class AccountList(BaseView):
 
 
 class AccountDetail(BaseView):
-    URLS = ['/api/v1/account/<int:accountId>']
+    URLS = ['/api/v1/account/<int:account_id>']
 
     @rollback
     @check_auth(ROLE_ADMIN)
-    def get(self, accountId):
+    def get(self, account_id):
         """Fetch a single account"""
-        account = BaseAccount.get(accountId)
+        account = BaseAccount.get(account_id)
         if account:
             return self.make_response({
                 'message': None,
@@ -130,7 +131,7 @@ class AccountDetail(BaseView):
 
     @rollback
     @check_auth(ROLE_ADMIN)
-    def put(self, accountId):
+    def put(self, account_id):
         """Update an account"""
         self.reqparse.add_argument('accountName', type=str, required=True)
         self.reqparse.add_argument('accountType', type=str, required=True)
@@ -157,7 +158,7 @@ class AccountDetail(BaseView):
             if prop['key'] not in class_properties:
                 raise InquisitorError('Missing required property {}'.format(prop))
 
-        account = account_class.get(accountId)
+        account = account_class.get(account_id)
         if account.account_type != args['accountType']:
             raise InquisitorError('You cannot change the type of an account')
 
@@ -170,18 +171,18 @@ class AccountDetail(BaseView):
 
         auditlog(event='account.update', actor=session['user'].username, data=args)
 
-        return self.make_response({'message': 'Object updated', 'account': account.to_json(is_admin=True)})
+        return self.make_response({'message': 'Account updated', 'account': account.to_json(is_admin=True)})
 
     @rollback
     @check_auth(ROLE_ADMIN)
-    def delete(self, accountId):
+    def delete(self, account_id):
         """Delete an account"""
-        acct = BaseAccount.get(accountId)
+        acct = BaseAccount.get(account_id)
         if not acct:
             raise Exception('No such account found')
 
         acct.delete()
-        auditlog(event='account.delete', actor=session['user'].username, data={'accountId': accountId})
+        auditlog(event='account.delete', actor=session['user'].username, data={'accountId': account_id})
 
         return self.make_response('Account deleted')
 
@@ -245,3 +246,114 @@ class AccountImportExport(BaseView):
                 'Error importing account data: {}'.format(ex),
                 HTTP.SERVER_ERROR
             )
+
+
+class AccountDetailV2(BaseView):
+    URLS = ['/api/v2/account/<int:account_id>']
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def put(self, account_id):
+        """Update an account"""
+        self.reqparse.add_argument('accountName', type=str, required=True)
+        self.reqparse.add_argument('accountType', type=str, required=True)
+        self.reqparse.add_argument('contacts', type=dict, required=True, action='append')
+        self.reqparse.add_argument('enabled', type=inputs.boolean, required=True, default=False)
+        self.reqparse.add_argument('requiredRoles', type=str, action='append', default=())
+        self.reqparse.add_argument('properties', type=dict, required=True)
+        args = self.reqparse.parse_args()
+
+        account_class = get_plugin_by_name(PLUGIN_NAMESPACES['accounts'], args['accountType'])
+        if not account_class:
+            raise InquisitorError('Invalid account type: {}'.format(args['accountType']))
+
+        validate_contacts(args['contacts'])
+
+        if not args['accountName'].strip():
+            raise Exception('You must provide an account name')
+
+        if not args['contacts']:
+            raise Exception('You must provide at least one contact')
+
+        class_properties = {from_camelcase(key): value for key, value in args['properties'].items()}
+        for prop in account_class.class_properties:
+            if prop['key'] not in class_properties:
+                raise InquisitorError('Missing required property {}'.format(prop))
+
+        account = account_class.get(account_id)
+        if account.account_type != args['accountType']:
+            raise InquisitorError('You cannot change the type of an account')
+
+        account.account_name = args['accountName']
+        account.contacts = args['contacts']
+        account.enabled = args['enabled']
+        account.required_roles = args['requiredRoles']
+        account.update(**args['properties'])
+        account.save()
+
+        auditlog(event='account.update', actor=session['user'].username, data=args)
+
+        return self.make_response({'message': 'Account updated', 'account': account.to_json(is_admin=True)})
+
+
+class AccountListV2(BaseView):
+    URLS = ['/api/v2/account']
+    MENU_ITEMS = [
+        MenuItem(
+            'admin',
+            'Accounts',
+            'account.list',
+            'account',
+            order=1
+        )
+    ]
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def post(self):
+        """Create a new account"""
+        self.reqparse.add_argument('accountName', type=str, required=True)
+        self.reqparse.add_argument('accountType', type=str, required=True)
+        self.reqparse.add_argument('contacts', type=dict, required=True, action='append')
+        self.reqparse.add_argument('enabled', type=inputs.boolean, required=True, default=True)
+        self.reqparse.add_argument('requiredGroups', type=str, action='append', default=())
+        self.reqparse.add_argument('properties', type=dict, required=True)
+        args = self.reqparse.parse_args()
+
+        account_class = get_plugin_by_name(PLUGIN_NAMESPACES['accounts'], args['accountType'])
+        if not account_class:
+            raise InquisitorError('Invalid account type: {}'.format(args['accountType']))
+
+        validate_contacts(args['contacts'])
+
+        for key in ('accountName', 'accountType', 'contacts', 'enabled'):
+            value = args[key]
+            if type(value) == str:
+                value = value.strip()
+
+            if type(value) in (int, tuple, list, str, bool):
+                if not value:
+                    raise Exception('{} cannot be empty'.format(key.replace('_', ' ').title()))
+            else:
+                raise ValueError('Invalid type: {} for value {} for argument {}'.format(type(value), value, key))
+
+        class_properties = {from_camelcase(key): value for key, value in args['properties'].items()}
+        for prop in account_class.class_properties:
+            if prop['key'] not in class_properties:
+                raise InquisitorError('Missing required property {}'.format(prop))
+
+        acct = account_class.create(
+            account_name=args['accountName'],
+            contacts=args['contacts'],
+            enabled=args['enabled'],
+            required_roles=args['requiredGroups'],
+            properties=class_properties,
+            auto_commit=False
+        )
+        db.session.commit()
+
+        # Add the newly created account to the session so we can see it right away
+        session['accounts'].append(acct.account_id)
+        auditlog(event='account.create', actor=session['user'].username, data=args)
+
+        return self.make_response({'message': 'Account created', 'accountId': acct.account_id}, HTTP.CREATED)

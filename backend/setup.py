@@ -63,6 +63,9 @@ setuptools.setup(
             'log_details = cloud_inquisitor.plugins.views.logs:LogDetails',
             'metadata = cloud_inquisitor.plugins.views.metadata:MetaData',
             'password_reset = cloud_inquisitor.plugins.views.users:PasswordReset',
+            'resource_children = cloud_inquisitor.plugins.views.resources:ResourceGetChildren',
+            'resource_get = cloud_inquisitor.plugins.views.resources:ResourceGet',
+            'resource_list = cloud_inquisitor.plugins.views.resources:ResourceList',
             'role_get = cloud_inquisitor.plugins.views.roles:RoleGet',
             'role_list = cloud_inquisitor.plugins.views.roles:RoleList',
             'search = cloud_inquisitor.plugins.views.search:Search',
@@ -71,6 +74,12 @@ setuptools.setup(
             'template_list = cloud_inquisitor.plugins.views.templates:TemplateList',
             'user_details = cloud_inquisitor.plugins.views.users:UserDetails',
             'user_list = cloud_inquisitor.plugins.views.users:UserList',
+            'v2_account_list = cloud_inquisitor.plugins.views.accounts:AccountListV2',
+            'v2_account_details = cloud_inquisitor.plugins.views.accounts:AccountDetailV2',
+            'v2_config_list = cloud_inquisitor.plugins.views.config:ConfigListV2',
+            'v2_search = cloud_inquisitor.plugins.views.search:SearchV2',
+            'v2_user_user = cloud_inquisitor.plugins.views.users:UserListV2',
+            'v2_password_reset = cloud_inquisitor.plugins.views.users:PasswordResetV2',
         ]
     },
 
