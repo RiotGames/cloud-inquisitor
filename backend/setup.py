@@ -103,7 +103,7 @@ setuptools.setup(
         'Flask-Migrate~=2.1',
         'Flask-RESTful~=0.3',
         'Flask-Script~=2.0',
-        'Flask~=0.12.2',
+        'Flask~=0.12',
         'Jinja2~=2.9',
         'MarkupSafe~=1.0',
         'PyJWT~=1.5',
