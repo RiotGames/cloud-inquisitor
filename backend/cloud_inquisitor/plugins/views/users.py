@@ -344,10 +344,15 @@ class PasswordResetV2(BaseView):
     @check_auth(ROLE_USER)
     def put(self, user_id):
         if user_id == session['user'].user_id:
-            self.reqparse.add_argument('password', type=str, required=True)
-            args = self.reqparse.parse_args
-            password = args['password']
-            provided = True
+            self.reqparse.add_argument('password', type=str, required=False)
+            args = self.reqparse.parse_args()
+
+            if args['password']:
+                password = args['password']
+                provided = True
+            else:
+                password = generate_password()
+                provided = False
         else:
             password = generate_password()
             provided = False
