@@ -67,3 +67,29 @@ class AuditLogGet(BaseView):
         return self.make_response({
             'auditLogEvent': event
         })
+
+
+class AuditLogListV2(BaseView):
+    URLS = ['/api/v2/auditlog']
+
+    @rollback
+    @check_auth(ROLE_ADMIN)
+    def get(self):
+        self.reqparse.add_argument('page', type=int, default=0)
+        self.reqparse.add_argument('count', type=int, default=25)
+        args = self.reqparse.parse_args()
+
+        qry = db.AuditLog.order_by(AuditLog.audit_log_event_id.desc())
+
+        total_events = qry.count()
+        qry = qry.limit(args['count'])
+
+        if args['page'] > 0:
+            offset = args['page'] * args['count']
+            qry = qry.offset(offset)
+
+        return self.make_response({
+            'auditLogEvents': qry.all(),
+            'auditLogEventCount': total_events,
+            'eventTypes': [x[0] for x in db.query(distinct(AuditLog.event)).all()]
+        })

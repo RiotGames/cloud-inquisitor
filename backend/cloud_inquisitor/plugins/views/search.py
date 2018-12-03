@@ -9,7 +9,7 @@ from sqlalchemy.orm import aliased
 from cloud_inquisitor.constants import RGX_TAG, ROLE_USER, RGX_PROPERTY
 from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseView
-from cloud_inquisitor.schema import Tag, Resource, ResourceProperty, ResourceType
+from cloud_inquisitor.schema import Tag, Resource, ResourceProperty, ResourceType, Account
 from cloud_inquisitor.utils import is_truthy, MenuItem
 from cloud_inquisitor.wrappers import check_auth, rollback
 
@@ -236,7 +236,10 @@ class SearchV2(BaseView):
             qry = qry.filter(Resource.resource_id.op('regexp')(id_rgx.lower()))
 
         if args['accounts']:
-            qry = qry.filter(Resource.account_id.in_(args['accounts']))
+            # qry = qry.filter(Resource.account_id.in_(args['accounts']))
+            qry = qry.join(Account, Resource.account_id == Account.account_id).filter(
+                Account.account_name.in_(args['accounts'])
+            )
 
         if args['locations']:
             qry = qry.filter(Resource.location.in_(args['locations']))
@@ -286,8 +289,8 @@ class SearchV2(BaseView):
         total = qry.count()
         qry = qry.limit(args['count'])
 
-        if (args['page'] - 1) > 0:
-            offset = (args['page'] - 1) * args['count']
+        if args['page'] > 0:
+            offset = args['page'] * args['count']
             qry = qry.offset(offset)
 
         results = []
