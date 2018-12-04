@@ -229,6 +229,58 @@ class BaseIssue(ABC):
         qry = qry.offset((page - 1) * limit if page > 1 else 0)
 
         return total, [cls(x) for x in qry.all()]
+
+    @classmethod
+    def find(cls, *, limit=100, page=1, properties=None, return_query=False):
+        """Search for issues based on the provided filters
+
+        Args:
+            limit (`int`): Number of results to return. Default: 100
+            page (`int`): Pagination offset for results. Default: 1
+            properties (`dict`): A `dict` containing property name and value pairs. Values can be either a str or a list
+            of strings, in which case a boolean OR search is performed on the values
+            return_query (`bool`): Returns the query object prior to adding the limit and offset functions. Allows for
+            sub-classes to amend the search feature with extra conditions. The calling function must handle pagination
+            on its own
+
+        Returns:
+            `list` of `Issue`, `sqlalchemy.orm.Query`
+        """
+        qry = db.Issue.order_by(Issue.issue_id).filter(
+            Issue.issue_type_id == IssueType.get(cls.issue_type).issue_type_id
+        )
+
+        if properties:
+            for prop_name, value in properties.items():
+                alias = aliased(IssueProperty)
+                qry = qry.join(alias, Issue.issue_id == alias.issue_id)
+                if type(value) == list:
+                    where_clause = []
+                    for item in value:
+                        where_clause.append(alias.value == item)
+
+                    qry = qry.filter(
+                        and_(
+                            alias.name == prop_name,
+                            or_(*where_clause)
+                        ).self_group()
+                    )
+                else:
+                    qry = qry.filter(
+                        and_(
+                            alias.name == prop_name,
+                            alias.value == value
+                        ).self_group()
+                    )
+
+        if return_query:
+            return qry
+
+        total = qry.count()
+        qry = qry.limit(limit)
+        qry = qry.offset(page * limit if page > 0 else 0)
+
+        return total, [cls(x) for x in qry.all()]
     # endregion
 
 
