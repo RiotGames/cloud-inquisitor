@@ -10,8 +10,8 @@ from sqlalchemy.orm import aliased
 from cloud_inquisitor import get_plugin_by_name, PLUGIN_NAMESPACES
 from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import IssueException, InquisitorError
-from cloud_inquisitor.plugins.types.resources import Resource, EBSVolume
-from cloud_inquisitor.schema import IssueProperty, Issue, IssueType
+from cloud_inquisitor.plugins.types.resources import BaseResource
+from cloud_inquisitor.schema import IssueProperty, Issue, IssueType, Resource
 from cloud_inquisitor.utils import to_camelcase, parse_date, is_truthy, deprecated
 
 IssueProp = namedtuple('IssueProp', ('key', 'name', 'type', 'show', 'primary'))
@@ -73,12 +73,12 @@ class BaseIssue(ABC):
 
     @classmethod
     def create(cls, issue_id, *, properties=None, auto_add=True, auto_commit=False):
-        """Creates a new Resource object with the properties and tags provided
+        """Creates a new Issue object with the properties and tags provided
 
         Args:
-            issue_id (str): Unique identifier for the resource object
-            properties (dict): Dictionary of properties for the resource object.
-            auto_add (bool): Automatically add the new resource to the DB session. Default: True
+            issue_id (str): Unique identifier for the issue object
+            properties (dict): Dictionary of properties for the issue object.
+            auto_add (bool): Automatically add the new issue to the DB session. Default: True
             auto_commit (bool): Automatically commit the change to the database. Default: False
         """
         if cls.get(issue_id):
@@ -109,7 +109,7 @@ class BaseIssue(ABC):
 
     @classmethod
     def get_all(cls):
-        """Returns a list of all resources for a given account, location and resource type.
+        """Returns a list of all issues for a given issue type.
 
         Returns:
             `list` - list of issue objects
@@ -267,7 +267,7 @@ class BaseIssue(ABC):
             properties (`dict`): A dictionary of properties to update
 
         Returns:
-            True if resource object was updated, else False
+            True if issue object was updated, else False
         """
         updated = False
 
@@ -542,7 +542,7 @@ class EBSVolumeAuditIssue(BaseIssue):
         Returns:
             `EBSVolume`
         """
-        return EBSVolume.get(self.volume_id)
+        return BaseResource.get(self.volume_id)
     # endregion
 
     @deprecated('`update` is deprecated, please use `update_issue` instead')
@@ -552,7 +552,7 @@ class EBSVolumeAuditIssue(BaseIssue):
         `db.session.add(instance)` on the object.
 
         Args:
-            data (:obj:): AWS API Resource object fetched from AWS API
+            data (`dict`): Dictionary containing update information
 
         Returns:
             `bool`
