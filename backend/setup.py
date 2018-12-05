@@ -38,6 +38,12 @@ setuptools.setup(
             'dns_zone = cloud_inquisitor.plugins.types.resources:DNSZone',
         ],
 
+        'cloud_inquisitor.plugins.types.issues': [
+            'aws_required_tags = cloud_inquisitor.plugins.types.issues:RequiredTagsIssue',
+            'domain_hijacking = cloud_inquisitor.plugins.types.issues:DomainHijackIssue',
+            'aws_ebs_volume_audit = cloud_inquisitor.plugins.types.issues:EBSVolumeAuditIssue',
+        ],
+
         'cloud_inquisitor.plugins.types.accounts': [
             'AWS = cloud_inquisitor.plugins.types.accounts:AWSAccount',
             'DNS: AXFR = cloud_inquisitor.plugins.types.accounts:AXFRAccount',
@@ -59,6 +65,8 @@ setuptools.setup(
             'config_namespace_list = cloud_inquisitor.plugins.views.config:Namespaces',
             'email = cloud_inquisitor.plugins.views.emails:EmailGet',
             'email_list = cloud_inquisitor.plugins.views.emails:EmailList',
+            'issues_list = cloud_inquisitor.plugins.views.issues:IssueList',
+            'issue_get = cloud_inquisitor.plugins.views.issues:IssueGet',
             'log = cloud_inquisitor.plugins.views.logs:Logs',
             'log_details = cloud_inquisitor.plugins.views.logs:LogDetails',
             'metadata = cloud_inquisitor.plugins.views.metadata:MetaData',
@@ -79,6 +87,7 @@ setuptools.setup(
             'v2_auditlog_list = cloud_inquisitor.plugins.views.auditlog:AuditLogListV2',
             'v2_config_list = cloud_inquisitor.plugins.views.config:ConfigListV2',
             'v2_log = cloud_inquisitor.plugins.views.logs:LogsV2',
+            'v2_metadata = cloud_inquisitor.plugins.views.metadata:MetaDataV2',
             'v2_search = cloud_inquisitor.plugins.views.search:SearchV2',
             'v2_user_user = cloud_inquisitor.plugins.views.users:UserListV2',
             'v2_password_reset = cloud_inquisitor.plugins.views.users:PasswordResetV2',

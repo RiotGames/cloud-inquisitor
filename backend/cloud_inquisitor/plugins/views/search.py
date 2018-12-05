@@ -236,7 +236,6 @@ class SearchV2(BaseView):
             qry = qry.filter(Resource.resource_id.op('regexp')(id_rgx.lower()))
 
         if args['accounts']:
-            # qry = qry.filter(Resource.account_id.in_(args['accounts']))
             qry = qry.join(Account, Resource.account_id == Account.account_id).filter(
                 Account.account_name.in_(args['accounts'])
             )

@@ -103,7 +103,7 @@ class Issue(Model, BaseModelMixin):
     )
 
     @staticmethod
-    def get(issue_id, issue_type_id):
+    def get(issue_id, issue_type_id=None):
         """Return issue by ID
 
         Args:
@@ -114,6 +114,5 @@ class Issue(Model, BaseModelMixin):
             :obj:`Issue`: Returns Issue object if found, else None
         """
         return db.Issue.find_one(
-            Issue.issue_id == issue_id,
-            Issue.issue_type_id == issue_type_id
+            Issue.issue_id == issue_id
         )

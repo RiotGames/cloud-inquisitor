@@ -18,7 +18,7 @@ from cloud_inquisitor.database import db
 from cloud_inquisitor.json_utils import InquisitorJSONDecoder, InquisitorJSONEncoder
 from cloud_inquisitor.log import auditlog
 from cloud_inquisitor.plugins.views import BaseView, LoginRedirectView, LogoutRedirectView
-from cloud_inquisitor.schema import ResourceType, ConfigNamespace, ConfigItem, Role, Template
+from cloud_inquisitor.schema import ResourceType, ConfigNamespace, ConfigItem, Role, Template, IssueType
 from cloud_inquisitor.utils import get_hash, diff
 
 logger = logging.getLogger(__name__.split('.')[0])
@@ -209,6 +209,7 @@ class CINQFlask(Flask):
         self.api = None
         self.active_auth_system = None
         self.types = {}
+        self.issue_types = {}
         self.available_auth_systems = {}
         self.menu_items = DEFAULT_MENU_ITEMS
 
@@ -222,6 +223,7 @@ class CINQFlask(Flask):
 
     def register_plugins(self):
         self.__register_types()
+        self.__register_issues()
         self.api.register_views(self)
 
     def register_auth_system(self, auth_system):
@@ -279,6 +281,20 @@ class CINQFlask(Flask):
                 cls = entry_point.load()
                 self.types[ResourceType.get(cls.resource_type).resource_type_id] = cls
                 logger.debug('Registered resource type {}'.format(cls.__name__))
+        except SQLAlchemyError as ex:
+            logger.warning('Failed loading type information: {}'.format(ex))
+
+    def __register_issues(self):
+        """Iterates all entry points for issue types and registers a `issue_type_id` to class mapping
+
+        Returns:
+            `None`
+        """
+        try:
+            for entry_point in CINQ_PLUGINS['cloud_inquisitor.plugins.types.issues']['plugins']:
+                cls = entry_point.load()
+                self.issue_types[IssueType.get(cls.issue_type).issue_type_id] = cls
+                logger.debug('Registered issue type {}'.format(cls.__name__))
         except SQLAlchemyError as ex:
             logger.warning('Failed loading type information: {}'.format(ex))
 
