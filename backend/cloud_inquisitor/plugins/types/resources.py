@@ -1107,8 +1107,12 @@ class DNSZone(BaseResource):
         )
 
     def to_json(self, with_records=True):
-        # TODO: Fix code using this function so it can be removed in favor of BaseResource.to_json
-        return super().to_json()
+        data = super().to_json()
+        if with_records:
+            data['recordCount'] = len(self.records)
+            data['records'] = self.records
+
+        return data
     # endregion
 
 
