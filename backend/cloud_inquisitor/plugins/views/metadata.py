@@ -146,7 +146,9 @@ class MetaDataV2(BaseView):
                 properties.append({
                     'key': to_camelcase(prop.key),
                     'name': prop.name,
-                    'type': prop.type
+                    'type': prop.type,
+                    'show': prop.show,
+                    'primary': prop.primary
                 })
 
             yield {

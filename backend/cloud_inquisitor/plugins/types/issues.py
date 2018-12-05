@@ -397,8 +397,8 @@ class RequiredTagsIssue(BaseIssue):
         IssueProp(key='state', name='State', type='int', show=True, primary=False),
         IssueProp(key='last_change', name='Last Change', type='datetime', show=True, primary=False),
         IssueProp(key='shutdown_on', name='Shutdown on', type='datetime', show=True, primary=False),
-        IssueProp(key='missing_tags', name='Missing Tags', type='list', show=True, primary=True),
-        IssueProp(key='notes', name='Notes', type='list', show=True, primary=False),
+        IssueProp(key='missing_tags', name='Missing Tags', type='array', show=True, primary=True),
+        IssueProp(key='notes', name='Notes', type='array', show=True, primary=False),
         IssueProp(key='last_alert', name='Last Alert', type='string', show=True, primary=False),
         IssueProp(key='resource_type', name='Resource Type', type='int', show=True, primary=False),
     ]
@@ -529,7 +529,7 @@ class EBSVolumeAuditIssue(BaseIssue):
         IssueProp(key='account_id', name='Account ID', type='int', show=True, primary=False),
         IssueProp(key='location', name='Location', type='string', show=True, primary=False),
         IssueProp(key='state', name='State', type='string', show=True, primary=False),
-        IssueProp(key='last_change', name='Last Change', type='datetime', show=True, primary=False),
+        IssueProp(key='last_change', name='Last Change', type='datetime', show=True, primary=True),
         IssueProp(key='last_notice', name='Last Notification', type='datetime', show=True, primary=False),
         IssueProp(key='notes', name='Notes', type='array', show=True, primary=False),
     ]
