@@ -1,0 +1,13 @@
+<ul ng-repeat="section in vm.menuItems | orderObjectBy: 'order'" class="sidenav-menu">
+    <li ng-class="{collapsed: section.collapsed}">
+        <h1 ng-if="section.name" ng-click="vm.toggle(section)">
+            {{section.name}}
+            <i class="material-icons toggle">expand_more</i>
+        </h1>
+        <ul ng-repeat="item in section.items | orderObjectBy: 'order'">
+            <li>
+                <md-button ng-class="{active: vm.isActive(item)}" ng-click="vm.click(item)">{{item.name}}</md-button>
+            </li>
+        </ul>
+    </li>
+</ul>

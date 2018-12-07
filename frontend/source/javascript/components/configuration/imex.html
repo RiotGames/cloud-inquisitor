@@ -1,0 +1,53 @@
+<div>
+    <md-toolbar class="md-primary md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Import Configuration</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    <section class="md-whiteframe-2dp md-padding">
+        <div>
+            <form name="configImport" ng-submit="vm.importConfig()">
+                <textarea
+                        id="configData"
+                        name="configData"
+                        layout-fill
+                        style="min-height: 400px; resize: none; padding: 8px 4px;"
+                        json
+                        ng-model="vm.importData.content"
+                        ng-class="{'error': configImport.configData.$error.json}"
+                        placeholder="Drag and drop file here"></textarea>
+                <br>
+                <div class="help-block">
+                    Only .json files under 5MB in size are supported
+                </div>
+                <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!configImport.$valid">
+                    Import
+                </md-button>
+            </form>
+        </div>
+    </section>
+</div>
+
+<div>
+    <md-toolbar class="md-primary md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Export Configuration</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    <section class="md-whiteframe-2dp md-padding">
+        <download-file
+                url="/api/v1/config/imex"
+                label="Export configuration"
+                tooltip="Download configuration"
+                filename="cloud-inquisitor-config"
+                formats="['json']"
+        ></download-file>
+        <!--<md-button class="md-raised" ng-click="vm.exportConfig();">Export configuration</md-button>-->
+    </section>
+</div>

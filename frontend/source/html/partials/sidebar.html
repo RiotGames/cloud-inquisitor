@@ -1,0 +1,42 @@
+<header>
+    <md-toolbar>
+        <h1>Cloud Inquisitor</h1>
+    </md-toolbar>
+</header>
+
+<md-content flex>
+    <side-menu menu-items="mc.menuItems" click="mc.click" is-active="mc.isActive"></side-menu>
+</md-content>
+
+<footer flex="none" class="menu-footer" layout-padding layout="row" layout-align="center center">
+    <div ng-if="mc.currentUser.username">
+        Logged in as {{mc.currentUser.username}}
+    </div>
+
+    <div ng-if="!mc.currentUser.username">
+        Not logged in
+    </div>
+
+    <div flex></div>
+
+    <md-menu md-position-mode="target target" md-offset="10 10" ng-if="mc.currentUser">
+        <md-button aria-label="Open user menu" class="md-icon-button md-primary md-hue-2 md-raised" ng-click="mc.openMenu($mdOpenMenu, $event)">
+            <md-icon>person</md-icon>
+        </md-button>
+        <md-menu-content width="4">
+            <md-menu-item>
+                <md-button ng-click="mc.changePassword($event)" aria-label="Change Password">
+                    <md-icon>vpn_key</md-icon>
+                    Change Password
+                </md-button>
+            </md-menu-item>
+            <md-menu-divider></md-menu-divider>
+            <md-menu-item>
+                <md-button ng-click="mc.logout($event)" aria-label="Logout">
+                    <md-icon>power_settings_new</md-icon>
+                    Logout
+                </md-button>
+            </md-menu-item>
+        </md-menu-content>
+    </md-menu>
+</footer>

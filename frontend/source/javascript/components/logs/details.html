@@ -1,0 +1,65 @@
+<section class="md-whiteframe-2dp">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Event Details</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    
+    <md-table-container>
+        <table md-table class="vertical">
+            <tbody md-body>
+            <tr md-row>
+                <td md-cell>
+                    Timestamp:
+                </td>
+                <td md-cell>
+                    {{vm.logEvent.timestamp | date : 'yyyy-MM-dd HH:mm:ss'}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Level:
+                </td>
+                <td md-cell ng-bind-html="{no: vm.logEvent.levelno, txt: vm.logEvent.level} | loglevel">
+                    &nbsp;
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Module:
+                </td>
+                <td md-cell>
+                    {{vm.logEvent.module}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Message
+                </td>
+                <td md-cell ng-bind-html="vm.logEvent.message | nl2br">
+                    &nbsp;
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<section class="md-whiteframe-2dp" ng-if="vm.logEvent.levelno >= 40">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Stacktrace</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+    <md-content class="md-padding">
+        <pre>{{vm.logEvent.stacktrace}}</pre>
+    </md-content>
+</section>
+
+<md-button class="md-raised md-accent md-hue-1" onclick="history.back()">Back</md-button>

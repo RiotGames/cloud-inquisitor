@@ -1,0 +1,40 @@
+<md-dialog aria-label="Download File" class="downloadfile">
+    <form ng-cloak name="frmDownloadFile" ng-submit="vm.downloadFile()">
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>{{vm.title}}</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="vm.cancel()">
+                    <md-icon aria-label="Close dialog">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+            <div class="md-dialog-content" style="max-width: 600px;">
+                <p>
+                    Please select the file format you would like the download
+                </p>
+
+                <md-input-container class="md-block">
+                    <label>Format</label>
+                    <md-select ng-model="vm.form.fileFormat">
+                        <md-option ng-repeat="itm in vm.formats" value="{{itm.type}}">{{itm.name}}</md-option>
+                    </md-select>
+                </md-input-container>
+
+                <div id="dlMessages"></div>
+            </div>
+        </md-dialog-content>
+
+        <md-dialog-actions layout="row">
+            <span flex></span>
+            <md-button class="md-warn" type="submit" id="btnDownload">
+                Download
+            </md-button>
+            <md-button ng-click="vm.cancel()">
+                Close
+            </md-button>
+        </md-dialog-actions>
+    </form>
+</md-dialog>

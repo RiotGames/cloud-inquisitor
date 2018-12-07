@@ -1,0 +1,69 @@
+<form ng-submit="vm.update()">
+    <div layout="column" layout-gt-md="row" layout-align="start end" id="filters">
+        <span ng-repeat="(paramName, param) in vm.params track by $index">
+            <md-input-container ng-if="param.type === 'select'">
+                <label>{{param.label}}</label>
+                <md-select ng-if="param.multiple"
+                           multiple
+                           ng-model="vm.models[paramName]"
+                           md-on-close="vm.searchTerms[paramName] = ''"
+                           md-container-class="selectHeader"
+                           aria-label="{{param.label}}"
+                           placeholder="{{param.placeholder || param.label}}">
+                    <md-select-header ng-if="param.searchable" class="header" ng-if="param.searchable">
+                        <input type="search"
+                               ng-keydown="$event.stopPropagation()"
+                               ng-model="vm.searchTerms[paramName]"
+                               placeholder="Search"
+                               class="searchbox md-text">
+                    </md-select-header>
+                    <md-option ng-repeat="value in param.values | filter:vm.searchTerms[paramName]" ng-value="value.value">{{value.name}}</md-option>
+                </md-select>
+                <md-select ng-if="!param.multiple"
+                           ng-model="vm.models[paramName]"
+                           md-on-close="vm.searchTerms[paramName] = ''"
+                           md-container-class="selectHeader"
+                           aria-label="{{param.label}}"
+                           placeholder="{{param.placeholder || param.label}}">
+                    <md-select-header ng-if="param.searchable" class="header" ng-if="param.searchable">
+                        <input type="search"
+                               ng-keydown="$event.stopPropagation()"
+                               ng-model="vm.searchTerms[paramName]"
+                               placeholder="Search"
+                               class="searchbox md-text">
+                    </md-select-header>
+                    <md-option ng-repeat="value in param.values | filter:vm.searchTerms[paramName]" ng-value="value.value">{{value.name}}</md-option>
+                </md-select>
+            </md-input-container>
+            <md-input-container ng-if="param.type === 'string'">
+                <label>{{param.label}}</label>
+                <input type="text" ng-model="vm.models[paramName]" style="width: 250px;"/>
+            </md-input-container>
+            <md-input-container ng-if="param.type === 'chips'">
+                <label>{{param.label}}</label>
+                <md-chips ng-model="vm.models[paramName]" placeholder="{{param.placeholder}}" secondary-placeholder="{{param.placeholder}}"></md-chips>
+            </md-input-container>
+        </span>
+
+        <span flex></span>
+
+        <section layout="row">
+            <span ng-repeat="btn in vm.buttons">
+                <md-button class="md-raised md-icon-button" ng-click="btn.callback()" ng-class="btn.classes" aria-label="{{btn.label}}">
+                <md-tooltip>{{btn.tooltip}}</md-tooltip>
+                <i class="material-icons">{{btn.icon}}</i>
+            </md-button>
+            </span>
+
+            <md-button class="md-raised md-icon-button" type="submit" aria-label="Update Filters">
+                <md-tooltip>Update Filters</md-tooltip>
+                <i class="material-icons">update</i>
+            </md-button>
+
+            <md-button ng-if="vm.onReset" class="md-raised md-icon-button md-warn" ng-click="vm.onReset()" aria-label="Reset Filters">
+                <md-tooltip>Reset Filters</md-tooltip>
+                <i class="material-icons">clear</i>
+            </md-button>
+        </section>
+    </div>
+</form>

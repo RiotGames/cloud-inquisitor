@@ -1,0 +1,43 @@
+//region Bootstrap-esque labels
+.labels {
+    min-width: 70px;
+    display: inline-block;
+    padding: 6px 8px;
+    font-weight: bold;
+    color: invert($fontcolor);
+    font-family: $font;
+    font-size: 11px;
+    text-align: center;
+    background-color: $color-medium-grey;
+    @include border-radius(4px);
+
+    &.large {
+        font-size: 14px !important;
+    }
+
+    &:not(last-child) {
+        margin-right: 4px;
+    }
+
+    &.red {
+        background-color: $color-red;
+    }
+
+    &.yellow {
+        background-color: $color-yellow;
+        color: complement($color-yellow);
+    }
+
+    &.blue {
+        background-color: $color-blue;
+    }
+
+    &.green {
+        background-color: $color-green;
+    }
+
+    &.orange {
+        background-color: $color-orange;
+    }
+}
+//endregion

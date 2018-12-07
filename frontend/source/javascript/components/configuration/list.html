@@ -1,0 +1,96 @@
+<div ng-repeat="ns in vm.namespaces" id="namespace-{{ns.namespacePrefix}}" ng-cloak ng-class="{'config-namespace': !$last}">
+    <md-toolbar class="md-primary md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>{{ns.name}} <small>({{ns.namespacePrefix}})</small></span>
+            </h2>
+            <span flex></span>
+            <md-button class="md-icon-button md-raised md-primary md-hue-1" aria-label="Add new setting" ng-click="vm.addItem(ns.namespacePrefix);">
+                <md-icon md-font-set="material-icons">add circle</md-icon>
+            </md-button>
+            <md-button class="md-icon-button md-raised md-primary md-hue-1" aria-label="Edit namespace" ng-click="vm.editNamespace(ns.namespacePrefix);">
+                <md-icon md-font-set="material-icons">edit</md-icon>
+            </md-button>
+            <md-button class="md-icon-button md-raised md-primary md-hue-1" aria-label="Delete namespace" ng-click="vm.deleteNamespace($event, ns);">
+                <md-icon md-font-set="material-icons">delete</md-icon>
+            </md-button>
+            <md-button class="md-icon-button md-raised md-primary md-hue-1" ng-click="vm.toggleNamespace(ns.namespacePrefix);">
+                <md-icon md-font-set="material-icons">{{vm.panels[ns.namespacePrefix] ? 'expand_less' : 'expand_more'}}</md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <section class="md-whiteframe-2dp" id="namespace-fold-{{ns.namespacePrefix}}">
+        <div ng-if="ns.configItems.length == 0" class="md-padding"><i>No config items yet</i></div>
+        <md-table-container ng-if="ns.configItems.length > 0">
+            <table md-table class="striped hover">
+                <thead md-head>
+                <tr md-row>
+                    <th md-column style="width: 250px;">Key</th>
+                    <th md-column style="width: 100px; text-align: center;">Type</th>
+                    <th md-column>Value</th>
+                    <th md-column style="width: 80px; text-align: right;">&nbsp;</th>
+                </tr>
+                </thead>
+                <tr ng-repeat="cfg in ns.configItems | orderBy: 'key'" id="cfg-{{ns.namespacePrefix}}-{{cfg.key}}" class="deletable">
+                    <td md-cell style="width: 250px;">{{cfg.key}}</td>
+                    <td md-cell style="width: 100px; text-align: center;">
+                        <span class="labels" ng-class="vm.getTypeClass(cfg.type)">{{cfg.type}}</span>
+                    </td>
+                    <td md-cell class="overflow" ng-if="cfg.type == 'string' || cfg.type == 'int' || cfg.type == 'float'">{{cfg.value}}</td>
+                    <td md-cell ng-if="cfg.type == 'bool'"><b>{{cfg.value ? "Enabled" : "Disabled"}}</b></td>
+                    <td md-cell ng-if="cfg.type == 'array'" ng-bind-html="cfg.value.join(', ') || '<i><b>Empty</b></i>'"></td>
+                    <td md-cell ng-if="cfg.type == 'json'"><div hljs source="vm.toPrettyJSON(cfg.value)">&nbsp;</div></td>
+                    <td md-cell ng-if="cfg.type == 'choice'" ng-bind-html="cfg.value.enabled.join(', ') || '<i><b>Empty</b></i>'"></td>
+                    <td md-cell style="width: 80px; text-align: right;">
+                        <span ng-if="cfg.description">
+                            <md-tooltip md-direction="left">{{cfg.description}}</md-tooltip>
+                            <md-icon md-font-set="material-icons">info_outline</md-icon>
+                        </span>
+
+                        <md-menu md-position-mode="target-right target">
+                            <md-button aria-label="Open account interactions menu" class="md-icon-button" ng-click="$mdMenu.open()">
+                                <md-icon md-font-set="material-icons">settings</md-icon>
+                            </md-button>
+                            <md-menu-content width="4">
+                                <md-menu-item>
+                                    <md-button ng-click="vm.editItem(cfg.namespacePrefix, cfg.key)">
+                                        <md-icon md-font-set="material-icons">edit</md-icon>
+                                        Edit
+                                    </md-button>
+                                </md-menu-item>
+                                <md-menu-divider></md-menu-divider>
+                                <md-menu-item>
+                                    <md-button ng-click="vm.deleteItem($event, cfg)">
+                                        <md-icon md-font-set="material-icons">delete</md-icon>
+                                        Delete
+                                    </md-button>
+                                </md-menu-item>
+                            </md-menu-content>
+                        </md-menu>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </md-table-container>
+    </section>
+</div>
+
+<md-fab-speed-dial md-open="fabopen" md-direction="left" class="md-scale md-fab-bottom-right" style="position: fixed; bottom: 20px">
+    <md-fab-trigger>
+        <md-button aria-label="menu" class="md-fab md-warn">
+            <md-icon md-font-set="material-icons">menu</md-icon>
+        </md-button>
+    </md-fab-trigger>
+    <md-fab-actions>
+        <md-button aria-label="add namespace" ui-sref="config.namespaceAdd" class="md-fab md-raised md-primary md-mini">
+            <md-tooltip md-direction="bottom">Add Namespace</md-tooltip>
+            <md-icon md-font-set="material-icons">add outline</md-icon>
+        </md-button>
+        <md-button aria-label="import export" ui-sref="config.imex" class="md-fab md-raised md-primary md-mini">
+            <md-tooltip md-direction="bottom">Import / Export configuration</md-tooltip>
+            <md-icon md-font-set="material-icons">import_export</md-icon>
+        </md-button>
+    </md-fab-actions>
+</md-fab-speed-dial>
+<br />

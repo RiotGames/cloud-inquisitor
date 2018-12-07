@@ -64,8 +64,8 @@ install_files:
 	sudo -H mv private.key ${APP_CONFIG_BASE_PATH}/ssl
 
 	# Prepare Cinq config file
-	sudo -H cp -f ${INS_DIR}/packer/files/logging.json ${APP_CONFIG_BASE_PATH}
-	sed -e "s|APP_DB_URI|${APP_DB_URI}|g" -e "s|APP_SECRET_KEY|${SECRET_KEY}|g" -e "s|APP_USE_USER_DATA|${USE_USER_DATA}|g" -e "s|APP_KMS_ACCOUNT_NAME|${APP_KMS_ACCOUNT_NAME}|g" -e "s|APP_KMS_REGION|${APP_KMS_REGION}|g" -e "s|APP_USER_DATA_URL|${APP_USER_DATA_URL}|g" -e "s|APP_AWS_API_ACCESS_KEY|${APP_AWS_API_ACCESS_KEY}|g" -e "s|APP_AWS_API_SECRET_KEY|${APP_AWS_API_SECRET_KEY}|g" ${INS_DIR}/packer/files/backend-config.json > ${APP_CONFIG_BASE_PATH}/config.json
+	sudo -H cp -f ${INS_DIR}/resources/config_files/logging.json ${APP_CONFIG_BASE_PATH}
+	sed -e "s|APP_DB_URI|${APP_DB_URI}|g" -e "s|APP_SECRET_KEY|${SECRET_KEY}|g" -e "s|APP_USE_USER_DATA|${USE_USER_DATA}|g" -e "s|APP_KMS_ACCOUNT_NAME|${APP_KMS_ACCOUNT_NAME}|g" -e "s|APP_KMS_REGION|${APP_KMS_REGION}|g" -e "s|APP_USER_DATA_URL|${APP_USER_DATA_URL}|g" -e "s|APP_AWS_API_ACCESS_KEY|${APP_AWS_API_ACCESS_KEY}|g" -e "s|APP_AWS_API_SECRET_KEY|${APP_AWS_API_SECRET_KEY}|g" ${INS_DIR}/resources/config_files/backend-config.json > ${APP_CONFIG_BASE_PATH}/config.json
 	sudo -H chown -R ${SUDO_USER}:${SUDO_USER} ${APP_CONFIG_BASE_PATH}
 
 init_service_mysql:
@@ -75,11 +75,11 @@ init_service_mysql:
 init_service_nginx:
 	# NGINX configuration
 	if [ "${USE_HTTPS}" != "false" ]; then \
-		sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" ${INS_DIR}/packer/files/nginx-ssl.conf > /etc/nginx/sites-available/cinq.conf; \
+		sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" ${INS_DIR}/resources/config_files/nginx-ssl.conf > /etc/nginx/sites-available/cinq.conf; \
 		mkdir -p ${PATH_CINQ}/ssl; \
 		openssl req -x509 -subj "/C=US/ST=CA/O=Your Company/localityName=Your City/commonName=localhost/organizationalUnitName=Operations/emailAddress=someone@example.com" -days 3650 -newkey rsa:2048 -nodes -keyout ${APP_CONFIG_BASE_PATH}/ssl/cinq-frontend.key -out ${APP_CONFIG_BASE_PATH}/ssl/cinq-frontend.crt; \
 	else \
-		sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" ${INS_DIR}/packer/files/nginx-nossl.conf > /etc/nginx/sites-available/cinq.conf; \
+		sed -e "s|APP_FRONTEND_BASE_PATH|${PATH_FRONTEND}/dist|g" ${INS_DIR}/resources/config_files/nginx-nossl.conf > /etc/nginx/sites-available/cinq.conf; \
 	fi
 
 	rm -f /etc/nginx/sites-enabled/default
@@ -100,7 +100,7 @@ init_cinq_db:
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/cloud-inquisitor db upgrade
 
 enable_supervisor:
-	sed -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" -e "s|APP_PYENV_PATH|${PATH_VENV}|g" -e "s|APP_WORKER_PROCS|${APP_WORKER_PROCS}|g" ${INS_DIR}/packer/files/supervisor.conf > /etc/supervisor/conf.d/cinq.conf
+	sed -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" -e "s|APP_PYENV_PATH|${PATH_VENV}|g" -e "s|APP_WORKER_PROCS|${APP_WORKER_PROCS}|g" ${INS_DIR}/resources/config_files/supervisor.conf > /etc/supervisor/conf.d/cinq.conf
 
 enable_test:
 	echo "WARNING: Running Cinq test will DESTROY your data in your database. Please make sure you run it on a dedicated test environment"

@@ -1,0 +1,91 @@
+<section class="md-whiteframe-2dp padding" ng-cloak>
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Account Info</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+
+    <md-table-container>
+        <table md-table class="vertical">
+            <tbody md-body>
+            <tr md-row>
+                <td md-cell>
+                    <label for="accountId">Account ID:</label>
+                </td>
+                <td md-cell id="accountId">
+                    {{vm.account.accountId}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    <label for="accountName">Account Name:</label>
+                </td>
+                <td md-cell id="accountName">
+                    {{vm.account.accountName}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    <label for="contacts">Contacts:</label>
+                </td>
+                <td md-cell id="contacts">
+                    <span ng-repeat="contact in vm.account.contacts" ng-bind-html="contact | contacttype">&nbsp;</span>
+                </td>
+            </tr>
+
+            <tr md-row>
+                <td md-cell>
+                    <label for="enabled">Enabled:</label>
+                </td>
+                <td md-cell ng-bind-html="vm.account.enabled | status" id="enabled">
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    <label for="requiredRoles">Required Roles:</label>
+                </td>
+                <td md-cell ng-switch="vm.account.requiredRoles.length">
+                    <i ng-switch-when="0">None</i>
+                    <md-chips id="requiredRoles" ng-model="vm.account.requiredRoles" readonly="true" ng-switch-default></md-chips>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<section class="md-whiteframe-2dp padding">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Properties</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+
+    <md-table-container>
+        <table md-table class="vertical">
+            <tbody md-body>
+            <tr md-row ng-repeat="(key, value) in vm.account.properties">
+                <td md-cell>
+                    <label>{{vm.getPropertyName(vm.account.accountType, key)}}</label>
+                </td>
+                <td md-cell ng-switch="vm.getPropertyType(vm.account.accountType, key)">
+                    <div ng-switch-when="string|int|float" ng-switch-when-separator="|" ng-bind-html="value | empty"></div>
+
+                    <div ng-switch-when="array">
+                        <i ng-if="value.length < 1">Empty</i>
+                        <span ng-repeat="item in value" class="labels blue">{{item}}</span>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<md-button class="md-accent md-raised md-hue-1" ui-sref="account.list">Back</md-button>

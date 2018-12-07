@@ -1,0 +1,80 @@
+<md-dialog aria-label="search help">
+    <md-toolbar class="md-hue-1">
+        <div class="md-toolbar-tools">
+            <h2>Query Format</h2>
+            <span flex></span>
+            <md-button class="md-icon-button"><md-icon md-font-set="material-icons" ng-click="vm.cancel()">cancel</md-icon></md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content style="max-height: 800px; max-width: 800px; min-height: 400px;">
+        <section class="md-padding">
+            <p>
+                There are currently 4 ways to search for instances, by ID, name, public IP and DNS address and tag key/value pair, each described in additional detail below.
+            </p>
+            <p>
+                All searches are case-insensitive, and terms can be put in quotes to correctly search for values with spaces
+            </p>
+        </section>
+
+        <md-tabs md-dynamic-height md-border-bottom>
+            <md-tab label="Instance ID">
+                <md-content class="md-padding">
+                    <p>
+                        To search for an instance by ID, you'd simply input the instance ID into the search field. Searching by instance will always return a single
+                        instance, and never a list of instances. Wildcards are not supported.
+                    </p>
+
+                    <h4>Example</h4>
+                    <pre>i-91a6404c</pre>
+                </md-content>
+            </md-tab>
+
+            <md-tab label="Instance Name">
+                <md-content class="md-padding">
+                    <p>
+                        To search for instances by name, you can either search by simply typing the name of the instance you want to find, or by using
+                        the tag query format. This query can return more than a single instance, if multiple instances have identical names
+                    </p>
+
+                    <h4>Examples</h4>
+                    <pre>inquisitor-asg</pre>
+                    <p>or</p>
+                    <pre>tag:name=inquisitor-asg</pre>
+                </md-content>
+            </md-tab>
+
+            <md-tab label="Public IP / DNS Address">
+                <md-content class="md-padding">
+                    <p>
+                        If you need to search for an instance by its public IP address or DNS name, you can simply search for the DNS name or the IP directly
+                    </p>
+
+                    <h4>Example</h4>
+                    <pre>54.186.42.171</pre>
+                    or
+                    <pre>ec2-54-186-42-171.us-west-2.compute.amazonaws.com</pre>
+                </md-content>
+            </md-tab>
+
+            <md-tab label="Tag Key/Pair Values">
+                <md-content class="md-padding">
+                    <p>
+                        The most powerful type of search allows the user to search by tag key/value pairs, by searching for <i>tag:<b>key</b>=<b>value</b></i>.
+                    </p>
+
+                    <h4>Examples</h4>
+                    <p>
+                        Search for instances with the name <code>inquisitor-asg</code>
+                    </p>
+                    <pre>tag:name=inquisitor-asg</pre>
+
+                    <p>
+                        Search for instances tagged with <code>ElasticSearch CloudTrail cluster</code> as the AppName
+                    </p>
+                    <pre>tag:AppName="ElasticSearch CloudTrail cluster"</pre>
+                </md-content>
+            </md-tab>
+        </md-tabs>
+    </md-dialog-content>
+</md-dialog>

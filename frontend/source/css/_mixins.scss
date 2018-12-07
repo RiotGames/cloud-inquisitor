@@ -1,0 +1,31 @@
+//region Mixins
+@mixin border-radius($radius) {
+    -webkit-border-radius: $radius !important;
+    -moz-border-radius: $radius !important;
+    -ms-border-radius: $radius !important;
+    border-radius: $radius !important;
+}
+
+@mixin overflow() {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@mixin fixed-height($height) {
+    min-height: $height;
+    height: $height;
+    max-height: $height;
+}
+
+@mixin fixed-width($width) {
+    min-width: $width;
+    width: $width;
+    max-width: $width;
+}
+
+@mixin fixed-size($height, $width) {
+    @include fixed-height($height);
+    @include fixed-width($width);
+}
+//endregion

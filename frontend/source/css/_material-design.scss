@@ -1,0 +1,199 @@
+//region Material Design Elements
+md-grid-tile.empty svg path:first-of-type {
+    fill: $color-red;
+    stroke: $fontcolor;
+    stroke-width: 1.5px;
+    animation: blinker 2s linear infinite;
+}
+
+@keyframes blinker {
+    50% { opacity: 0.50; }
+}
+
+md-toolbar {
+    h1 {
+        margin: auto;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    h2 {
+        margin: auto;
+        font-size: 18px;
+        font-weight: bold;
+    }
+}
+
+md-list {
+    md-list-item {
+        margin: 0 !important;
+
+        &.selected .md-button {
+            color: $color-light-blue;
+            background-color: $color-grey;
+        }
+    }
+
+    &[role="list"] {
+        md-list-item:not(.md-3-line) {
+            padding: 0 !important;
+            min-height: 45px;
+            height: 45px;
+        }
+
+        .md-button {
+            transition: background-color .5s;
+        }
+    }
+
+    .md-button {
+        height: 45px !important;
+        line-height: 45px;
+        border-radius: 0;
+        color: inherit;
+        font-weight: 500;
+        text-align: left;
+        width: 100%;
+        margin: 0;
+        padding: 0 0 0 20px;
+    }
+
+    &.striped md-list-item:nth-child(even) {
+        background-color: $color-light-grey;
+    }
+
+    &.hover md-list-item:hover {
+        background-color: darken($color-light-grey, 10%);
+    }
+}
+
+md-sidenav {
+    width: 270px;
+    transition: all .2s ease-in-out;
+
+    h2 {
+        font-size: $fontsize;
+        opacity: .55;
+        padding-left: 15px;
+        margin-top: 20px;
+    }
+
+    md-list {
+        padding: 0 0 8px 0;
+    }
+}
+
+.md-button.menu > md-icon {
+    color: $color-dark-grey;
+    width: 24px;
+    height: 24px;
+}
+
+md-chips {
+    input {
+        font-size: $fontsize - 2;
+        width: 300px !important;
+        background-color: $color-light-grey !important;
+        border-radius: 16px !important;
+        border: 1px solid #DDD !important;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    md-chip {
+        font-size: $fontsize - 2;
+        border: 1px solid $color-grey !important;
+
+        .md-chip-remove-container {
+            button md-icon {
+                @include fixed-size(14px, 14px);
+            }
+        }
+    }
+}
+
+md-content section {
+    margin-bottom: 20px;
+}
+
+md-toolbar {
+    max-height: 64px;
+}
+
+md-toast {
+    width: 400px;
+
+    & div.md-toast-content {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    &.md-center {
+        left: 50%;
+        transform: translate3d(-50%, 0, 0);
+    }
+
+    &.md-audit-error-theme div.md-toast-content {
+        background-color: $color-red;
+    }
+
+    &.md-audit-warning-theme div.md-toast-content {
+        background-color: $color-orange;
+    }
+
+    &.md-audit-info-theme div.md-toast-content {
+        background-color: $color-blue;
+    }
+
+    &.md-audit-success-theme div.md-toast-content {
+        background-color: $color-green;
+    }
+}
+
+.md-button {
+    &.md-audit-success-theme {
+        min-width: 50px;
+    }
+
+    &.md-audit-info-theme {
+        min-width: 50px;
+    }
+
+    &.md-audit-warning-theme {
+        min-width: 50px;
+    }
+
+    &.md-audit-error-theme {
+        min-width: 50px;
+    }
+}
+
+md-dialog-content {
+    min-width: 400px;
+}
+
+.selectHeader {
+    & .searchbox {
+        border: none;
+        outline: none;
+        height: 100%;
+        width: 100%;
+        padding: 0;
+    }
+
+    & .header {
+        box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.1), 0 0 0 0 rgba(0, 0, 0, 0.14), 0 0 0 0 rgba(0, 0, 0, 0.12);
+        padding-left: 10.667px;
+        height: 48px;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: auto;
+    }
+
+    & md-content._md {
+        max-height: 240px;
+    }
+}
+//endregion
