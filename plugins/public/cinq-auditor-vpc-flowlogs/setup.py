@@ -10,7 +10,6 @@ with open(os.path.join(path, 'README.rst')) as fd:
 
 setuptools.setup(
     name='cinq-auditor-vpc-flowlogs',
-    use_scm_version=True,
 
     entry_points={
         'cloud_inquisitor.plugins.auditors': [
@@ -19,7 +18,7 @@ setuptools.setup(
     },
 
     packages=setuptools.find_packages(),
-    setup_requires=['setuptools_scm'],
+    setup_requires=[],
     install_requires=[
         'cloud_inquisitor~=2.0',
         'cinq_collector_aws~=2.0'
@@ -32,7 +31,6 @@ setuptools.setup(
     # Metadata for the project
     description='VPC Flow Log auditor',
     long_description=long_desc,
-    url='https://github.com/RiotGames/cinq-auditor-vpc-flowlogs/',
     author='Riot Games Security',
     author_email='security@riotgames.com',
     license='License :: OSI Approved :: Apache Software License',

@@ -10,7 +10,6 @@ with open(os.path.join(path, 'README.rst')) as fd:
 
 setuptools.setup(
     name='cinq-auditor-cloudtrail',
-    use_scm_version=True,
 
     entry_points={
         'cloud_inquisitor.plugins.auditors': [
@@ -19,7 +18,7 @@ setuptools.setup(
     },
 
     packages=setuptools.find_packages(),
-    setup_requires=['setuptools_scm'],
+    setup_requires=[],
     install_requires=[
         'cloud_inquisitor~=2.0',
     ],
@@ -31,7 +30,6 @@ setuptools.setup(
     # Metadata for the project
     description='CloudTrail auditor',
     long_description=long_desc,
-    url='https://github.com/RiotGames/cinq-auditor-cloudtrail/',
     author='Riot Games Security',
     author_email='security@riotgames.com',
     license='Apache 2.0',

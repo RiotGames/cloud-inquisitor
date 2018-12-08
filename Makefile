@@ -1,8 +1,8 @@
 .PHONY: install_libs install_services install_files init_services init_cinq enable_test do_test setup_localdev setup_tarvisci
 
 PATH_CINQ ?= /opt/cinq
-PATH_BACKEND ?= ${PATH_CINQ}/cinq-backend
-PATH_FRONTEND ?= ${PATH_CINQ}/cinq-frontend
+PATH_BACKEND ?= ${PATH_CINQ}/backend
+PATH_FRONTEND ?= ${PATH_CINQ}/frontend
 PATH_PYTHON ?= /usr/bin/python3
 PATH_VENV ?= ${PATH_CINQ}/cinq-venv
 APP_WORKER_PROCS ?= 12
@@ -44,18 +44,15 @@ install_files:
 	chmod -R 777 /var/log/cloud-inquisitor/
 	mkdir -p ${PATH_CINQ}
 
-	# Checkout frontend code
-	sudo git clone https://github.com/RiotGames/cinq-frontend.git ${PATH_FRONTEND}
-
-	# Target is not backend means this is a build job for plugins, therefore we need to checkout backend code as well
-	if [ "${PATH_BACKEND}" != "." ]; then \
-		sudo git clone https://github.com/RiotGames/cloud-inquisitor.git ${PATH_BACKEND}; \
-	fi
-
+	# Copy project files
+	cp -R ${INS_DIR}/backend ${PATH_BACKEND}
+	cp -R ${INS_DIR}/frontend ${PATH_FRONTEND}
+	cp -R ${INS_DIR}/plugins ${PATH_CINQ}/plugins
+	cp -R ${INS_DIR}/docs ${PATH_CINQ}/docs
 	chown -R ${SUDO_USER}:${SUDO_USER} ${PATH_CINQ}
 
 	# Setup frontend and virtual env
-	cd ${PATH_FRONTEND}; sudo -u ${SUDO_USER} -H npm i; sudo -u ${SUDO_USER} -H node_modules/.bin/gulp build.dev
+	cd ${PATH_CINQ}/frontend; sudo -u ${SUDO_USER} -H npm i; sudo -u ${SUDO_USER} -H node_modules/.bin/gulp build.dev
 	sudo -u ${SUDO_USER} -H virtualenv --python=${PATH_PYTHON} ${PATH_VENV}
 
 	# Setup Keys
@@ -87,13 +84,11 @@ init_service_nginx:
 	service nginx restart
 
 init_cinq:
-	# If setup.py exists in the current directory, we are probably testing against a plugin. In this case we need to pip install it
-	if [ -f ./setup.py ]; then \
-		sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -e .; \
-	fi
-
 	# Install backend
-	cd ${PATH_BACKEND}/backend; sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -e .
+	cd ${PATH_BACKEND}; sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -e .
+
+	# Install plugins
+	cd ${PATH_CINQ}; find plugins -maxdepth 2 -name cinq* -exec ../cinq-venv/bin/pip3 install -e {} \;
 
 init_cinq_db:
 	# Initialize Cinq DB
@@ -109,7 +104,7 @@ enable_test:
 do_test:
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]==1.3.4
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/cloud-inquisitor setup
-	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest ${PATH_BACKEND}/backend
+	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest ${PATH_BACKEND}
 
 clean:
 	sudo rm -rf ${PATH_CINQ} ${PATH_BACKEND} ${PATH_FRONTEND} ${PATH_VENV} ${APP_CONFIG_BASE_PATH}

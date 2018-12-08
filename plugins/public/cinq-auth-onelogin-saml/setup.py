@@ -10,7 +10,6 @@ with open(os.path.join(path, 'README.rst')) as fd:
 
 setuptools.setup(
     name='cinq-auth-onelogin-saml',
-    use_scm_version=True,
 
     entry_points={
         'cloud_inquisitor.plugins.auth': [
@@ -19,7 +18,7 @@ setuptools.setup(
     },
 
     packages=setuptools.find_packages(),
-    setup_requires=['setuptools_scm'],
+    setup_requires=[],
     install_requires=[
         'cloud_inquisitor~=2.0',
         'python3-saml~=1.2',
@@ -33,7 +32,6 @@ setuptools.setup(
     # Metadata for the project
     description='OneLogin SAML based user authentication',
     long_description=long_desc,
-    url='https://github.com/RiotGames/cinq-auth-onelogin-saml/',
     author='Riot Games Security',
     author_email='security@riotgames.com',
     license='License :: OSI Approved :: Apache Software License',
