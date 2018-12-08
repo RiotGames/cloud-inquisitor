@@ -10,6 +10,7 @@ with open(os.path.join(path, 'README.rst')) as fd:
 
 setuptools.setup(
     name='cinq-scheduler-standalone',
+    version='3.0.0',
 
     entry_points={
         'cloud_inquisitor.plugins.schedulers': [
@@ -20,7 +21,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     setup_requires=[],
     install_requires=[
-        'cloud_inquisitor~=2.0',
+        'cloud_inquisitor~=3.0',
         'APScheduler~=3.3',
     ],
     extras_require={

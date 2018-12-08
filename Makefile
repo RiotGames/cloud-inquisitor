@@ -88,7 +88,7 @@ init_cinq:
 	cd ${PATH_BACKEND}; sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -e .
 
 	# Install plugins
-	cd ${PATH_CINQ}; find plugins -maxdepth 2 -name cinq* -exec ../cinq-venv/bin/pip3 install -e {} \;
+	cd ${PATH_CINQ}; sudo -u ${SUDO_USER} -H find plugins -mindepth 2 -maxdepth 2 -type d -name "cinq-*" -exec ${PATH_VENV}/bin/pip3 install -e {} \;
 
 init_cinq_db:
 	# Initialize Cinq DB
@@ -114,3 +114,5 @@ setup_localdev: install_libs install_service_mysql install_service_nginx install
 setup_tarvisci: install_libs_tarvisci install_files init_service_mysql init_service_nginx init_cinq init_cinq_db enable_test
 
 setup_server_install: install_libs install_service_nginx install_files init_service_nginx init_cinq
+
+reinstall_localdev: clean install_files init_cinq

@@ -10,6 +10,7 @@ with open(os.path.join(path, 'README.rst')) as fd:
 
 setuptools.setup(
     name='cinq-auditor-domain-hijacking',
+    version='3.0.0',
 
     entry_points={
         'cloud_inquisitor.plugins.auditors': [
@@ -23,9 +24,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     setup_requires=[],
     install_requires=[
-        'cloud-inquisitor~=2.0',
-        'cinq-collector-aws~=2.0',
-        'dnspython~=1.15.0',
+        'cloud-inquisitor~=3.0',
+        'dnspython~=1.15.0'
     ],
     extras_require={
         'dev': [],

@@ -10,6 +10,7 @@ with open(os.path.join(path, 'README.rst')) as fd:
 
 setuptools.setup(
     name='cinq-collector-aws',
+    version='3.0.0',
 
     entry_points={
         'cloud_inquisitor.plugins.collectors': [
@@ -38,7 +39,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     setup_requires=[],
     install_requires=[
-        'cloud_inquisitor~=2.0',
+        'cloud_inquisitor~=3.0',
         'boto3~=1.4',
         'python-dateutil~=2.6.0',
         'Flask~=0.12.2',

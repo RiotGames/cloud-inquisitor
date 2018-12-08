@@ -2,9 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='cloud_inquisitor',
-    use_scm_version={
-        'root': '..'
-    },
+    version='3.0.0',
 
     entry_points={
         'console_scripts': [
