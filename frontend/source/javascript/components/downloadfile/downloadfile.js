@@ -22,6 +22,7 @@ angular
 ;
 
 FileDownloadController.$inject = ['$mdDialog', 'Utils', 'DLFILE_SUPPORTED_FORMATS'];
+
 function FileDownloadController($mdDialog, Utils, DLFILE_SUPPORTED_FORMATS) {
     const vm = this;
     vm.icon = vm.icon || 'file_download';
@@ -59,6 +60,7 @@ function FileDownloadController($mdDialog, Utils, DLFILE_SUPPORTED_FORMATS) {
 }
 
 FileDownloadDialogController.$inject = ['$mdDialog', '$http', '$rootScope', 'params'];
+
 function FileDownloadDialogController($mdDialog, $http, $rootScope, params) {
     const vm = this;
     vm.form = {
@@ -115,11 +117,11 @@ function FileDownloadDialogController($mdDialog, $http, $rootScope, params) {
             .off('click')
             .on('click', () => {
                 const link = document.createElement('a');
-                var binary_string = window.atob(data);
-                var len = binary_string.length;
-                var bytes = new Uint8Array(len);
+                const binaryString = window.atob(data);
+                const len = binaryString.length;
+                let bytes = new Uint8Array(len);
                 for (var i = 0; i < len; i++) {
-                    bytes[i] = binary_string.charCodeAt(i);
+                    bytes[i] = binaryString.charCodeAt(i);
                 }
                 var blob = new Blob([bytes.buffer], {type: 'application/json'});
 
@@ -136,5 +138,6 @@ function FileDownloadDialogController($mdDialog, $http, $rootScope, params) {
     function downloadFailed(event, message) {
         $('#dlMessages').text('An error occured while preparing your download.<br />Please try again later');
     }
+
     //endregion
 }

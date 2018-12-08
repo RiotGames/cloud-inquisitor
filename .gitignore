@@ -15,10 +15,8 @@
 *.so
 AUTHORS
 ChangeLog
-bundle.js
 dist
 node_modules/**
-vendor.js
 
 ##### IDE / Text Editor related files #####
 .idea

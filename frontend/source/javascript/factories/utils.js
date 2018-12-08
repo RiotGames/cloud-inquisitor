@@ -433,7 +433,7 @@ function Utils($injector, $window, Session) {
 
     /**
      * Returns the name an account type property by key
-     * @param {string} key Key of the property to lookup
+     * @param {string} accountType Key of the property to lookup
      * @return {string}
      */
     function getAccountTypeProperties(accountType) {

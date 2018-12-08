@@ -14,6 +14,7 @@ angular
 ;
 
 ELBListController.$inject = ['MetadataService', 'Utils'];
+
 function ELBListController(MetadataService, Utils) {
     const vm = this;
     vm.elbs = undefined;
@@ -22,7 +23,7 @@ function ELBListController(MetadataService, Utils) {
     vm.regions = MetadataService.regions;
     vm.showDetails = Utils.showDetails;
     vm.filters = {};
-    vm.formats=['json']
+    vm.formats = ['json'];
     vm.updateFilters = updateFilters;
     vm.resetFilters = resetFilters;
     vm.updatePath = updatePath;
@@ -42,7 +43,9 @@ function ELBListController(MetadataService, Utils) {
                 type: 'select',
                 label: 'Accounts',
                 multiple: true,
-                values: vm.accounts.map(v => {return v.accountName;}),
+                values: vm.accounts.map(v => {
+                    return v.accountName;
+                }),
                 searchable: true,
                 selected: vm.params.accounts
             },
@@ -79,5 +82,6 @@ function ELBListController(MetadataService, Utils) {
     function updatePath() {
         Utils.goto('elb.list', vm.params);
     }
+
     //endregion
 }
