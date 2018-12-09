@@ -298,15 +298,6 @@ class AccountDetailV2(BaseView):
 
 class AccountListV2(BaseView):
     URLS = ['/api/v2/account']
-    MENU_ITEMS = [
-        MenuItem(
-            'admin',
-            'Accounts',
-            'account.list',
-            'account',
-            order=1
-        )
-    ]
 
     @rollback
     @check_auth(ROLE_ADMIN)

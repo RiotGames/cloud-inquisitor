@@ -833,7 +833,7 @@ class EC2Instance(BaseResource):
         qry = cls.search(
             limit=limit,
             page=page,
-            resource_types=[ResourceType.get(cls.resource_type_id).resource_type],
+            resource_types=[ResourceType.get(cls.resource_type).resource_type],
             accounts=accounts,
             locations=locations,
             properties=properties,

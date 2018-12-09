@@ -156,14 +156,14 @@ class UserDetails(BaseView):
         """Update a user object"""
         self.reqparse.add_argument('roles', type=str, action='append')
         args = self.reqparse.parse_args()
-        auditlog(event='user.create', actor=session['user'].username, data=args)
+        print(args['roles'])
 
         user = db.User.find_one(User.user_id == user_id)
         roles = db.Role.find(Role.name.in_(args['roles']))
         if not user:
             return self.make_response('No such user found: {}'.format(user_id), HTTP.NOT_FOUND)
 
-        if user.username == 'admin' and user.auth_system == 'builtin':
+        if user.username == 'admin' and user.auth_system == 'Local Authentication':
             return self.make_response('You cannot modify the built-in admin user', HTTP.FORBIDDEN)
 
         user.roles = []
@@ -174,6 +174,7 @@ class UserDetails(BaseView):
         db.session.add(user)
         db.session.commit()
 
+        auditlog(event='user.create', actor=session['user'].username, data=args)
         return self.make_response({'message': 'User roles updated'}, HTTP.OK)
 
     @rollback
