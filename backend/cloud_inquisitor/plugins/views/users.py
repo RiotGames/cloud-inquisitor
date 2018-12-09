@@ -1,4 +1,4 @@
-from flask import session, current_app
+from flask import session, current_app, request
 
 from cloud_inquisitor.constants import ROLE_ADMIN, ROLE_USER, HTTP
 from cloud_inquisitor.database import db
@@ -154,12 +154,14 @@ class UserDetails(BaseView):
     @check_auth(ROLE_ADMIN)
     def put(self, user_id):
         """Update a user object"""
-        self.reqparse.add_argument('roles', type=str, action='append')
-        args = self.reqparse.parse_args()
-        print(args['roles'])
+        data = request.json
+        if 'roles' not in data:
+            return self.make_response('Invalid request, missing required value roles', HTTP.BAD_REQUEST)
+
+        new_roles = data['roles']
 
         user = db.User.find_one(User.user_id == user_id)
-        roles = db.Role.find(Role.name.in_(args['roles']))
+        roles = db.Role.find(Role.name.in_(new_roles))
         if not user:
             return self.make_response('No such user found: {}'.format(user_id), HTTP.NOT_FOUND)
 
@@ -168,13 +170,13 @@ class UserDetails(BaseView):
 
         user.roles = []
         for role in roles:
-            if role in args['roles']:
+            if role in new_roles:
                 user.roles.append(role)
 
         db.session.add(user)
         db.session.commit()
 
-        auditlog(event='user.create', actor=session['user'].username, data=args)
+        auditlog(event='user.create', actor=session['user'].username, data={'roles': new_roles})
         return self.make_response({'message': 'User roles updated'}, HTTP.OK)
 
     @rollback

@@ -89,9 +89,16 @@ class EmailGet(BaseView):
             }, HTTP.NOT_FOUND)
 
         try:
+            if type(email.recipients) == list:
+                recipients = [NotificationContact('email', x) for x in email.recipients]
+            elif type(email.recipients) == str:
+                recipients = [NotificationContact('email', email.recipients)]
+            else:
+                return self.make_response('Unable to determine recipients', HTTP.SERVER_ERROR)
+
             send_notification(
                 subsystem=email.subsystem,
-                recipients=[NotificationContact('email', x) for x in email.recipients],
+                recipients=recipients,
                 subject=email.subject,
                 body_html=email.message_html,
                 body_text=email.message_text
