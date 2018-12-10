@@ -796,23 +796,6 @@ class EC2Instance(BaseResource):
         super().get_name_or_id(with_id=with_id)
 
     @classmethod
-    def search(cls, *, limit=100, page=1, accounts=None, locations=None, resources=None,
-               resource_types=None, properties=None, include_disabled=False, return_query=False):
-        """Wrapper for search method
-
-        TODO: Deprecate this method
-        """
-        return cls.find(
-            limit=limit,
-            page=page,
-            accounts=accounts,
-            locations=locations,
-            properties=properties,
-            include_disabled=include_disabled,
-            return_query=return_query
-        )
-
-    @classmethod
     def search_by_age(cls, *, limit=100, page=1, accounts=None, locations=None, age=720,
                       properties=None, include_disabled=False):
         """Search for resources based on the provided filters
