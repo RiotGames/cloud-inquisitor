@@ -318,15 +318,11 @@ class AccountListV2(BaseView):
         validate_contacts(args['contacts'])
 
         for key in ('accountName', 'accountType', 'contacts', 'enabled'):
-            value = args[key]
-            if type(value) == str:
-                value = value.strip()
+            try:
+                self.__validate_input(args[key])
 
-            if type(value) in (int, tuple, list, str, bool):
-                if not value:
-                    raise Exception('{} cannot be empty'.format(key.replace('_', ' ').title()))
-            else:
-                raise ValueError('Invalid type: {} for value {} for argument {}'.format(type(value), value, key))
+            except ValueError as ex:
+                raise ValueError('{} for {}'.format(str(ex), key))
 
         class_properties = {from_camelcase(key): value for key, value in args['properties'].items()}
         for prop in account_class.class_properties:
@@ -348,3 +344,19 @@ class AccountListV2(BaseView):
         auditlog(event='account.create', actor=session['user'].username, data=args)
 
         return self.make_response({'message': 'Account created', 'accountId': acct.account_id}, HTTP.CREATED)
+
+    @staticmethod
+    def __validate_input(value):
+        input_type = type(value)
+
+        if input_type not in (int, tuple, list, str, bool):
+            raise ValueError('Invalid or empty input type {}'.format(input_type.__name__))
+
+        if input_type == bool:
+            return True
+
+        if input_type == str:
+            value = value.strip()
+
+        if value:
+            return True
