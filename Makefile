@@ -102,7 +102,7 @@ enable_test:
 	sed -i -E "s/\"test_mode\": ([a-z]+)/\"test_mode\": true/g" ${APP_CONFIG_BASE_PATH}/config.json
 
 do_test:
-	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]==1.3.4
+	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pip3 install -U pytest moto[server]==1.3.7
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/cloud-inquisitor setup
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/pytest ${PATH_BACKEND}
 

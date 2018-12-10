@@ -1,6 +1,10 @@
 import json
 from base64 import b64encode
 from collections import OrderedDict
+from io import BytesIO
+
+from flask import Response
+from pyexcel_xlsx import save_data
 
 from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import ROLE_USER, HTTP, NS_AUDITOR_REQUIRED_TAGS
@@ -10,8 +14,6 @@ from cloud_inquisitor.plugins.types.issues import RequiredTagsIssue
 from cloud_inquisitor.schema import Account
 from cloud_inquisitor.utils import MenuItem
 from cloud_inquisitor.wrappers import check_auth, rollback
-from flask import Response
-from pyexcel import save_book_as
 
 
 class RequiredInstanceTags(BaseView):
@@ -112,11 +114,10 @@ class RequiredInstanceTagsExport(BaseView):
                 else:
                     data.update({sheet: [headers, row]})
 
-            response = Response(
-                response=b64encode(
-                    save_book_as(bookdict=data, dest_file_type='xlsx').read()
-                )
-            )
+            data_buffer = BytesIO()
+            save_data(data_buffer, data)
+            response = Response(response=b64encode(data_buffer.getvalue()))
+            data_buffer.close()
         else:
             output = [{
                 'resourceId': issue.resource.resource_id,
