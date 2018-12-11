@@ -107,7 +107,7 @@ setuptools.setup(
         'flake8~=3.3',
         'gunicorn~=19.7',
         'ipython~=6.2',
-        'moto==1.3.4',
+        'moto~=1.3',
         'munch~=2.1',
         'mysqlclient~=1.3',
         'pyexcel-xlsx~=0.5',

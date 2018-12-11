@@ -27,10 +27,8 @@ setuptools.setup(
     install_requires=[
         'cloud_inquisitor~=3.0',
         'Flask~=0.12.2',
-        'pytimeparse==1.1.7',
-        'pyexcel==0.4.5',
-        'pyexcel-io==0.3.4.1',
-        'pyexcel-xlsx==0.3.0'
+        'pyexcel-xlsx~=0.5',
+        'pytimeparse==1.1.8'
     ],
     extras_require={
         'dev': [],
