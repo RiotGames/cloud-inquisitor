@@ -3,11 +3,11 @@
     "disable_existing_loggers": false,
     "formatters": {
         "rainbow": {
-            "datefmt": "[%H:%M:%S]",
+            "datefmt": "[%Y-%m-%d %H:%M:%S]",
             "format": "%(asctime)s %(name)s %(message)s"
         },
         "standard": {
-            "datefmt": "[%H:%M:%S]",
+            "datefmt": "[%Y-%m-%d %H:%M:%S]",
             "format": "%(asctime)s %(name)s [%(levelname)s] %(message)s"
         }
     },
@@ -19,7 +19,7 @@
     "handlers": {
         "console": {
             "formatter": "rainbow",
-            "datefmt": "[%H:%M:%S]",
+            "datefmt": "[%Y-%m-%d %H:%M:%S]",
             "stream": "ext://sys.stdout",
             "color_asctime": [ null, null, null ],
             "color_message_warning": [ "yellow", null, true ],
