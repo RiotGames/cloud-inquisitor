@@ -1,35 +1,24 @@
-dist: trusty
+dist: xenial
 sudo: required
 language: python
 branches:
   only:
     - master
-    - staging
-    - /^dev-.*$/
-env:
-  global:
-    - PATH_BACKEND=.
+    - /^dev(-.+)?$/
 matrix:
   include:
   - name: "Test with Python 3.5"
     python: "3.5"
     env: PATH_PYTHON=/home/travis/virtualenv/python3.5/bin/python
-  - name: "Test with Python 3.6"
-    python: "3.6"
-    env: PATH_PYTHON=/home/travis/virtualenv/python3.6/bin/python
+  - name: "Test with Python 3.7"
+    python: "3.7"
+    env: PATH_PYTHON=/home/travis/virtualenv/python3.7/bin/python
+services:
+  - mysql
 addons:
   apt:
     update: true
-    sources:
-      - mysql-5.7-trusty
-    packages:
-      - mysql-server
-      - mysql-client
-      - nginx
 before_install:
-  - sudo mysql -e "use mysql; update user set authentication_string=PASSWORD('') where User='root'; update user set plugin='mysql_native_password';FLUSH PRIVILEGES;"
-  - sudo mysql_upgrade --force
-  - sudo service mysql restart
   - sudo rm -f /etc/boto.cfg
 install:
   - sudo make setup_tarvisci
