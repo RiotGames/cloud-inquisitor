@@ -1,0 +1,76 @@
+<section class="md-whiteframe-2dp">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>EC2 Instances</span>
+            </h2>
+            <span flex></span>
+            <md-button class="md-icon-button md-raised md-primary md-hue-1 collapsed" ng-class="{collapsed: vm.panels.ec2}" ng-click="vm.toggle('ec2');">
+                <md-icon md-font-set="material-icons toggle">expand_more</md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+    <md-content flex id="dashboard-ec2">
+        <md-grid-list md-cols-gt-md="3" md-cols="2" md-row-height-gt-md="1:1" md-row-height="2:1.5">
+            <md-grid-tile>
+                <justgage id="running"
+                          value="{{vm.stats.ec2Instances.running}}"
+                          min="0"
+                          max="{{vm.stats.ec2Instances.total}}"
+                          level-colors="[&quot;#00A000&quot;]"
+                          title="Running"
+                          label="Instances"></justgage>
+            </md-grid-tile>
+            <md-grid-tile>
+                <justgage id="stopped"
+                          value="{{vm.stats.ec2Instances.stopped}}"
+                          min="0"
+                          max="{{vm.stats.ec2Instances.total}}"
+                          level-colors="[&quot;#CC0000&quot;]"
+                          title="Stopped"
+                          label="Instances"></justgage>
+            </md-grid-tile>
+            <md-grid-tile>
+                <justgage id="with_public_ips"
+                          value="{{vm.stats.instancesWithPublicIps}}"
+                          min="0"
+                          max="100"
+                          level-colors="[&quot;#00CCCC&quot;]"
+                          title="With Public IP"
+                          symbol="%"
+                          decimals="1"
+                          label="Percent"></justgage>
+            </md-grid-tile>
+        </md-grid-list>
+    </md-content>
+</section>
+<br/>
+
+<section class="md-whiteframe-2dp">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Required Tags Compliance</span>
+            </h2>
+            <span flex></span>
+            <md-button class="md-icon-button md-raised md-primary md-hue-1" ng-click="vm.toggle('rfc26');">
+                <md-icon md-font-set="material-icons">{{vm.panels.rfc26 ? 'expand_less' : 'expand_more'}}</md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+    <md-content flex id="dashboard-rfc26">
+        <md-grid-list md-cols="2" md-cols-gt-md="6" md-row-height-gt-md="1:1" md-row-height="2:1.5">
+            <md-grid-tile ng-repeat="data in vm.stats.rfc26Compliance | orderBy: vm.order" ng-class="{'empty': data.percent < 25}">
+                <justgage id="rfc26_{{data.accountName}}"
+                          value="{{data.percent}}"
+                          min="0"
+                          max="100"
+                          title="{{data.accountName}}"
+                          symbol="%"
+                          label="{{data.compliantResources}} / {{data.taggableResources}}"
+                          level-colors="{{vm.levelColors}}"
+                          decimals="1"></justgage>
+            </md-grid-tile>
+        </md-grid-list>
+    </md-content>
+</section>

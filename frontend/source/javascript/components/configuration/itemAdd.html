@@ -1,0 +1,133 @@
+<form name="configAdd" ng-submit="vm.add()">
+    <section class="md-whiteframe-2dp padding">
+        <md-content class="md-padding">
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label for="namespace_prefix">Namespace</label>
+                    <input id="namespace_prefix" name="namespace_prefix" type="text" ng-model="vm.namespace.name" required disabled />
+                </md-input-container>
+
+                <span style="width: 20px;"></span>
+
+                <md-input-container class="md-block" flex>
+                    <label for="key">Key</label>
+                    <input id="key" name="key" type="text" ng-model="vm.config.key" required />
+
+                    <div ng-messages="configAdd.key.$error" role="alert">
+                        <div ng-message="required" class="my-message">
+                            You must provide a key for the config item
+                        </div>
+                    </div>
+                </md-input-container>
+
+                <span style="width: 20px"></span>
+
+                <md-input-container class="md-block" flex>
+                    <label for="type">Type</label>
+                    <md-select id="type" name="type" ng-model="vm.config.type" ng-change="vm.changeType()">
+                        <md-option value="string">String</md-option>
+                        <md-option value="int">Integer</md-option>
+                        <md-option value="float">Float</md-option>
+                        <md-option value="array">Array</md-option>
+                        <md-option value="json">JSON</md-option>
+                        <md-option value="bool">Bool</md-option>
+                        <md-option value="choice">Choice</md-option>
+                    </md-select>
+
+                    <div class="hint">
+                        Changing the type will reset the value
+                    </div>
+                </md-input-container>
+            </div>
+
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <input id="description" name="description" type="text" ng-model="vm.config.description" aria-label="Description" />
+                </md-input-container>
+            </div>
+
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex ng-if="vm.config.type == 'string'">
+                    <label for="string_value">Value</label>
+                    <input id="string_value" name="string_value" type="text" ng-model="vm.config.value" />
+                </md-input-container>
+
+                <md-input-container class="md-block" flex ng-if="vm.config.type == 'int'">
+                    <label for="int_value">Value</label>
+                    <input id="int_value" name="int_value" type="number" ng-model="vm.config.value" />
+                </md-input-container>
+
+                <md-input-container class="md-block" flex ng-if="vm.config.type == 'float'">
+                    <label for="float_value">Value</label>
+                    <input id="float_value" name="float_value" step="any" type="number" ng-model="vm.config.value" />
+                </md-input-container>
+
+                <md-input-container class="md-block" flex ng-if="vm.config.type == 'array'">
+                    <label for="array_value">Value</label>
+                    <md-chips id="array_value" ng-model="vm.config.value" placeholder="Enter values" flex></md-chips>
+                </md-input-container>
+
+                <md-input-container class="md-block" flex ng-if="vm.config.type == 'json'">
+                    <label for="json_value">Value</label>
+                    <textarea
+                            id="json_value"
+                            name="json_value"
+                            ng-model="vm.config.value"
+                            max-rows="20"
+                            json
+                            ng-class="{'error': configAdd.json_value.$error.json}"></textarea>
+
+                    <div ng-messages="configAdd.json_value.$error" role="alert" multiple>
+                        <div ng-message="json" class="my-message">Invalid JSON provided</div>
+                    </div>
+                </md-input-container>
+
+                <md-input-container class="md-block" ng-if="vm.config.type == 'bool'">
+                    <md-switch
+                            id="bool_value"
+                            name="bool_value"
+                            aria-label="Value"
+                            ng-model="vm.config.value"
+                            ng-true-value="true"
+                            ng-false-value="false"
+                            class="md-primary">
+                        {{vm.config.value ? "Enabled" : "Disabled"}}
+                    </md-switch>
+                </md-input-container>
+
+                <div flex ng-if="vm.config.type == 'choice'">
+                    <div layout-gt-md="row">
+                        <md-input-container class="md-block" flex>
+                            <label for="string_value">Available Values</label>
+                            <md-chips ng-model="vm.config.value.available" placeholder="Enter values"></md-chips>
+                        </md-input-container>
+                    </div>
+
+                    <div layout-gt-md="row">
+                        <md-input-container class="md-block">
+                            <label for="string_value">Min Items Required</label>
+                            <input type="number" ng-model="vm.config.value.min_items" ng-value="vm.config.value.min_items"/>
+                        </md-input-container>
+
+                        <md-input-container class="md-block">
+                            <label for="string_value">Max Items Allowed</label>
+                            <input type="number" ng-model="vm.config.value.max_items" ng-value="vm.config.value.max_items"/>
+                        </md-input-container>
+                    </div>
+
+                    <div layout-gt-md="row">
+                        <md-input-container class="md-block" flex>
+                            <label for="string_value">Value</label>
+                            <md-select ng-model="vm.config.value.enabled" multiple="true">
+                                <md-option ng-value="optVal" ng-repeat="optVal in vm.config.value.available">{{ optVal }}</md-option>
+                            </md-select>
+                        </md-input-container>
+                    </div>
+                </div>
+            </div>
+        </md-content>
+    </section>
+
+    <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!configAdd.$valid">Add</md-button>
+    <md-button class="md-warn md-raised" onClick="history.back()">Cancel</md-button>
+</form>

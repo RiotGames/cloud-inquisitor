@@ -1,0 +1,91 @@
+<section class="md-whiteframe-2dp md-padding" ng-cloak>
+    <filters filters="vm.filters" on-update="vm.updateFilters" on-reset="vm.resetFilters"></filters>
+
+    <md-table-pagination
+            style="border: 0;"
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.userCount}}">
+    </md-table-pagination>
+
+    <md-table-container>
+        <table md-table class="striped hover">
+            <thead md-head>
+            <tr md-row>
+                <th md-column style="width: 250px;">Username</th>
+                <th md-column style="width: 200px;">Auth System</th>
+                <th md-column>Roles</th>
+                <th md-column style="width: 50px;">&nbsp;</th>
+            </tr>
+            </thead>
+            <tbody md-body>
+            <tr md-row ng-repeat="user in vm.users" id="user-{{user.userId}}">
+                <td md-cell>{{user.username}}</td>
+                <td md-cell>{{user.authSystem}}</td>
+                <td md-cell>
+                    <span class="labels" ng-style="{ 'background-color': '{{role.color}}' }" ng-repeat="role in user.roles">{{role.name}}</span>
+                    <span style="font-style: italic;" ng-if="user.roles.length == 0">No roles applied</span>
+                </td>
+                <td md-cell>
+                    <md-menu md-position-mode="target-right target">
+                        <md-button aria-label="Open user interactions menu" class="md-icon-button" ng-click="$mdMenu.open()">
+                            <md-icon md-font-set="material-icons">settings</md-icon>
+                        </md-button>
+                        <md-menu-content width="4">
+                            <md-menu-item>
+                                <md-button ng-click="vm.editUser(user.userId)">
+                                    <md-icon md-font-set="material-icons">edit</md-icon>
+                                    Edit
+                                </md-button>
+                            </md-menu-item>
+                            <md-menu-item>
+                                <md-button ng-click="vm.changePassword($event, user)">
+                                    <md-icon md-font-set="material-icons">vpn_key</md-icon>
+                                    Reset Password
+                                </md-button>
+                            </md-menu-item>
+                            <md-menu-divider></md-menu-divider>
+                            <md-menu-item>
+                                <md-button ng-click="vm.deleteUser($event, user)">
+                                    <md-icon md-font-set="material-icons">delete</md-icon>
+                                    Delete
+                                </md-button>
+                            </md-menu-item>
+                        </md-menu-content>
+                    </md-menu>
+                </td>
+            </tr>
+            <tr md-row ng-if="!vm.users || vm.users.length == 0">
+                <td md-cell colspan="7">No users found matching filters</td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+
+    <md-table-pagination
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.userCount}}">
+    </md-table-pagination>
+</section>
+
+<md-fab-speed-dial md-open="fabopen" md-direction="left" class="md-scale md-fab-bottom-right" style="position: fixed; bottom: 20px">
+    <md-fab-trigger>
+        <md-button aria-label="menu" class="md-fab md-warn">
+            <md-icon md-font-set="material-icons">menu</md-icon>
+        </md-button>
+    </md-fab-trigger>
+    <md-fab-actions>
+        <md-button aria-label="add user" ui-sref="user.add" class="md-fab md-raised md-primary md-mini">
+            <md-tooltip md-direction="bottom">Add User</md-tooltip>
+            <md-icon md-font-set="material-icons">add outline</md-icon>
+        </md-button>
+    </md-fab-actions>
+</md-fab-speed-dial>
+<br />

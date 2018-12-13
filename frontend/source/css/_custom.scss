@@ -1,0 +1,131 @@
+.menu {
+    background-color: transparent;
+    border: none;
+    height: 38px;
+    margin: 16px;
+    width: 36px;
+}
+
+#toast-container > div {
+    margin-top: 70px;
+    min-width: 400px;
+}
+
+#filters {
+    md-input-container:not(:last-child) {
+        margin-right: 14px;
+    }
+
+    md-select {
+        min-width: 160px;
+    }
+}
+
+.hint {
+    transform: translateY(70%);
+    font-size: $fontsize - 2;
+    line-height: $fontsize;
+    color: $color-grey;
+    height: $fontsize;
+
+    &.ng-hide, &.ng-enter {
+        bottom: 26px;
+        opacity: 0;
+    }
+
+    &.ng-leave {
+        &.ng-leave-active {
+            bottom: 26px;
+            opacity: 0;
+        }
+        bottom: 7px;
+        opacity: 1;
+    }
+
+    &.ng-enter.ng-enter-active {
+        bottom: 7px;
+        opacity: 1;
+    }
+}
+
+.config-namespace {
+    padding-bottom: 16px;
+}
+
+.new-password {
+    padding: 4px 8px 4px 8px;
+    background-color: $color-light-grey;
+    font-weight: bold;
+    @include border-radius(4px);
+}
+
+.menu-footer {
+    background-color: $color-footer-background;
+    color: $color-footer-text;
+    height: 70px;
+
+    & > .md-button.md-icon-button {
+        height: 10px;
+        width: 10px;
+    }
+}
+
+.color-sample {
+    @include border-radius(4px);
+    @include fixed-size(14px, 14px);
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid #444;
+    font-size: 1px;
+    margin: 2px 4px 2px 4px;
+    vertical-align: bottom;
+}
+
+.icon-ok {
+    color: #00A000 !important;
+}
+
+.icon-remove {
+    color: #A00000 !important;
+}
+
+.collapsed {
+    .toggle {
+        transform: rotate(180deg);
+    }
+}
+
+.help-block {
+    color: lighten($color-dark-grey, 10%);
+}
+
+.disclaimer {
+    color: lighten($color-dark-grey, 10%);
+    background-color: $color-disclaimer-background;
+    font-style: italic;
+}
+
+#drop-zone {
+    padding: 10% 0;
+    text-align: center;
+    min-height: 100px;
+    background-color: $color-light-grey;
+    border: 1px solid $color-medium-grey;
+    border-radius: 6px;
+}
+
+.accountPropertiesGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-row-gap: 8px;
+    grid-column-gap: 16px;
+}
+
+.tableGrid {
+    display: grid;
+    grid-template-columns: .25fr 1fr;
+    grid-template-rows: auto;
+    grid-row-gap: 8px;
+    grid-column-gap: 16px;
+}

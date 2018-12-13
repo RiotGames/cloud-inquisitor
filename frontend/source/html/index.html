@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Cloud Inquisitor</title>
+
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="Cloud Inquisitor">
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <base href="/">
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+
+        <link rel="stylesheet" href="css/material.css" />
+
+        <!-- favicons etc -->
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=wAO0Joz2Bl">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=wAO0Joz2Bl">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=wAO0Joz2Bl">
+        <link rel="manifest" href="/site.webmanifest?v=wAO0Joz2Bl">
+        <link rel="mask-icon" href="/safari-pinned-tab.svg?v=wAO0Joz2Bl" color="#607d8b">
+        <link rel="shortcut icon" href="/favicon.ico?v=wAO0Joz2Bl">
+        <meta name="msapplication-TileColor" content="#607d8b">
+        <meta name="theme-color" content="#607d8b">
+        <!-- end favicons -->
+
+        <style type="text/css">
+            [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak] {
+                display: none !important;
+            }
+        </style>
+    </head>
+
+    <body ng-app="cloud-inquisitor" layout="row" ng-controller="MenuController as mc" ng-cloak>
+        <md-sidenav
+            id="sidebar"
+            class="md-sidenav-left md-whiteframe-2dp"
+            md-component-id="sidebar"
+            md-is-locked-open="$mdMedia('gt-sm')"
+            role="navigation"
+            md-swipe-left="mc.toggleMenu()"
+            ui-view="sidebar">
+        </md-sidenav>
+
+        <div layout="column" role="main" flex>
+            <button class="menu md-button md-raised md-ink-ripple hide-gt-sm" type="button" hide-gt-md ng-click="mc.toggleMenu()" aria-label="Show menu">
+                <md-icon class="ng-scope ng-isolate-scope">menu</md-icon>
+            </button>
+
+            <md-content flex>
+                <section class="md-padding" ui-view ng-cloak>&nbsp;</section>
+            </md-content>
+        </div>
+
+        <!-- Third party libs and main App -->
+        <script src="js/vendor.js"></script>
+        <script src="js/bundle.js"></script>
+        <script src="js/templates.js"></script>
+
+        <!-- Third-party modules, not supported by npm modules -->
+        <script src="libs/angular-gage.min.js"></script>
+    </body>
+</html>

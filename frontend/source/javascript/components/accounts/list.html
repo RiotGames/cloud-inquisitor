@@ -1,0 +1,70 @@
+<section class="md-whiteframe-2dp md-padding" ng-cloak>
+    <md-table-container>
+        <table md-table class="striped hover">
+            <thead md-head>
+            <tr md-row>
+                <th md-column style="width: 250px">Name</th>
+                <th md-column>Contacts</th>
+                <th md-column style="width: 100px; text-align: center;">Type</th>
+                <th md-column style="width: 100px; text-align: center;">Status</th>
+                <th md-column style="width: 40px; text-align: right; padding-right: 35px;">&nbsp;</th>
+            </tr>
+            </thead>
+            <tbody md-body>
+            <tr md-row ng-repeat="acct in vm.accounts" id="acct-{{acct.accountId}}">
+                <td md-cell style="width: 200px !important;">{{acct.accountName}}</td>
+                <td md-cell><span ng-repeat="contact in acct.contacts" ng-bind-html="contact | contacttype">&nbsp;</span></td>
+                <td md-cell style="text-align: center;" ng-bind-html="vm.accountTypeLabel(acct.accountType)"></td>
+                <td md-cell style="text-align: center;" ng-bind-html="acct.enabled | status">&nbsp;</td>
+                <td md-cell style="width: 40px; text-align: right; padding-right: 35px;">
+                    <md-menu md-position-mode="target-right target">
+                        <md-button aria-label="Open account interactions menu" class="md-icon-button" ng-click="$mdMenu.open()">
+                            <md-icon md-font-set="material-icons">settings</md-icon>
+                        </md-button>
+                        <md-menu-content width="4">
+                            <md-menu-item>
+                                <md-button ng-click="vm.showDetails(acct.accountId)">
+                                    <md-icon md-font-set="material-icons">info</md-icon>
+                                    View Details
+                                </md-button>
+                            </md-menu-item>
+                            <md-menu-divider></md-menu-divider>
+                            <md-menu-item>
+                                <md-button ng-click="vm.edit(acct)">
+                                    <md-icon md-font-set="material-icons">edit</md-icon>
+                                    Update Account
+                                </md-button>
+                            </md-menu-item>
+                            <md-menu-item>
+                                <md-button ng-click="vm.delete($event, acct)">
+                                    <md-icon md-font-set="material-icons">delete</md-icon>
+                                    Delete Account
+                                </md-button>
+                            </md-menu-item>
+                        </md-menu-content>
+                    </md-menu>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<md-fab-speed-dial md-open="fabopen" md-direction="left" class="md-scale md-fab-bottom-right" style="position: fixed; bottom: 20px">
+    <md-fab-trigger>
+        <md-button aria-label="menu" class="md-fab md-primary">
+            <md-icon md-font-set="material-icons">menu</md-icon>
+        </md-button>
+    </md-fab-trigger>
+    <md-fab-actions>
+        <md-button aria-label="add account" ui-sref="account.add" class="md-fab md-raised md-warn md-mini">
+            <md-tooltip md-direction="bottom">Add Account</md-tooltip>
+            <md-icon md-font-set="material-icons">add outline</md-icon>
+        </md-button>
+        <md-button aria-label="import export" ui-sref="account.imex" class="md-fab md-raised md-primary md-mini">
+            <md-tooltip md-direction="bottom">Import / Export Accounts</md-tooltip>
+            <md-icon md-font-set="material-icons">import_export</md-icon>
+        </md-button>
+    </md-fab-actions>
+</md-fab-speed-dial>
+<br />

@@ -1,0 +1,48 @@
+<section class="md-whiteframe-2dp md-padding">
+    <filters filters="vm.filters" on-update="vm.updateFilters" on-reset="vm.resetFilters"></filters>
+
+    <md-table-pagination
+            style="border: 0;"
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.instanceCount}}">
+    </md-table-pagination>
+
+    <md-table-container>
+        <table md-table class="striped hover">
+            <thead md-head>
+            <tr md-row>
+                <th md-column>Instance</th>
+                <th md-column style="width: 150px;">Account</th>
+                <th md-column style="width: 150px;">Region</th>
+                <th md-column style="width: 100px;">State</th>
+                <th md-column style="width: 100px;">&nbsp;</th>
+            </tr>
+            </thead>
+            <tbody md-body>
+            <tr md-auto-select md-row ng-repeat="instance in vm.instances">
+                <td md-cell>{{vm.getInstanceName(instance)}}</td>
+                <td md-cell>{{instance.account.accountName}}</td>
+                <td md-cell>{{instance.location}}</td>
+                <td md-cell>{{instance.properties.state}}</td>
+                <td md-cell>
+                    <md-button ng-click="vm.showDetails(instance)" class="md-icon-button"><md-icon md-font-set="material-icons">info_outline</md-icon></md-button>
+                    <md-icon class="md-warn md-hue-2 md-raised material-icons" style="cursor: help" ng-if="vm.hasPublicIP(instance)"><md-tooltip>Public IP</md-tooltip>public</md-icon>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+
+    <md-table-pagination
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.instanceCount}}">
+    </md-table-pagination>
+</section>

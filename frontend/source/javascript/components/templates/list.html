@@ -1,0 +1,62 @@
+<section class="md-whiteframe-2dp md-padding" ng-cloak>
+    <md-table-container>
+        <table md-table class="striped hover">
+            <thead md-head>
+            <tr md-row>
+                <th md-column style="width: 250px;">Name</th>
+                <th md-column>Template</th>
+                <th md-column style="width: 50px;">&nbsp;</th>
+            </tr>
+            </thead>
+            <tbody md-body>
+            <tr md-row ng-repeat="template in vm.templates" id="template-{{template.templateName}}">
+                <td md-cell>{{template.templateName}}</td>
+                <td md-cell>
+                    {{template.template}}
+                </td>
+                <td md-cell>
+                    <md-menu md-position-mode="target-right target">
+                        <md-button aria-label="Open user interactions menu" class="md-icon-button" ng-click="$mdMenu.open()">
+                            <md-icon md-font-set="material-icons">settings</md-icon>
+                        </md-button>
+                        <md-menu-content width="4">
+                            <md-menu-item>
+                                <md-button ng-click="vm.editTemplate(template)">
+                                    <md-icon md-font-set="material-icons">edit</md-icon>
+                                    Edit
+                                </md-button>
+                            </md-menu-item>
+                            <md-menu-divider></md-menu-divider>
+                            <md-menu-item>
+                                <md-button ng-click="vm.deleteTemplate($event, template)">
+                                    <md-icon md-font-set="material-icons">delete</md-icon>
+                                    Delete
+                                </md-button>
+                            </md-menu-item>
+                        </md-menu-content>
+                    </md-menu>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<md-fab-speed-dial md-open="fabopen" md-direction="left" class="md-scale md-fab-bottom-right" style="position: fixed; bottom: 20px">
+    <md-fab-trigger>
+        <md-button aria-label="menu" class="md-fab md-warn">
+            <md-icon md-font-set="material-icons">menu</md-icon>
+        </md-button>
+    </md-fab-trigger>
+    <md-fab-actions>
+        <md-button aria-label="add template" ui-sref="template.add" class="md-fab md-raised md-primary md-mini">
+            <md-tooltip md-direction="bottom">Add Template</md-tooltip>
+            <md-icon md-font-set="material-icons">add</md-icon>
+        </md-button>
+        <md-button aria-label="import-templates" ng-click="vm.importTemplates()" class="md-fab md-raised md-primary md-mini">
+            <md-tooltip md-direction="bottom">Import Templates</md-tooltip>
+            <md-icon md-font-set="material-icons">import_contacts</md-icon>
+        </md-button>
+    </md-fab-actions>
+</md-fab-speed-dial>
+<br />
