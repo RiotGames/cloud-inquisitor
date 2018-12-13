@@ -1,0 +1,91 @@
+ul.sidenav-menu {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    width: 100%;
+
+    &:first-child {
+        margin-top: 10px;
+    }
+
+    & > li {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        cursor: pointer;
+        display: block;
+        line-height: 40px;
+
+        h1 {
+            padding: 0 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: $color-grey;
+            display: block;
+            position: relative;
+
+            .toggle {
+                font-size: 20px;
+                text-align: right;
+                vertical-align: middle;
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                transition: transform .2s ease-in-out;
+            }
+        }
+
+        &.collapsed {
+            .toggle {
+                transform: rotate(180deg);
+            }
+
+            & > ul {
+                max-height: 0;
+                overflow: hidden;
+                opacity: 0;
+            }
+        }
+
+        & > ul {
+            opacity: 1;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            transition: all .2s ease-in-out;
+
+            li {
+                margin: 0;
+                padding: 0;
+
+                .md-button {
+                    width: 100%;
+                    text-align: left;
+                    box-shadow: none !important;
+                    border-radius: 0;
+                    cursor: pointer;
+                    display: block;
+                    align-items: inherit;
+                    line-height: 38px;
+                    @include fixed-height(38px);
+                    overflow: hidden;
+                    margin: 0;
+                    padding: 0 16px;
+                    text-decoration: none;
+                    white-space: normal;
+                    text-transform: uppercase;
+                    transform: none;
+
+                    &.active {
+                        background-color: $color-grey !important;
+                        color: $color-light-blue;
+                    }
+
+                    &:hover {
+                        background-color: $color-light-grey;
+                    }
+                }
+            }
+        }
+    }
+}

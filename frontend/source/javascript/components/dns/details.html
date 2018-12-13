@@ -1,0 +1,95 @@
+<section class="md-whiteframe-2dp">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>DNS Zone Details</span>
+            </h2>
+            <span flex></span>
+        </div>
+    </md-toolbar>
+
+    <md-table-container>
+        <table md-table class="vertical">
+            <tbody md-body>
+            <tr md-row>
+                <td md-cell>
+                    Name:
+                </td>
+                <td md-cell>
+                    {{vm.zone.properties.name}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Source:
+                </td>
+                <td md-cell>
+                    {{vm.zone.properties.source}}
+                </td>
+            </tr>
+            <tr md-row>
+                <td md-cell>
+                    Record Count
+                </td>
+                <td md-cell>
+                    {{vm.recordCount}}
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+</section>
+
+<section class="md-whiteframe-2dp" ng-if="vm.records" ng-cloak>
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>Records</span>
+            </h2>
+            <span flex></span>
+            <md-table-pagination
+                    style="border: 0;"
+                    md-on-paginate="vm.updatePath"
+                    md-page="vm.form.page"
+                    md-page-select
+                    md-limit="vm.form.count"
+                    md-limit-options="[25, 50, 100]"
+                    md-total="{{vm.recordCount}}">
+            </md-table-pagination>
+        </div>
+    </md-toolbar>
+    <md-content class="md-padding" block-ui block-ui-pattern="/\/api\/v1\/dns\/records\/.*/">
+        <md-table-container>
+            <table md-table class="striped hover">
+                <thead md-head>
+                <tr md-row>
+                    <th md-column style="width: 10%;">Type</th>
+                    <th md-column style="width: 45%;">Name</th>
+                    <th md-column>Value</th>
+                </tr>
+                </thead>
+                <tbody md-body>
+                <tr md-auto-select md-row ng-repeat="record in vm.records">
+                    <td md-cell>{{record.properties.type}}</td>
+                    <td md-cell>{{record.properties.name}}</td>
+                    <td md-cell>{{record.properties.value.join(", ")}}</td>
+                </tr>
+                <tr md-row ng-if="vm.recordCount == 0">
+                    <td md-cell colspan="5">No DNS Records found for the current filters</td>
+                </tr>
+                </tbody>
+            </table>
+        </md-table-container>
+
+        <md-table-pagination
+                md-on-paginate="vm.updatePath"
+                md-page="vm.form.page"
+                md-page-select
+                md-limit="vm.form.count"
+                md-limit-options="[25, 50, 100]"
+                md-total="{{vm.recordCount}}">
+        </md-table-pagination>
+    </md-content>
+</section>
+
+<md-button class="md-raised md-accent md-hue-1" onclick="history.back()">Back</md-button>

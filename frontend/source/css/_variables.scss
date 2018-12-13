@@ -1,0 +1,30 @@
+// region Base variables
+$font: 'Roboto', Arial, sans-serif;
+$fontsize: 14px;
+$fontcolor: #000000;
+
+$monospacefont: Menlo, Monaco, Consolas, "Courier New", monospace;
+// endregion
+
+// region Colors
+// region Greys
+$color-dark-grey:   rgb(68, 68, 68);
+$color-medium-grey: rgb(158, 158, 158);
+$color-grey:        rgb(187, 187, 187);
+$color-stripe-alt:  rgb(240, 240, 240);
+$color-light-grey:  rgb(245, 245, 245);
+// endregion
+
+$color-light-blue:  rgb(10, 110, 189);
+$color-red:         rgba(189, 6, 10, 0.8);
+$color-orange:      rgba(255, 103, 0, 0.8);
+$color-yellow:      rgba(239, 216, 0, 0.8);
+$color-blue:        rgba(47, 150, 180, 0.8);
+$color-green:       rgba(81, 163, 81, 0.8);
+$color-salmon:      rgba(255, 127, 2, 0.15);
+$color-warning-red: rgba(255, 20, 20, 0.8);
+
+$color-footer-background:       rgb(96, 125, 139);
+$color-footer-text:             rgb(255, 255, 255);
+$color-disclaimer-background:   rgb(252, 247, 220);
+// endregion

@@ -1,0 +1,50 @@
+<section class="md-whiteframe-2dp md-padding">
+    <filters filters="vm.filters" on-update="vm.updateFilters" on-reset="vm.resetFilters"></filters>
+
+    <md-table-pagination
+            style="border: 0;"
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.s3Count}}">
+    </md-table-pagination>
+
+    <md-table-container>
+        <table md-table class="striped hover">
+            <thead md-head>
+            <tr md-row>
+                <th md-column style="width: 75px;">Account</th>
+                <th md-column style="width: 75px;">Region</th>
+                <th md-column style="width: 250px;">Bucket Name</th>
+                <th md-column style="width: 125px;">Creation Date</th>
+                <th md-column style="width: 75px;">Website Enabled</th>
+                <th md-column style="width: 75px;">Required Tags Present</th>
+            </tr>
+            </thead>
+            <tbody md-body>
+            <tr md-auto-select md-row ng-repeat="s3 in vm.s3">
+                <td md-cell>{{s3.account.accountName}}</td>
+                <td md-cell>{{s3.properties.location}}</td>
+                <td md-cell>{{s3.resourceId}}</td>
+                <td md-cell>{{s3.properties.creationDate}}</td>
+                <td md-cell>{{s3.properties.websiteEnabled}}</td>
+                <td md-cell>
+                     <p ng-repeat="tag in s3.tags" ng-if="tag.key == 'Name' || tag.key == 'Owner' || tag.key == 'Accounting'">{{tag.key}}
+                     </p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+
+    <md-table-pagination
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.s3Count}}">
+    </md-table-pagination>
+</section>

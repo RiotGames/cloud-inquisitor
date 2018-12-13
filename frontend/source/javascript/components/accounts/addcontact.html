@@ -1,0 +1,34 @@
+<md-dialog aria-label="Add Contact" class="addContact">
+    <form ng-cloak name="frmAddContact" ng-submit="vm.addContact()">
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Add contact for {{vm.accountName}}</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="vm.cancel()">
+                    <md-icon aria-label="Close dialog">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content>
+            <div class="md-dialog-content" style="max-width: 600px;">
+                <md-input-container class="md-block">
+                    <label>Notification method</label>
+                    <md-select ng-model="vm.form.type">
+                        <md-option ng-repeat="itm in vm.supportedTypes" ng-value="itm.type">{{itm.type}}</md-option>
+                    </md-select>
+                </md-input-container>
+            </div>
+        </md-dialog-content>
+
+        <md-dialog-actions layout="row">
+            <span flex></span>
+            <md-button class="md-warn" type="submit" id="btnAddContact">
+                Add Contact
+            </md-button>
+            <md-button ng-click="vm.cancel()">
+                Close
+            </md-button>
+        </md-dialog-actions>
+    </form>
+</md-dialog>

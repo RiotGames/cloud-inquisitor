@@ -1,0 +1,72 @@
+<md-dialog aria-label="Instance Shutdown" style="min-width: 600px;">
+    <md-toolbar ng-class="{'md-warn': (vm.noAction.length + vm.failed.length) > 0}">
+        <div class="md-toolbar-tools">
+            <h2>Instances shut down</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="vm.close()">
+                <md-icon aria-label="Close dialog">close</md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+
+    <md-dialog-content>
+        <md-tabs md-border-bottom md-autoselect md-stretch-tabs="always">
+            <md-tab label="Overview">
+                <div class="md-padding">
+                    Instances shutdown: {{vm.shutdown.length}}
+                    <br />
+                    Instances already shutdown: {{vm.noAction.length}}
+                    <br />
+                    Instances failed shutdown: {{vm.failed.length}}
+                </div>
+            </md-tab>
+
+            <md-tab label="Shutdown" ng-if="vm.shutdown.length > 0">
+                <div class="md-padding">
+                    <p>
+                        The list of instances below were shut down
+                    </p>
+                    <md-grid-list md-cols="4" md-row-height="fit" style="height: 200px;">
+                        <md-grid-tile ng-repeat="inst in vm.shutdown">
+                            {{inst}}
+                        </md-grid-tile>
+                    </md-grid-list>
+                </div>
+            </md-tab>
+
+            <md-tab label="No Action" ng-if="vm.noAction.length > 0">
+                <div class="md-padding">
+                    <p>
+                        The list of instances below were already stopped and as a result no actions
+                        were performed against these instances.
+                    </p>
+                    <md-grid-list md-cols="4" md-row-height="fit" style="height: 200px;">
+                        <md-grid-tile ng-repeat="inst in vm.noAction">
+                            {{inst}}
+                        </md-grid-tile>
+                    </md-grid-list>
+                </div>
+            </md-tab>
+
+            <md-tab label="Failed" ng-if="vm.failed.length > 0">
+                <div class="md-padding">
+                    <p>
+                        The list of instances below failed to shut down. See the application logs for more details
+                    </p>
+                    <md-grid-list md-cols="4" md-row-height="fit" style="height: 200px;">
+                        <md-grid-tile ng-repeat="inst in vm.failed">
+                            {{inst}}
+                        </md-grid-tile>
+                    </md-grid-list>
+                </div>
+            </md-tab>
+        </md-tabs>
+    </md-dialog-content>
+
+    <md-dialog-actions layout="row">
+        <span flex></span>
+        <md-button class="md-raised" ng-click="vm.close()">
+            Close
+        </md-button>
+    </md-dialog-actions>
+</md-dialog>

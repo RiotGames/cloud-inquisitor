@@ -1,0 +1,13 @@
+<section class="md-whiteframe-2dp">
+    <md-toolbar class="md-hue-3">
+        <div class="md-toolbar-tools">
+            <h2>
+                <span>{{vm.complete === true ? 'Logged out' : 'Logging out'}}</span>
+            </h2>
+        </div>
+    </md-toolbar>
+
+    <md-content layout-padding>
+        <p>{{vm.complete === true ? 'You have now been logged out of the system' : 'Please wait while we process your request'}}</p>
+    </md-content>
+</section>

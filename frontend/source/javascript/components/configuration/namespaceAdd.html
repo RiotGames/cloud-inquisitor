@@ -1,0 +1,50 @@
+<form name="namespaceAdd" ng-submit="vm.add()">
+    <section class="md-whiteframe-2dp padding">
+        <md-content class="md-padding">
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label for="namespacePrefix">Namespace Prefix</label>
+                    <input id="namespacePrefix" name="namespacePrefix" type="text" ng-model="vm.namespace.namespacePrefix" required />
+                    
+                    <div ng-messages="namespaceAdd.namespacePrefix.$error" role="alert">
+                        <div ng-message="required" class="my-message">
+                            You must provide a prefix for the namespace
+                        </div>
+                    </div>
+                </md-input-container>
+
+                <span style="width: 40px"></span>
+
+                <md-input-container class="md-block" flex>
+                    <label for="name">Name</label>
+                    <input id="name" name="name" type="text" ng-model="vm.namespace.name" required />
+
+                    <div ng-messages="namespaceAdd.name.$error" role="alert">
+                        <div ng-message="required" class="my-message">
+                            You must provide a prefix for the namespace
+                        </div>
+                    </div>
+                </md-input-container>
+            </div>
+
+            <div layout-gt-md="row">
+                <md-input-container class="md-block">
+                    <label for="sortOrder">Sort Order</label>
+                    <input id="sortOrder" name="sortOrder" type="number" ng-model="vm.namespace.sortOrder" required/>
+
+                    <div ng-messages="configAdd.sortOrder.$error" role="alert">
+                        <div ng-message="number" class="my-message">
+                            Must be a valid number
+                        </div>
+                        <div ng-message="required" class="my-message">
+                            You must provide a sort order
+                        </div>
+                    </div>
+                </md-input-container>
+            </div>
+        </md-content>
+    </section>
+
+    <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!namespaceAdd.$valid">Add</md-button>
+    <md-button class="md-warn md-raised" onclick="history.back()">Cancel</md-button>
+</form>

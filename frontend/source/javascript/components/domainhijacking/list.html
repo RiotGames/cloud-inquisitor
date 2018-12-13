@@ -1,0 +1,44 @@
+<section class="md-whiteframe-2dp md-padding">
+    <md-table-pagination
+            style="border: 0;"
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[10, 25, 50]"
+            md-total="{{vm.issueCount}}">
+    </md-table-pagination>
+
+    <md-list flex class="striped">
+        <md-list-item class="md-3-line md-long-text" ng-repeat="issue in vm.issues">
+            <div class="md-list-item-text" layout="column">
+                <h3>
+                    {{issue.properties.source}}
+                </h3>
+                <p>
+                    {{issue.properties.description}}
+                </p>
+                <p>
+                    Open for {{vm.formatDuration(issue.properties.start, issue.properties.end)}}. Detected on {{issue.properties.start | date : 'yyyy-MM-dd HH:mm:ss'}}
+                </p>
+                <div class="md-secondary">
+                    <div ng-switch data-on="issue.state">
+                        <md-icon class="material-icons" ng-switch-when="FIXED"><md-tooltip>Issue has been fixed</md-tooltip>check</md-icon>
+                        <md-icon class="material-icons md-warn md-hue-2" ng-switch-default><md-tooltip>Issue still present</md-tooltip>error_outline</md-icon>
+                    </div>
+                </div>
+            </div>
+            <md-divider ng-if="!$last"></md-divider>
+        </md-list-item>
+        <div ng-if="vm.issues.length == 0" class="md-padding"><i>No issues found</i></div>
+    </md-list>
+
+    <md-table-pagination
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[10, 25, 50]"
+            md-total="{{vm.issueCount}}">
+    </md-table-pagination>
+</section>

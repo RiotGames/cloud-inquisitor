@@ -1,0 +1,23 @@
+<form name="roleEdit" ng-submit="vm.update()">
+    <section class="md-whiteframe-2dp padding">
+        <md-content class="md-padding">
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label>Name</label>
+                    <input name="name" type="text" ng-model="vm.role.name" disabled required />
+                </md-input-container>
+
+                <md-input-container class="md-block" flex>
+                    <spectrum-colorpicker
+                            ng-model="vm.role.color"
+                            options="{showButtons: false, showPalette: true,hideAfterPaletteSelect: true, clickoutFiresChange: true, preferredFormat: 'hex'}"
+                    >
+                    </spectrum-colorpicker>
+                </md-input-container>
+            </div>
+        </md-content>
+    </section>
+
+    <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!roleEdit.$valid">Update</md-button>
+    <md-button class="md-warn md-raised" onclick="history.back()">Cancel</md-button>
+</form>

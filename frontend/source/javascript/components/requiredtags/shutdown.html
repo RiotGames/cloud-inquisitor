@@ -1,0 +1,63 @@
+<section class="md-whiteframe-2dp md-padding">
+    <filters filters="vm.filters" buttons="vm.buttons" on-update="vm.updateFilters" on-reset="vm.resetFilters"></filters>
+
+    <md-table-pagination
+            style="border: 0;"
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.instanceCount}}">
+    </md-table-pagination>
+
+    <md-table-container ng-if="vm.instanceCount > 0">
+        <table md-table class="striped hover" multiple="true" data-md-row-select ng-model="vm.selected">
+            <thead md-head>
+            <tr md-row>
+                <th md-column>Instance</th>
+                <th md-column style="width: 150px;">Account</th>
+                <th md-column style="width: 100px;">Region</th>
+                <th md-column style="width: 150px;">Missing Tags</th>
+                <th md-column>Notes</th>
+                <th md-column style="width: 100px;">Last Change</th>
+                <th md-column style="width: 50px;">&nbsp;</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr md-row ng-repeat="obj in vm.instances" data-md-select="obj" data-md-select-id="instanceId" data-md-auto-select id="{{obj.instanceId}}">
+                <td md-cell style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px">{{vm.getInstanceName(obj.instance)}}</td>
+                <td md-cell>{{obj.instance.account.accountName}}</td>
+                <td md-cell>{{obj.instance.region.regionName}}</td>
+                <td md-cell>{{obj.missingTags.join(", ")}}</td>
+                <td md-cell>
+                    <p ng-repeat="note in obj.notes">{{note}}</p>
+                    <p ng-if="obj.notes == undefined || obj.notes.length     == 0"><i>None</i></p>
+                </td>
+                <td md-cell style="width: 100px;">
+                    {{obj.lastChange | age}}
+                </td>
+                <td md-cell style="width: 50px;">
+                    <md-button ng-click="vm.showDetails(obj.instance.instanceId)" class="md-icon-button">
+                        <md-icon md-font-set="material-icons">
+                            info_outline
+                        </md-icon>
+                    </md-button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+    <div ng-if="vm.instanceCount == 0" class="md-padding"><i>No instances pending shutdown</i></div>
+
+    <md-table-pagination
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.instanceCount}}">
+    </md-table-pagination>
+
+    <md-button class="md-raised md-warn md-hue-2" ng-disabled="vm.selected.length == 0" ng-click="vm.shutdownInstances()">Shutdown instances</md-button>
+</section>

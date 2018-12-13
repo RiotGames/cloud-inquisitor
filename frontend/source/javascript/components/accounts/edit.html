@@ -1,0 +1,91 @@
+<form name="accountEdit" ng-submit="vm.update()">
+    <section class="md-whiteframe-2dp padding">
+        <md-content class="md-padding">
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label>Account Name</label>
+                    <input name="accountName" type="text" ng-model="vm.account.accountName" required />
+
+                    <div ng-messages="accountEdit.accountName.$error" role="alert" multiple>
+                        <div ng-message="required" class="my-message">Required field</div>
+                    </div>
+                </md-input-container>
+
+                <span style="width: 40px"></span>
+
+                <md-input-container class="md-block" flex>
+                    <label>Account Type</label>
+                    <md-select name="accountType" ng-model="vm.account.accountType" ng-change="vm.onAccountTypeChange()" disabled>
+                        <md-option ng-repeat="accountType in vm.accountTypes" ng-value="accountType.name">{{accountType.name}}</md-option>
+                    </md-select>
+
+                    <div ng-messages="accountEdit.accountName.$error" role="alert" multiple>
+                        <div ng-message="required" class="my-message">Required field</div>
+                    </div>
+                </md-input-container>
+            </div>
+
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label>Required Groups</label>
+                    <md-chips ng-model="vm.account.requiredRoles" placeholder="Enter role"></md-chips>
+                </md-input-container>
+
+                <span style="width: 40px"></span>
+
+                <md-input-container class="md-block" flex>
+                    <label for="contacts">Contacts</label>
+                    <md-chips id="contacts" ng-model="vm.account.contacts" md-transform-chip="vm.onChipAdd($chip)">
+                        <md-chip-template>{{$chip.value}}</md-chip-template>
+                    </md-chips>
+                </md-input-container>
+            </div>
+
+            <div layout-gt-md="row">
+                <md-input-container class="md-block" flex>
+                    <label>Enabled</label>
+                    <md-switch ng-model="vm.account.enabled" aria-label="Enabled" ng-true-value="true" ng-false-value="false" class="md-primary"></md-switch>
+                </md-input-container>
+            </div>
+
+            <div ng-if="vm.account.accountType" class="accountPropertiesGrid">
+                <div ng-repeat="property in vm.getAccountTypeProperties(vm.account.accountType)">
+                    <md-input-container class="md-block" ng-if="property.type === 'string'">
+                        <label>{{property.name}}</label>
+                        <input type="text" ng-model="vm.account.properties[property.key]" />
+                    </md-input-container>
+
+                    <md-input-container class="md-block" ng-if="property.type == 'int'">
+                        <label>{{property.name}}</label>
+                        <input type="number" ng-model="vm.account.properties[property.key]" />
+                    </md-input-container>
+
+                    <md-input-container class="md-block" ng-if="property.type == 'float'">
+                        <label>{{property.name}}</label>
+                        <input step="any" type="number" ng-model="vm.account.properties[property.key]" />
+                    </md-input-container>
+
+                    <md-input-container class="md-block" ng-if="property.type === 'array'">
+                        <label>{{property.name}}</label>
+                        <md-chips ng-model="vm.account.properties[property.key]" placeholder="Enter values" flex></md-chips>
+                    </md-input-container>
+
+                    <md-input-container class="md-block" ng-if="property.type === 'bool'">
+                        <md-switch id="bool_value"
+                                   name="bool_value"
+                                   aria-label="Value"
+                                   ng-model="vm.account.properties[property.key]"
+                                   ng-true-value="true"
+                                   ng-false-value="false"
+                                   class="md-primary">
+                            {{vm.config.value ? "Enabled" : "Disabled"}}
+                        </md-switch>
+                    </md-input-container>
+                </div>
+            </div>
+        </md-content>
+    </section>
+
+    <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!accountEdit.$valid">Update Account</md-button>
+    <md-button class="md-warn md-raised md-hue-2" onclick="history.back()">Cancel</md-button>
+</form>

@@ -1,0 +1,56 @@
+<section class="md-whiteframe-2dp md-padding">
+    <div class="disclaimer md-padding" md-whiteframe="1">
+        This list shows the currently detected resources. If you have recently made changes to an instance to bring it
+        into compliance, it can take a little while before the instance will be cleared from this list.
+    </div>
+
+    <filters filters="vm.filters" buttons="vm.buttons" on-update="vm.updateFilters" on-reset="vm.resetFilters"></filters>
+
+    <md-table-pagination
+            style="border: 0;"
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.issueCount}}">
+    </md-table-pagination>
+
+    <md-table-container ng-if="vm.issueCount > 0">
+        <table md-table class="striped hover">
+            <thead md-head>
+            <tr md-row>
+                <th md-column>Resource</th>
+                <th md-column style="width: 120px;">Account</th>
+                <th md-column style="width: 120px;">Region</th>
+                <th md-column style="width: 200px;">Missing Tags</th>
+                <th md-column style="width: 350px;">Notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr md-row ng-repeat="issue in vm.issues">
+                <td md-cell>{{vm.getResourceName(issue.resource)}}</td>
+                <td md-cell>{{issue.resource.account.accountName}}</td>
+                <td md-cell>{{issue.properties.location}}</td>
+                <td md-cell>{{issue.properties.missingTags.join(", ")}}</td>
+                <td md-cell>
+                    <p ng-repeat="note in issue.properties.notes">{{note}}</p>
+                    <p ng-if="issue.properties.notes === undefined || issue.properties.notes.length === 0"><i>None</i></p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </md-table-container>
+    <div ng-if="vm.issueCount == 0" class="md-padding"><i>All instances are compliant, great job!</i></div>
+
+    <md-table-pagination
+            md-on-paginate="vm.updatePath"
+            md-page="vm.params.page"
+            md-page-select
+            md-limit="vm.params.count"
+            md-limit-options="[25, 50, 100]"
+            md-total="{{vm.issueCount}}">
+    </md-table-pagination>
+
+    <download-file url="/api/v1/requiredTagsExport" formats="vm.formats" args="vm.params" label="Download report" tooltip="Download report as JSON"></download-file>
+</section>
