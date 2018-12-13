@@ -96,12 +96,6 @@ class StandaloneScheduler(BaseScheduler):
                 if job_name in current_jobs:
                     continue
 
-                self.log.info('Scheduling global {name} worker every {interval} minutes to start at {start}'.format(
-                    name=wkr.name,
-                    start=start,
-                    interval=wkr.interval
-                ))
-
                 self.scheduler.add_job(
                     self.execute_global_worker,
                     trigger='interval',
@@ -126,13 +120,6 @@ class StandaloneScheduler(BaseScheduler):
                     if job_name in current_jobs:
                         continue
 
-                    self.log.info('Scheduling {} worker every {} minutes for {} to start at {}'.format(
-                        wkr.name,
-                        wkr.interval,
-                        acct.account_name,
-                        start
-                    ))
-
                     self.scheduler.add_job(
                         self.execute_aws_account_worker,
                         trigger='interval',
@@ -151,16 +138,6 @@ class StandaloneScheduler(BaseScheduler):
 
                         if job_name in current_jobs:
                             continue
-
-                        self.log.info(
-                            'Scheduling {name} worker every {interval} minutes for '
-                            '{account}/{region} to start at {start}'.format(
-                                name=wkr.name,
-                                account=acct.account_name,
-                                region=region,
-                                start=start,
-                                interval=wkr.interval
-                            ))
 
                         self.scheduler.add_job(
                             self.execute_aws_region_worker,
@@ -189,10 +166,6 @@ class StandaloneScheduler(BaseScheduler):
             else:
                 audit_start = start + timedelta(minutes=5)
 
-            self.log.debug('Scheduling {name} auditor every {interval} minutes to start at {start}'.format(
-                name=wkr.name, start=audit_start, interval=wkr.interval
-            ))
-
             self.scheduler.add_job(
                 self.execute_auditor_worker,
                 trigger='interval',
@@ -212,9 +185,10 @@ class StandaloneScheduler(BaseScheduler):
 
     def execute_global_worker(self, data, **kwargs):
         try:
-            self.log.info('Starting global {} worker'.format(data.name))
             cls = self.get_class_from_ep(data.entry_point)
             worker = cls(**kwargs)
+            self.log.info('RUN_INFO: {} starting at {}, next run will be at approximately {}'.format(data.entry_point['module_name'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), (datetime.now() + timedelta(minutes=data.interval)).strftime("%Y-%m-%d %H:%M:%S")))
+            self.log.info('Starting global {} worker'.format(data.name))
             worker.run()
 
         except Exception as ex:
@@ -226,9 +200,9 @@ class StandaloneScheduler(BaseScheduler):
 
     def execute_aws_account_worker(self, data, **kwargs):
         try:
-            self.log.info('Starting {} worker on {}'.format(data.name, kwargs['account']))
             cls = self.get_class_from_ep(data.entry_point)
             worker = cls(**kwargs)
+            self.log.info('RUN_INFO: {} starting at {}, next run will be at approximately {}'.format(data.entry_point['module_name'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), (datetime.now() + timedelta(minutes=data.interval)).strftime("%Y-%m-%d %H:%M:%S")))
             worker.run()
 
         except Exception as ex:
@@ -240,9 +214,9 @@ class StandaloneScheduler(BaseScheduler):
 
     def execute_aws_region_worker(self, data, **kwargs):
         try:
-            self.log.info('Starting {} worker on {}/{}'.format(data.name, kwargs['account'], kwargs['region']))
             cls = self.get_class_from_ep(data.entry_point)
             worker = cls(**kwargs)
+            self.log.info('RUN_INFO: {} starting at {} for account {} / region {}, next run will be at approximately {}'.format(data.entry_point['module_name'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), kwargs['account'], kwargs['region'], (datetime.now() + timedelta(minutes=data.interval)).strftime("%Y-%m-%d %H:%M:%S")))
             worker.run()
 
         except Exception as ex:
@@ -263,9 +237,9 @@ class StandaloneScheduler(BaseScheduler):
 
     def execute_auditor_worker(self, data, **kwargs):
         try:
-            self.log.info('Starting {} auditor'.format(data.name))
             cls = self.get_class_from_ep(data.entry_point)
             worker = cls(**kwargs)
+            self.log.info('RUN_INFO: {} starting at {}, next run will be at approximately {}'.format(data.entry_point['module_name'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), (datetime.now() + timedelta(minutes=data.interval)).strftime("%Y-%m-%d %H:%M:%S")))
             worker.run()
 
         except Exception as ex:

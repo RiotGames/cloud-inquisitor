@@ -129,11 +129,6 @@ class SQSScheduler(BaseScheduler):
                 if job_name in current_jobs:
                     continue
 
-                self.log.info('Scheduling global {} worker every {} minutes'.format(
-                    worker.name,
-                    worker.interval
-                ))
-
                 self.scheduler.add_job(
                     self.send_worker_queue_message,
                     trigger='interval',
@@ -160,11 +155,6 @@ class SQSScheduler(BaseScheduler):
                         continue
 
                     new_jobs.append(job_name)
-                    self.log.info('Scheduling {} worker every {} minutes for {}'.format(
-                        worker.name,
-                        worker.interval,
-                        account.account_name
-                    ))
 
                     self.scheduler.add_job(
                         self.send_worker_queue_message,
@@ -193,12 +183,6 @@ class SQSScheduler(BaseScheduler):
                             continue
 
                         new_jobs.append(job_name)
-                        self.log.info('Scheduling {} worker every {} minutes for {}/{}'.format(
-                            worker.name,
-                            worker.interval,
-                            account.account_name,
-                            region
-                        ))
 
                         self.scheduler.add_job(
                             self.send_worker_queue_message,
@@ -231,12 +215,6 @@ class SQSScheduler(BaseScheduler):
                 continue
 
             new_jobs.append(job_name)
-
-            self.log.debug('Scheduling {} auditor every {} minutes to start at {}'.format(
-                worker.name,
-                worker.interval,
-                audit_start
-            ))
 
             self.scheduler.add_job(
                 self.send_worker_queue_message,
@@ -342,6 +320,15 @@ class SQSScheduler(BaseScheduler):
 
                         cls = self.get_class_from_ep(data['entry_point'])
                         worker = cls(**data['worker_args'])
+                        if hasattr(worker, 'type'):
+                            if worker.type == CollectorType.GLOBAL:
+                                self.log.info('RUN_INFO: {} starting at {}, next run will be at approximately {}'.format(data['entry_point']['module_name'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), (datetime.now() + timedelta(minutes=worker.interval)).strftime("%Y-%m-%d %H:%M:%S")))
+                            elif worker.type == CollectorType.AWS_REGION:
+                                self.log.info('RUN_INFO: {} starting at {} for account {} / region {}, next run will be at approximately {}'.format(data['entry_point']['module_name'],	datetime.now().strftime("%Y-%m-%d %H:%M:%S"), data['worker_args']['account'], data['worker_args']['region'], (datetime.now() + timedelta(minutes=worker.interval)).strftime("%Y-%m-%d %H:%M:%S")))
+                            elif worker.type == CollectorType.AWS_ACCOUNT:
+                                self.log.info('RUN_INFO: {} starting at {} for account {} next run will be at approximately {}'.format(data['entry_point']['module_name'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), data['worker_args']['account'], (datetime.now() + timedelta(minutes=worker.interval)).strftime("%Y-%m-%d %H:%M:%S")))
+                        else:
+                            self.log.info('RUN_INFO: {} starting at {} next run will be at approximately {}'.format(data['entry_point']['module_name'], datetime.now().strftime("%Y-%m-%d %H:%M:%S"), (datetime.now() + timedelta(minutes=worker.interval)).strftime("%Y-%m-%d %H:%M:%S")))
                         worker.run()
 
                         self.send_status_message(data['job_id'], SchedulerStatus.COMPLETED)
