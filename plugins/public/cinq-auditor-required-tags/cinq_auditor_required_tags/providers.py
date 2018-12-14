@@ -108,7 +108,6 @@ def terminate_ec2_instance(client, resource):
     Returns:
         `bool` - True if the instance was terminated. Will raise an exception if failed
     """
-    # TODO: Implement disabling of TerminationProtection
     try:
         # Gather instance metrics before termination
         instance_type = "Not Found"
@@ -121,6 +120,7 @@ def terminate_ec2_instance(client, resource):
 
         metrics = {"instance_type": instance_type, "public_ip": public_ip}
 
+        client.modify_instance_attribute(InstanceId=resource.resource_id, Attribute='disableApiTermination', Value='False')
         client.terminate_instances(InstanceIds=[resource.resource_id])
         logger.info('Terminated instance {}/{}/{}'.format(
             resource.account,
