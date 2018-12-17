@@ -1,10 +1,11 @@
 {% if data['not_fixed'] %}
     The following resources are not compliant with the Required Tagging standards:
     {% for issue in data['not_fixed'] %}
-        *Account:* `{{ issue['resource'].account.account_name }}`
-        *Region:* `{{ issue['resource'].location }}`
-        *Resource ID:* `{{ issue['resource'].resource_id }}`
-		*Resource Type:* `{{ issue['issue'].resource_type }}`
+        *Account:* {{ issue['resource'].account.account_name }}
+        *Name Tag:*  {% if issue['resource'].tags %}{% for tag in issue['resource'].tags %}{% if tag['key'] == "Name" %}{{ tag['value'] }}{% endif %}{% endfor %}{% endif %}
+        *Region:* {{ issue['resource'].location }}
+        *Resource ID:* {{ issue['resource'].resource_id }}
+        *Resource Type:* {{ issue['issue'].resource_type }}
         *Missing Tags:* {{ ', '.join(issue['missing_tags']) }}
         *Notes:* {{ issue['notes'] | slack_quote_join }}
         *Alert:* {{ issue['action_description'] }}
@@ -16,10 +17,11 @@
 
     The following instances are now compliant with the Required Tags standards and are no longer subject to being stopped:
     {% for issue in data['fixed'] %}
-        *Account:* `{{ issue['resource'].account.account_name }}`
-        *Region:* `{{ issue['resource'].location }}`
-        *Resource ID:* `{{ issue['resource'].resource_id }}`
-		*Resource Type:* `{{ issue['issue'].resource_type }}`
+        *Account:* {{ issue['resource'].account.account_name }}
+        *Name Tag:*  {% if issue['resource'].tags %}{% for tag in issue['resource'].tags %}{% if tag['key'] == "Name" %}{{ tag['value'] }}{% endif %}{% endfor %}{% endif %}
+        *Region:* {{ issue['resource'].location }}
+        *Resource ID:* {{ issue['resource'].resource_id }}
+        *Resource Type:* {{ issue['issue'].resource_type }}
 
     {% endfor %}
 {% endif %}

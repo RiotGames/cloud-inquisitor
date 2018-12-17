@@ -18,6 +18,9 @@
                     <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">
                         Resource
                     </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 250px; text-align: left; padding: 4px;">
+                        Name Tag
+                    </th>
                     <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 150px; text-align: left; padding: 4px;">
                         Resource Type
                     </th>
@@ -43,6 +46,15 @@
                 <tr>
                     <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
                         {{ issue['resource'].resource_id }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {% if issue['resource'].tags %}
+                        {% for tag in issue['resource'].tags %}
+                        {% if tag['key'] == "Name" %}
+                        <p>{{ tag['value'] }}</p>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
                     </td>
                     <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
                         {{ issue['issue'].resource_type }}
@@ -91,6 +103,9 @@
                         Resource
                     </th>
                     <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 400px; text-align: left; padding: 4px;">
+                        Name Tag
+                    </th>
+                    <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 400px; text-align: left; padding: 4px;">
                         Resource Type
                     </th>
                     <th style="border-bottom: solid #aaaaaa 2px; background-color: #eeeeee; width: 150px; text-align: left; padding: 4px;">
@@ -106,6 +121,15 @@
                 <tr>
                     <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
                         {{ issue['resource'].resource_id }}
+                    </td>
+                    <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
+                        {% if issue['resource'].tags %}
+                        {% for tag in issue['resource'].tags %}
+                        {% if tag['key'] == "Name" %}
+                        <p>{{ tag['value'] }}</p>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
                     </td>
                     <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
                         {{ issue['issue'].resource_type }}
