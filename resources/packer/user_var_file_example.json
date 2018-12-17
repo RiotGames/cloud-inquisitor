@@ -1,0 +1,16 @@
+{
+  "aws_access_key": "AKIAIOSFODNN7EXAMPLE",
+  "aws_iam_instance_profile": "CINQProfile",
+  "aws_region": "us-west-2",
+  "aws_secret_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+  "aws_security_group": "sg-12345678",
+  "aws_session_token": "xxxxxx",
+  "aws_source_ami": "ami-0bbe6b35405ecebdb",
+  "aws_subnet_id": "subnet-12345678",
+  "aws_vpc_id": "vpc-5c123456",
+  "opt_db_uri": "mysql://cinq:secretpass@127.0.0.1:3306/cinq_dev",
+  "opt_git_branch": "master",
+  "opt_make_switch": "setup_localdev",
+  "opt_use_https": "FALSE",
+  "opt_use_user_data": "FALSE"
+}

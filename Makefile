@@ -33,7 +33,7 @@ install_libs:
 	pip3 install -U virtualenv
 
 install_service_mysql:
-	apt-get -qq install mysql-server
+	DEBIAN_FRONTEND=noninteractive apt-get -qq install mysql-server
 
 install_service_nginx:
 	apt-get -qq install nginx
