@@ -10,7 +10,7 @@ use AWS STS tokens as well.
 
 .. _`AWS`: https://aws.amazon.com/
 
-It's highly recommended you first use the quickstart to build Cloud Inquisitor. However if you want to explore additional options please see `additional options <./additional_options.rst>`_.
+It's highly recommended you first use the Quickstart to build Cloud Inquisitor. However if you want to explore additional options please see `additional options <./additional_options.rst>`_.
 
 
 Installing Cloud Inquisitor
