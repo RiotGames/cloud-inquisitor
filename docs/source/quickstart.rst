@@ -60,7 +60,7 @@ Windows ::
 
 The example file ``variables/variables.json.sample`` provides sample variables needed to configure cinq. A full list of parameters is available in the build.json file. For detailed build information please see `additional options <./additional_options.rst>`_.
 
-**NOTE:** You will need to change some of these items as they are environnment-specific.
+**NOTE:** You will need to change some of these items as they are environment-specific.
 
 * The easiest way to get cinq up and running is to ensure you've properly configured all of the values in the sample file and most importantly the app_db_setup_local is set to True. The will install a local mysql-server on the instance itself and get the database setup for you. ::
 

@@ -1,4 +1,4 @@
-.PHONY: install_libs install_services install_files init_services init_cinq enable_test do_test setup_localdev setup_tarvisci
+.PHONY: install_libs_tarvisci install_libs install_service_mysql install_service_nginx install_files_localdev install_files_server setup_frontend_config init_service_mysql init_service_nginx init_cinq init_cinq_db enable_supervisor enable_test do_test clean make_image_aws setup_localdev setup_tarvisci setup_server_install
 
 PATH_CINQ ?= /opt/cinq
 PATH_BACKEND ?= ${PATH_CINQ}/backend
@@ -20,7 +20,7 @@ USE_USER_DATA ?= false
 
 install_libs_tarvisci:
 	curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-	apt-get install -qq build-essential apt-transport-https ca-certificates libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client nodejs nginx python3-dev software-properties-common swig
+	apt-get install -qq build-essential apt-transport-https ca-certificates libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client nodejs python3-dev software-properties-common swig
 
 install_libs:
 	apt-get update
@@ -33,12 +33,21 @@ install_libs:
 	pip3 install -U virtualenv
 
 install_service_mysql:
-	apt-get -qq install mysql-server
+	DEBIAN_FRONTEND=noninteractive apt-get -qq install mysql-server
 
 install_service_nginx:
 	apt-get -qq install nginx
 
-install_files:
+install_files_localdev:
+	# Prepare directories
+	mkdir -p /var/log/cloud-inquisitor/
+	chmod -R 777 /var/log/cloud-inquisitor/
+
+	# Copy project files
+	cp -R ${INS_DIR} ${PATH_CINQ}
+	chown -R ${SUDO_USER}:${SUDO_USER} ${PATH_CINQ}
+
+install_files_server:
 	# Prepare directories
 	mkdir -p /var/log/cloud-inquisitor/
 	chmod -R 777 /var/log/cloud-inquisitor/
@@ -48,9 +57,11 @@ install_files:
 	cp -R ${INS_DIR}/backend ${PATH_BACKEND}
 	cp -R ${INS_DIR}/frontend ${PATH_FRONTEND}
 	cp -R ${INS_DIR}/plugins ${PATH_CINQ}/plugins
-	cp -R ${INS_DIR}/docs ${PATH_CINQ}/docs
 	chown -R ${SUDO_USER}:${SUDO_USER} ${PATH_CINQ}
+	chown -R ${SUDO_USER}:${SUDO_USER} ${PATH_BACKEND}
+	chown -R ${SUDO_USER}:${SUDO_USER} ${PATH_FRONTEND}
 
+setup_frontend_config:
 	# Setup frontend and virtual env
 	cd ${PATH_FRONTEND}; sudo -u ${SUDO_USER} -H npm i; sudo -u ${SUDO_USER} -H node_modules/.bin/gulp build.dev
 	sudo -u ${SUDO_USER} -H virtualenv --python=${PATH_PYTHON} ${PATH_VENV}
@@ -109,10 +120,18 @@ do_test:
 clean:
 	sudo rm -rf ${PATH_CINQ} ${PATH_BACKEND} ${PATH_FRONTEND} ${PATH_VENV} ${APP_CONFIG_BASE_PATH}
 
-setup_localdev: install_libs install_service_mysql install_service_nginx install_files init_service_mysql init_service_nginx init_cinq init_cinq_db
+make_image_aws:
+	apt-get update
+	apt-get install -qq curl unzip
+	curl https://releases.hashicorp.com/packer/1.3.3/packer_1.3.3_linux_amd64.zip -o /tmp/packer.zip
+	unzip -o /tmp/packer.zip -d /usr/local/bin
+	chmod +x /usr/local/bin/packer
+	cd ${INS_DIR}/resources/packer; packer build -var-file=./user_var_file.json ./build_image_aws.json
 
-setup_tarvisci: install_libs_tarvisci install_files init_service_mysql init_service_nginx init_cinq init_cinq_db enable_test
+setup_localdev: clean install_libs install_service_mysql install_service_nginx install_files_localdev setup_frontend_config init_service_mysql init_service_nginx init_cinq init_cinq_db
 
-setup_server_install: install_libs install_service_nginx install_files init_service_nginx init_cinq
+setup_tarvisci: clean install_libs_tarvisci install_service_nginx install_files_localdev setup_frontend_config init_service_mysql init_service_nginx init_cinq init_cinq_db enable_test
 
-reinstall_localdev: clean install_files init_cinq
+setup_server_install: clean install_libs install_service_nginx install_files_server setup_frontend_config init_service_nginx init_cinq
+
+reset_localdev_files: clean install_files_localdev setup_frontend_config init_cinq
