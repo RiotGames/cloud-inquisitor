@@ -62,7 +62,7 @@ install_files_server:
 	chown -R ${SUDO_USER}:${SUDO_USER} ${PATH_FRONTEND}
 
 setup_frontend_config:
-    # Setup frontend and virtual env
+	# Setup frontend and virtual env
 	cd ${PATH_FRONTEND}; sudo -u ${SUDO_USER} -H npm i; sudo -u ${SUDO_USER} -H node_modules/.bin/gulp build.dev
 	sudo -u ${SUDO_USER} -H virtualenv --python=${PATH_PYTHON} ${PATH_VENV}
 
@@ -126,9 +126,12 @@ make_image_aws:
 	curl https://releases.hashicorp.com/packer/1.3.3/packer_1.3.3_linux_amd64.zip -o /tmp/packer.zip
 	unzip -o /tmp/packer.zip -d /usr/local/bin
 	chmod +x /usr/local/bin/packer
+	cd ${INS_DIR}/resources/packer; packer build -var-file=./user_var_file.json ./build_image_aws.json
 
 setup_localdev: clean install_libs install_service_mysql install_service_nginx install_files_localdev setup_frontend_config init_service_mysql init_service_nginx init_cinq init_cinq_db
 
 setup_tarvisci: clean install_libs_tarvisci install_service_nginx install_files_localdev setup_frontend_config init_service_mysql init_service_nginx init_cinq init_cinq_db enable_test
 
 setup_server_install: clean install_libs install_service_nginx install_files_server setup_frontend_config init_service_nginx init_cinq
+
+reset_localdev_files: clean install_files_localdev setup_frontend_config init_cinq
