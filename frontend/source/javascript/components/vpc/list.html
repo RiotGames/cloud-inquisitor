@@ -18,6 +18,7 @@
                 <th md-column style="width: 150px;">Account</th>
                 <th md-column style="width: 150px;">Region</th>
                 <th md-column style="width: 150px;">VPC ID</th>
+                <th md-column style="width: 150px;">VPC Type</th>
                 <th md-column style="width: 150px;">CIDR_V4</th>
                 <th md-column style="width: 150px;">Flow Logs Status</th>
                 <th md-column style="width: 150px;">CloudWatch Log Group</th>
@@ -29,6 +30,7 @@
                 <td md-cell>{{vpc.account.accountName}}</td>
                 <td md-cell>{{vpc.location}}</td>
                 <td md-cell>{{vpc.properties.vpcId}}</td>
+                <td md-cell>{{vpc.properties.isDefault}}</td>
                 <td md-cell>{{vpc.properties.cidrV4}}</td>
                 <td md-cell>{{vpc.properties.vpcFlowLogsStatus}}</td>
                 <td md-cell>{{vpc.properties.vpcFlowLogsLogGroup}}</td>

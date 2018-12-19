@@ -85,8 +85,6 @@ class VPCList(BaseView):
             print('Error calling base class get {}'.format(e))
 
 
-
-
 class VPCGet(BaseView):
     URLS = ['/api/v1/vpc/<string:vpc_id>']
 
