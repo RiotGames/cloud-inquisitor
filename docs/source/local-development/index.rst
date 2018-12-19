@@ -8,6 +8,5 @@ Cloud Inquisitor can be developed locally using `Packer  <https://packer.io/down
 .. toctree::
     :maxdepth: 2
 
-    packer
     docker
     local

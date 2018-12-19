@@ -1,6 +1,6 @@
 .. raw:: html
 
-    <img src="https://cloud-inquisitor.readthedocs.io/en/latest/_images/cloud-inquisitor_logo.png" height="100px">
+    <img src="https://cloudinquisitor.readthedocs.io/en/latest/_images/cloud-inquisitor_logo.png" height="100px">
 
 ============
 Introduction
@@ -13,6 +13,6 @@ Cloud Inquisitor can be used to improve the security posture of your AWS footpri
 * verifying security services such as `Cloudtrail <https://aws.amazon.com/cloudtrail/>`_ and `VPC Flowlogs <https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html>`_.
 * managing `IAM policies <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html>`_ across multiple accounts.
 
-Please see the official docs `here <https://cloud-inquisitor.readthedocs.io/en/latest/>`_ for more information on how to deploy, configure and operate Cloud Inquisitor in your environment.
+Please see the official docs `here <https://cloudinquisitor.readthedocs.io/en/latest/>`_ for more information on how to deploy, configure and operate Cloud Inquisitor in your environment.
 
-If you would like to contribute, please check out our `Contributing Guidelines <https://cloud-inquisitor.readthedocs.io/en/latest/contributing.html>`_.
+If you would like to contribute, please check out our `Contributing Guidelines <https://cloudinquisitor.readthedocs.io/en/latest/contributing.html>`_.

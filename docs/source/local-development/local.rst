@@ -61,5 +61,4 @@ Notes
 Below are things you might need to pay attention to
 
 * You probably need to set the working directory to ``/opt/cinq`` if you plan to use an IDE to do the development
-* If you'd like to develop other plugins, you need to clone it from GitHub then install it as well (go to where ``setup.py`` is located, then ``/opt/cinq/cinq-venv/bin/pip3 install -e .``)
 * ``/opt/cinq/cinq-venv/bin/cloud-inquisitor scheduler`` will run the scheduler for you

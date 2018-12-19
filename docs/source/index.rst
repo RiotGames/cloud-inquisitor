@@ -12,6 +12,7 @@ Getting started
     :maxdepth: 2
 
     quickstart
+    directory_map
     local-development/index
     userguide
     overview/index

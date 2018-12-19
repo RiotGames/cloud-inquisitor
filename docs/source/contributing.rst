@@ -3,7 +3,7 @@
 Contributing Guidelines
 =======================
 
-We would love contributions to Cloud Inqusitor - this document will help you get started quickly.
+We would love contributions to Cloud Inquisitor - this document will help you get started quickly.
 
 Docs
 ----
@@ -30,7 +30,7 @@ Submitting changes
 
 *   We would prefer one branch per feature or fix; please keep branches small and on topic.
 
-*   Send a pull request to the ``develop`` branch. See the GitHub `pull request docs <https://help.github.com/articles/using-pull-requests>`_ for further information.
+*   Send a pull request to the ``dev`` branch. See the GitHub `pull request docs <https://help.github.com/articles/using-pull-requests>`_ for further information.
 
 Additional resources
 --------------------
