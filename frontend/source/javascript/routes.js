@@ -808,13 +808,14 @@ function config($stateProvider, $urlServiceProvider) {
         })
         .state('vpc.list', {
             url: '/vpc/list?{page:int}&{count:int}&{accounts:string}&{regions:string}&{vpcId:string}&' +
-            '{cidrV4:string}&{vpcFlowLogsStatus:string}',
+            '{isDefault:string}&{cidrV4:string}&{vpcFlowLogsStatus:string}',
             params: {
                 page: 1,
                 count: 100,
                 accounts: [],
                 regions: [],
                 vpcId: undefined,
+                isDefault: undefined,
                 cidrV4: undefined,
                 vpcFlowLogsStatus: undefined
             },
