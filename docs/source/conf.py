@@ -53,7 +53,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Cloud Inquisitor'
-copyright = '2018, Riot Games Security'
+copyright = '2017-2019, Riot Games Security'
 author = 'Riot Games Security'
 
 # The version info for the project you're documenting, acts as replacement for

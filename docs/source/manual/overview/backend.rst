@@ -78,7 +78,7 @@ More information such as configuration options `here <https://github.com/RiotGam
 **Note:** This is currently being extended to include all taggable AWS objects.
 
 Default Schedule for Resources that can be Shutdown
-_______________________
+___________________________________________________
 
 +----------+-------------------------------------------------------------------------------------------+
 | Age      | Action                                                                                    |
@@ -96,7 +96,7 @@ _______________________
 
 
 Default Schedule for Resources that can only be terminated (S3, ECS, RDS...)
-_______________________
+____________________________________________________________________________
 
 
 +----------+-------------------------------------------------------------------------------------------+

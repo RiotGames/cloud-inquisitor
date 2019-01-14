@@ -1,3 +1,5 @@
+.. _manual-overview:
+
 Project Overview
 ================
 
