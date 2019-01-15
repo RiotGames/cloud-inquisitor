@@ -1,6 +1,10 @@
-.. raw:: html
+.. image:: https://cloudinquisitor.readthedocs.io/en/master/_images/cloud-inquisitor_logo.png
+   :height: 100px
 
-    <img src="https://cloudinquisitor.readthedocs.io/en/latest/_images/cloud-inquisitor_logo.png" height="100px">
+|
+
+.. image:: https://img.shields.io/github/license/RiotGames/cloud-inquisitor.svg
+.. image:: https://travis-ci.org/RiotGames/cloud-inquisitor.svg?branch=master
 
 ============
 Introduction

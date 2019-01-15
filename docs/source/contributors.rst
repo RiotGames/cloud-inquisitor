@@ -10,3 +10,4 @@ Contributors
 * `Gabe Friedmann <https://github.com/riot-gabe>`_
 * `Dong Liu <https://github.com/HTTP500>`_
 * `Reza Nikoopour <https://github.com/rnikoopour>`_
+* `Zach Pritchard <https://github.com/zpritcha>`_
