@@ -1,7 +1,8 @@
 <img src=https://cloudinquisitor.readthedocs.io/en/master/_images/cloud-inquisitor_logo.png height="100px"><br>
 
-[![Build Status](https://travis-ci.org/RiotGames/cloud-inquisitor.svg?branch=dev)](https://travis-ci.org/RiotGames/cloud-inquisitor)
 ![](https://img.shields.io/github/license/RiotGames/cloud-inquisitor.svg)
+[![Build Status](https://travis-ci.org/RiotGames/cloud-inquisitor.svg?branch=dev)](https://travis-ci.org/RiotGames/cloud-inquisitor)
+[![codecov](https://codecov.io/gh/RiotGames/cloud-inquisitor/branch/master/graph/badge.svg)](https://codecov.io/gh/RiotGames/cloud-inquisitor)
 
 # Introduction
 

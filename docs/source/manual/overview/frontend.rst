@@ -1,3 +1,5 @@
+.. _manual-overview-frontend:
+
 Frontend
 ========
 

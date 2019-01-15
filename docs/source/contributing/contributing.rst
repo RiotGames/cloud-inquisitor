@@ -10,7 +10,7 @@ Docs
 
 Within this **docs** directory, you'll find documentation on:
 
-* `Quickstart Guide <quickstart.rst>`_
+* :ref:`quickstart`
 * `Issue Log <https://github.com/RiotGames/cloud-inquisitor/issues>`_
 * `Roadmap for Cloud Inquisitor <https://github.com/RiotGames/cloud-inquisitor/milestones>`_
 
