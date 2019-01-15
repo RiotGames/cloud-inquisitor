@@ -21,7 +21,7 @@ USE_USER_DATA ?= false
 install_libs_tarvisci:
 	curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 	apt-get install -qq build-essential apt-transport-https ca-certificates libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client nodejs python3-dev software-properties-common swig
-    ${PATH_PYTHON}/pip3 install codecov
+	${PATH_PYTHON}/pip3 install codecov
 
 install_libs:
 	apt-get update
