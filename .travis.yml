@@ -24,7 +24,4 @@ install:
   - sudo make setup_tarvisci
 script:
   - sudo make do_test
-after_success:
-  - echo $TRAVIS_COMMIT
-  - echo $TRAVIS_BUILD_DIR
-  - python-codacy-coverage -v -r coverage.xml
+  - python-codacy-coverage -r coverage.xml
