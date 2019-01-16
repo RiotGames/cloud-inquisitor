@@ -66,7 +66,7 @@ IAM
 ^^^
 
 The IAM roles and policy `auditor <https://github.com/RiotGames/cloud-inquisitor/tree/master/plugins/public/cinq-auditor-iam>`__
-will audit, and if enabled, manage the default Riot IAM policies and roles.
+will audit, and if enabled, will manage you AWS policies stored in Github.
 
 More information such as configuration options
 `here <https://github.com/RiotGames/cloud-inquisitor/blob/master/plugins/public/cinq-auditor-iam/README.rst>`__.
