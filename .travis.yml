@@ -25,4 +25,4 @@ install:
 script:
   - sudo make do_test
 after_success:
-  - python-codacy-coverage -r coverage.xml
+  - python-codacy-coverage -c $TRAVIS_COMMIT -d $TRAVIS_BUILD_DIR -r coverage.xml
