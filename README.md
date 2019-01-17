@@ -2,8 +2,8 @@
 
 |        | License | Release | Travis CI |
 |--------|---------|---------|-----------|
-| master | ![](https://img.shields.io/github/license/RiotGames/cloud-inquisitor.svg) | ![](https://img.shields.io/github/release/RiotGames/cloud-inquisitor.svg) | [![Build Status](https://travis-ci.org/RiotGames/cloud-inquisitor.svg?branch=master)](https://travis-ci.org/RiotGames/cloud-inquisitor) |
-| dev    | ![](https://img.shields.io/github/license/RiotGames/cloud-inquisitor.svg) | ![](https://img.shields.io/github/release-pre/RiotGames/cloud-inquisitor.svg) | [![Build Status](https://travis-ci.org/RiotGames/cloud-inquisitor.svg?branch=dev)](https://travis-ci.org/RiotGames/cloud-inquisitor) |
+| master | [![](https://img.shields.io/github/license/RiotGames/cloud-inquisitor.svg)](https://www.apache.org/licenses/LICENSE-2.0) | [![](https://img.shields.io/github/release/RiotGames/cloud-inquisitor.svg)](https://github.com/RiotGames/cloud-inquisitor/releases/latest) | [![Build Status](https://travis-ci.org/RiotGames/cloud-inquisitor.svg?branch=master)](https://travis-ci.org/RiotGames/cloud-inquisitor) |
+| dev    | [![](https://img.shields.io/github/license/RiotGames/cloud-inquisitor.svg)](https://www.apache.org/licenses/LICENSE-2.0) | ![](https://img.shields.io/github/release-pre/RiotGames/cloud-inquisitor.svg) | [![Build Status](https://travis-ci.org/RiotGames/cloud-inquisitor.svg?branch=dev)](https://travis-ci.org/RiotGames/cloud-inquisitor) |
 
 # Introduction
 
