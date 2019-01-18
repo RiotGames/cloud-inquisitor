@@ -1,3 +1,5 @@
+.. _manual-overview-backend:
+
 Backend
 =======
 
@@ -10,8 +12,8 @@ the original codebase.
 API Server
 ----------
 
-The API server provides a RESTful interface for the `frontend <https://github.com/riotgames/inquisitor/frontend>`__
-web client.
+The API server provides a RESTful interface for the
+`frontend <https://github.com/RiotGames/cloud-inquisitor/tree/master/frontend>`__ web client.
 
 Authentication
 --------------
@@ -28,8 +30,8 @@ for local development to ensure proper testing of the SAML code.
 
 More information can be found at:
 
-* `Saml <https://github.com/RiotGames/cinq-auth-onelogin-saml>`_
-* `Local <https://github.com/RiotGames/cinq-auth-local/blob/master/README.rst>`__
+* `SAML <https://github.com/RiotGames/cloud-inquisitor/tree/master/plugins/public/cinq-auth-onelogin-saml>`__
+* `Local <https://github.com/RiotGames/cloud-inquisitor/tree/master/plugins/public/cinq-auth-local>`__
 
 Auditors
 --------
@@ -39,46 +41,50 @@ Auditors are plugins which will alert and potentially take action based on data 
 Cloudtrail
 ^^^^^^^^^^
 
-The CloudTrail `auditor <https://github.com/RiotGames/cinq-auditor-cloudtrail>`__ will ensure that CloudTrail 
-has been enabled for all accounts configured in the system. The system will automatically create an S3 bucket 
-and SNS topics for log delivery notifications. However, you must ensure that the proper access has been 
-granted to the accounts attempting to log to a remote S3 bucket. SNS subscriptions will need to be confirmed 
+The CloudTrail `auditor <https://github.com/RiotGames/cloud-inquisitor/tree/master/plugins/public/cinq-auditor-cloudtrail>`__
+will ensure that CloudTrail has been enabled for all accounts configured in the system. The system will automatically
+create an S3 bucket and SNS topics for log delivery notifications. However, you must ensure that the proper access has
+been granted to the accounts attempting to log to a remote S3 bucket. SNS subscriptions will need to be confirmed
 through an external tool such as the CloudTrail app.
 
-More information such as configuration options `here <https://github.com/RiotGames/cinq-auditor-cloudtrail/blob/master/README.rst>`__.
+More information such as configuration options `here <https://github.com/RiotGames/cloud-inquisitor/blob/master/plugins/public/cinq-auditor-cloudtrail/README.rst>`__.
 
 Domain Hijacking
 ^^^^^^^^^^^^^^^^
 
-The domain hijacking `auditor <https://github.com/RiotGames/cinq-auditor-domain-hijacking>`__ will attempt to 
-identify misconfigured DNS entries that would potentially result in third parties being able to take over 
+The domain hijacking `auditor <https://github.com/RiotGames/cloud-inquisitor/tree/master/plugins/public/cinq-auditor-domain-hijacking>`__
+will attempt to identify misconfigured DNS entries that would potentially result in third parties being able to take over
 legitimate DNS names and serve malicious content from a real location.
 
 This auditor will fetch information from AWS Route53, CloudFlare, and our internal F5 based DNS servers and 
 validate the records found against our known owned S3 buckets, Elastic BeanStalks, and CloudFront CDN distributions.
 
-More information such as configuration options `here <https://github.com/RiotGames/cinq-auditor-domain-hijacking/blob/master/README.rst>`__.
+More information such as configuration options
+`here <https://github.com/RiotGames/cloud-inquisitor/blob/master/plugins/public/cinq-auditor-domain-hijacking/README.rst>`__.
 
 IAM
 ^^^
 
-The IAM roles and policy `auditor <https://github.com/RiotGames/cinq-auditor-iam>`__ will audit, and if enabled, 
-manage the default Riot IAM policies and roles.
+The IAM roles and policy `auditor <https://github.com/RiotGames/cloud-inquisitor/tree/master/plugins/public/cinq-auditor-iam>`__
+will audit, and if enabled, will manage you AWS policies stored in Github.
 
-More information such as configuration options `here <https://github.com/RiotGames/cinq-auditor-iam/blob/master/README.rst>`__.
+More information such as configuration options
+`here <https://github.com/RiotGames/cloud-inquisitor/blob/master/plugins/public/cinq-auditor-iam/README.rst>`__.
 
 Required Tags
 ^^^^^^^^^^^^^
 
-Cloud Inquisitor `audits <https://github.com/RiotGames/cinq-auditor-required-tags>`__ EC2 instances and S3 Buckets for **tagging compliance** 
-and shutdowns or terminates resources if they are not brought into compliance after a pre-defined amount of time.
+Cloud Inquisitor `audits <https://github.com/RiotGames/cloud-inquisitor/tree/master/plugins/public/cinq-auditor-required-tags>`__
+EC2 instances and S3 Buckets for **tagging compliance** and shutdowns or terminates resources if they are not
+brought into compliance after a pre-defined amount of time.
 
-More information such as configuration options `here <https://github.com/RiotGames/cinq-auditor-required-tags/blob/master/README.rst>`__.
+More information such as configuration options
+`here <https://github.com/RiotGames/cloud-inquisitor/blob/master/plugins/public/cinq-auditor-required-tags/README.rst>`__.
 
 **Note:** This is currently being extended to include all taggable AWS objects.
 
 Default Schedule for Resources that can be Shutdown
-_______________________
+___________________________________________________
 
 +----------+-------------------------------------------------------------------------------------------+
 | Age      | Action                                                                                    |
@@ -96,7 +102,7 @@ _______________________
 
 
 Default Schedule for Resources that can only be terminated (S3, ECS, RDS...)
-_______________________
+____________________________________________________________________________
 
 
 +----------+-------------------------------------------------------------------------------------------+
@@ -163,15 +169,17 @@ database state.
 AWS
 ^^^
 
-The base AWS `collector <https://github.com/RiotGames/cinq-collector-aws>`__ queries all regions for every account 
-collecting information for all regions in each AWS account.
+The base AWS `collector <https://github.com/RiotGames/cloud-inquisitor/tree/master/plugins/public/cinq-collector-aws>`__
+queries all regions for every account collecting information for all regions in each AWS account.
 
-A more detailed description is available `here <https://github.com/RiotGames/cinq-collector-aws/blob/master/README.rst>`__.
+A more detailed description is available
+`here <https://github.com/RiotGames/cloud-inquisitor/blob/master/plugins/public/cinq-collector-aws/README.rst>`__.
 
 DNS
 ^^^
 
-The DNS `collector <https://github.com/RiotGames/cinq-collector-dns>`__ gathers and collates all related DNS information, 
-with which the relevant DNS auditors can analyse for potential security issues.
+The DNS `collector <https://github.com/RiotGames/cloud-inquisitor/tree/master/plugins/public/cinq-collector-dns>`__
+gathers and collates all related DNS information, with which the relevant DNS auditors can analyse for potential security issues.
 
-A more detailed description is available `here <https://github.com/RiotGames/cinq-collector-dns/blob/master/README.rst>`__.
+A more detailed description is available
+`here <https://github.com/RiotGames/cloud-inquisitor/blob/master/plugins/public/cinq-collector-dns/README.rst>`__.

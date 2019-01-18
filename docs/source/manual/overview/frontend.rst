@@ -1,8 +1,10 @@
+.. _manual-overview-frontend:
+
 Frontend
 ========
 
 This project provides the web frontend for the ``Cloud Inquisitor`` system, and is built using `AngularJS <https://angular.io/>`_ and
-angularjs-material (Google Material Design) elements, with a few jQuery based libraries as well.
+`AngularJS Material <https://material.angularjs.org/>`_ with a few jQuery based libraries as well.
 
 Building
 --------

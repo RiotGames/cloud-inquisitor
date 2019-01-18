@@ -3,7 +3,7 @@
 PATH_CINQ ?= /opt/cinq
 PATH_BACKEND ?= ${PATH_CINQ}/backend
 PATH_FRONTEND ?= ${PATH_CINQ}/frontend
-PATH_PYTHON ?= /usr/bin/python3
+PATH_PYTHON ?= /usr/bin
 PATH_VENV ?= ${PATH_CINQ}/cinq-venv
 APP_WORKER_PROCS ?= 12
 APP_CONFIG_BASE_PATH ?= /usr/local/etc/cloud-inquisitor
@@ -21,6 +21,7 @@ USE_USER_DATA ?= false
 install_libs_tarvisci:
 	curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 	apt-get install -qq build-essential apt-transport-https ca-certificates libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client nodejs python3-dev software-properties-common swig
+	${PATH_PYTHON}/pip3 install codacy-coverage
 
 install_libs:
 	apt-get update
@@ -64,7 +65,7 @@ install_files_server:
 setup_frontend_config:
 	# Setup frontend and virtual env
 	cd ${PATH_FRONTEND}; sudo -u ${SUDO_USER} -H npm i; sudo -u ${SUDO_USER} -H node_modules/.bin/gulp build.dev
-	sudo -u ${SUDO_USER} -H virtualenv --python=${PATH_PYTHON} ${PATH_VENV}
+	sudo -u ${SUDO_USER} -H virtualenv --python=${PATH_PYTHON}/python3 ${PATH_VENV}
 
 	# Setup Keys
 	sudo -H sh -c 'mkdir -p ${APP_CONFIG_BASE_PATH}/ssl'
@@ -132,6 +133,6 @@ setup_localdev: clean install_libs install_service_mysql install_service_nginx i
 
 setup_tarvisci: clean install_libs_tarvisci install_service_nginx install_files_localdev setup_frontend_config init_service_mysql init_service_nginx init_cinq init_cinq_db enable_test
 
-setup_server_install: clean install_libs install_service_nginx install_files_server setup_frontend_config init_service_nginx init_cinq
+setup_server_install: clean install_libs install_service_nginx install_files_server setup_frontend_config init_service_nginx init_cinq enable_supervisor
 
 reset_localdev_files: clean install_files_localdev setup_frontend_config init_cinq

@@ -4,9 +4,9 @@ Additional Options
 Databases
 ---------
 
-cinq is currently designed to run with MySQL Version 5.7.17. We recommend you stick to this version.
+Cinq is currently designed to run with MySQL Version 5.7.17. We recommend you stick to this version.
 
-If you do not wish to use a local MySQL DB that the cinq install gives you, in your variables file, simply set the following in your variables before you run the packer build to disable
+If you do not wish to use a local MySQL DB that the Cinq install gives you, in your variables file, simply set the following in your variables before you run the packer build to disable
 the install and setup of the local DB and point to the database you'd like to use ::
 
 "app_setup_local_db":     "False"
@@ -31,7 +31,7 @@ You can look in /path/to/cinq-backend/logs/ to see if you have any configuration
 KMS and UserData
 ----------------
 
-You may not wish to keep database credentials in flat configuration files on the instance. You can KMS encrypt these variables and pass them to the cinq instance
+You may not wish to keep database credentials in flat configuration files on the instance. You can KMS encrypt these variables and pass them to the Cinq instance
 via AWS userdata. In your variables file use the following ::
 
 "app_use_user_data":                       "True",
@@ -43,7 +43,7 @@ $ aws kms encrypt --key-id arn:aws:kms:us-west-2:<account_id>:key/xxxxxxxx-74f8-
 
 It will return a response with a field of CipherTextBlob that you can paste into your UserData field when you launch the AMI.
 
-To verify your cinq instance is using KMS, your production settings in ``/path/to/cinq-backend/settings/production.py`` should contain: :: 
+To verify your Cinq instance is using KMS, your production settings in ``/path/to/cinq-backend/settings/production.py`` should contain: ::
 
  USE_USER_DATA = True
  KMS_ACCOUNT_NAME = '<account_name>'
@@ -135,10 +135,10 @@ Backend Settings
 * ``app_ssl_enabled`` - Enable SSL on frontend and backend. Default: ``True``
 * ``app_ssl_cert_data`` - Base64 encoded SSL public key data, used if not using self-signed certificates. Default: ``None``
 * ``app_ssl_key_data`` - Base64 encoded SSL private key data, used if not using self-signed certificates. Default: ``None``
-* ``app_use_user_data`` - Tells cinq to read variables from encrypted user-data
+* ``app_use_user_data`` - Tells Cinq to read variables from encrypted user-data
 * ``app_kms_account_name`` - Provides an account name for kms.
 * ``app_user_data_url`` - URL where user data is access. Default: ``http://169.254.169.254/latest/user-data``
 
 FYI
 ^^^
-The vast majority of these settings should be left at their default values unless you fell you must change them to get cinq running.
+The vast majority of these settings should be left at their default values unless you fell you must change them to get Cinq running.

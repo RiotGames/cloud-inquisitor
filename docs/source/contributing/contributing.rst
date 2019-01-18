@@ -10,10 +10,7 @@ Docs
 
 Within this **docs** directory, you'll find documentation on:
 
-* `Building with Packer <local-development/packer.rst>`_
-* `Building with Docker <local-development/docker.rst>`_
-* `Standalone Local Development Environment Setup Script <local-development/local.rst>`_
-* `Quickstart Guide <quickstart.rst>`_
+* :ref:`quickstart`
 * `Issue Log <https://github.com/RiotGames/cloud-inquisitor/issues>`_
 * `Roadmap for Cloud Inquisitor <https://github.com/RiotGames/cloud-inquisitor/milestones>`_
 
