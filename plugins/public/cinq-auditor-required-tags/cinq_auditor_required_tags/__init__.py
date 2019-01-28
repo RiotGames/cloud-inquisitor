@@ -8,7 +8,7 @@ from cinq_auditor_required_tags.providers import process_action
 
 from cloud_inquisitor import CINQ_PLUGINS
 from cloud_inquisitor.config import dbconfig, ConfigOption
-from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, NS_GOOGLE_ANALYTICS, NS_EMAIL, AuditActions
+from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, NS_GOOGLE_ANALYTICS, NS_EMAIL, AuditActions, GDPR_COMPLIANCE_TAG_VALUES, MAX_AGE_TAG_VALUES, GDPR_TAGS
 from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseAuditor
 from cloud_inquisitor.plugins.types.issues import RequiredTagsIssue
@@ -59,7 +59,8 @@ class RequiredTagsAuditor(BaseAuditor):
         ConfigOption('permanent_recipient', [], 'array', 'List of email addresses to receive all alerts'),
         ConfigOption('required_tags', ['owner', 'accounting', 'name'], 'array', 'List of required tags'),
         ConfigOption('lifecycle_expiration_days', 3, 'int',
-                     'How many days we should set in the bucket policy for non-empty S3 buckets removal')
+                     'How many days we should set in the bucket policy for non-empty S3 buckets removal'),
+        ConfigOption('gdpr_accounts', [], 'array', 'List of accounts requiring GDPR compliance')
     )
 
     def __init__(self):
@@ -83,6 +84,7 @@ class RequiredTagsAuditor(BaseAuditor):
             resource_type.resource_type_id: resource_type.resource_type
             for resource_type in db.ResourceType.find()
         }
+        self.gdpr_accounts = dbconfig.get('gdpr_accounts', self.ns, [])
 
     def run(self, *args, **kwargs):
         known_issues, new_issues, fixed_issues = self.get_resources()
@@ -391,6 +393,26 @@ class RequiredTagsAuditor(BaseAuditor):
 
         return notices
 
+    def validate_tag(self, key, value):
+        """Check whether a tag value is valid
+
+        Args:
+            key: A tag key
+            value: A tag value
+
+        Returns:
+            `(True or False)`
+            A boolean indicating whether or not the value is valid
+        """
+        if key == 'owner':
+            return validate_email(value, self.partial_owner_match)
+        elif key == 'gdpr_compliance':
+            return value in GDPR_COMPLIANCE_TAG_VALUES
+        elif key == 'max-age' or key == 'data_retention':
+            return value in MAX_AGE_TAG_VALUES
+        else:
+            return True
+
     def check_required_tags_compliance(self, resource):
         """Check whether a resource is compliance
 
@@ -418,20 +440,32 @@ class RequiredTagsAuditor(BaseAuditor):
         if self.audit_ignore_tag.lower() in resource_tags:
             return missing_tags, notes
 
+        required_tags = list(self.required_tags)
+
+        # Add GDPR tags to required tags if the account must be GDPR compliant
+        if resource.account.account_name in self.gdpr_accounts:
+            required_tags.extend(GDPR_TAGS)
+
         '''
         # Do not audit this resource if it is still in grace period
         if (datetime.utcnow() - resource.resource_creation_date).total_seconds() // 3600 < self.grace_period:
             return missing_tags, notes
         '''
 
-        # Check if the resource is missing required tags
-        for key in [tag.lower() for tag in self.required_tags]:
+        # Check if the resource is missing required tags or has invalid tag values
+        for key in [tag.lower() for tag in required_tags]:
             if key not in resource_tags:
                 missing_tags.append(key)
-
-            elif key == 'owner' and not validate_email(resource_tags[key], self.partial_owner_match):
+            elif not self.validate_tag(key, resource_tags[key]):
                 missing_tags.append(key)
-                notes.append('Owner tag is not a valid email address')
+                notes.append('{} tag is not valid'.format(key))
+
+        # Support deprecated "data_retention" tag as a replacement for "max-age"
+        if 'max-age' in missing_tags and 'data_retention' in resource_tags:
+            missing_tags.remove('max-age')
+            if not self.validate_tag('data_retention', resource_tags['data_retention']):
+                missing_tags.append('data_retention')
+                notes.append('data_retention tag is not valid')
 
         return missing_tags, notes
 
