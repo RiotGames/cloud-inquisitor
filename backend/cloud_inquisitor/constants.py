@@ -41,6 +41,12 @@ class AuditActions:
     STOP = 'STOP'
 
 
+class ActionStatus:
+    SUCCEED = 'succeed'
+    FAILED = 'failed'
+    IGNORED = 'ignored'
+
+
 # Collectors
 NS_COLLECTOR_EC2 = 'collector_ec2'
 

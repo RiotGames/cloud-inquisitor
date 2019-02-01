@@ -1,10 +1,10 @@
+import datetime
 import time
-from contextlib import suppress
 from datetime import datetime
 
 import pytimeparse
-from cinq_auditor_required_tags.exceptions import ResourceActionError
 from cinq_auditor_required_tags.providers import process_action
+from cloud_inquisitor.constants import ActionStatus
 
 from cloud_inquisitor import CINQ_PLUGINS
 from cloud_inquisitor.config import dbconfig, ConfigOption
@@ -85,6 +85,10 @@ class RequiredTagsAuditor(BaseAuditor):
             for resource_type in db.ResourceType.find()
         }
         self.gdpr_accounts = dbconfig.get('gdpr_accounts', self.ns, [])
+        self.resource_classes = {resource.resource_type: resource for resource in map(
+            lambda plugin: plugin.load(),
+            CINQ_PLUGINS['cloud_inquisitor.plugins.types']['plugins']
+        )}
 
     def run(self, *args, **kwargs):
         known_issues, new_issues, fixed_issues = self.get_resources()
@@ -110,14 +114,10 @@ class RequiredTagsAuditor(BaseAuditor):
     def get_known_resources_missing_tags(self):
         non_compliant_resources = {}
         audited_types = dbconfig.get('audit_scope', NS_AUDITOR_REQUIRED_TAGS, {'enabled': []})['enabled']
-        resource_types = {resource.resource_type: resource for resource in map(
-            lambda plugin: plugin.load(),
-            CINQ_PLUGINS['cloud_inquisitor.plugins.types']['plugins']
-        )}
 
         try:
             # resource_info is a tuple with the resource typename as [0] and the resource class as [1]
-            resources = filter(lambda resource_info: resource_info[0] in audited_types, resource_types.items())
+            resources = filter(lambda resource_info: resource_info[0] in audited_types, self.resource_classes.items())
             for resource_name, resource_class in resources:
                 for resource_id, resource in resource_class.get_all().items():
                     missing_tags, notes = self.check_required_tags_compliance(resource)
@@ -273,7 +273,7 @@ class RequiredTagsAuditor(BaseAuditor):
             'action_description': None,
             'last_alert': issue.last_alert,
             'issue': issue,
-            'resource': issue.resource,
+            'resource': self.resource_classes[self.resource_types[issue.resource.resource_type_id]](issue.resource),
             'owners': [],
             'stop_after': issue_alert_schedule['stop'],
             'remove_after': issue_alert_schedule['remove'],
@@ -330,66 +330,70 @@ class RequiredTagsAuditor(BaseAuditor):
         """
         notices = {}
         notification_contacts = {}
-        try:
-            for action in actions:
-                resource = action['resource']
+        for action in actions:
+            resource = action['resource']
+            action_status = ActionStatus.SUCCEED
 
-                try:
-                    with suppress(ResourceActionError):
-                        if action['action'] == AuditActions.REMOVE:
-                            if process_action(resource, 'kill', self.resource_types[resource.resource_type_id]):
-                                db.session.delete(action['issue'].issue)
+            try:
+                if action['action'] == AuditActions.REMOVE:
+                    action_status = process_action(
+                        resource,
+                        AuditActions.REMOVE,
+                        self.ns
+                    )
+                    if action_status == ActionStatus.SUCCEED:
+                        db.session.delete(action['issue'].issue)
 
-                        elif action['action'] == AuditActions.STOP:
-                            if process_action(resource, 'stop', self.resource_types[resource.resource_type_id]):
-                                action['issue'].update({
-                                    'missing_tags': action['missing_tags'],
-                                    'notes': action['notes'],
-                                    'last_alert': action['last_alert'],
-                                    'state': action['action']
-                                })
+                elif action['action'] == AuditActions.STOP:
+                    action_status = process_action(
+                            resource,
+                            AuditActions.STOP,
+                            self.ns
+                    )
+                    if action_status == ActionStatus.SUCCEED:
+                        action['issue'].update({
+                            'missing_tags': action['missing_tags'],
+                            'notes': action['notes'],
+                            'last_alert': action['last_alert'],
+                            'state': action['action']
+                        })
 
-                            else:
-                                # Resource is already stopped, so we are gonna skip the notification for it
-                                continue
+                elif action['action'] == AuditActions.FIXED:
+                    db.session.delete(action['issue'].issue)
 
-                        elif action['action'] == AuditActions.FIXED:
-                            db.session.delete(action['issue'].issue)
+                elif action['action'] == AuditActions.ALERT:
+                    action['issue'].update({
+                        'missing_tags': action['missing_tags'],
+                        'notes': action['notes'],
+                        'last_alert': action['last_alert'],
+                        'state': action['action']
+                    })
 
-                        elif action['action'] == AuditActions.ALERT:
-                            action['issue'].update({
-                                'missing_tags': action['missing_tags'],
-                                'notes': action['notes'],
-                                'last_alert': action['last_alert'],
-                                'state': action['action']
-                            })
-                        db.session.commit()
+                db.session.commit()
 
-                        for owner in action['owners'] + self.permanent_emails:
-                            if owner['value'] not in notification_contacts:
-                                contact = NotificationContact(type=owner['type'], value=owner['value'])
-                                notification_contacts[owner['value']] = contact
-                                notices[contact] = {
-                                    'fixed': [],
-                                    'not_fixed': []
-                                }
-                            else:
-                                contact = notification_contacts[owner['value']]
+                if action_status == ActionStatus.SUCCEED:
+                    for owner in action['owners'] + self.permanent_emails:
+                        if owner['value'] not in notification_contacts:
+                            contact = NotificationContact(type=owner['type'], value=owner['value'])
+                            notification_contacts[owner['value']] = contact
+                            notices[contact] = {
+                                'fixed': [],
+                                'not_fixed': []
+                            }
+                        else:
+                            contact = notification_contacts[owner['value']]
 
-                            if action['action'] == AuditActions.FIXED:
-                                notices[contact]['fixed'].append(action)
-                            else:
-                                notices[contact]['not_fixed'].append(action)
-
-                except Exception as ex:
-                    self.log.exception('Unexpected error while processing resource {}/{}/{}/{}'.format(
-                        action['resource'].account.account_name,
-                        action['resource'].resource_id,
-                        action['resource'],
-                        ex
-                    ))
-        finally:
-            db.session.rollback()
+                        if action['action'] == AuditActions.FIXED:
+                            notices[contact]['fixed'].append(action)
+                        else:
+                            notices[contact]['not_fixed'].append(action)
+            except Exception as ex:
+                self.log.exception('Unexpected error while processing resource {}/{}/{}/{}'.format(
+                    action['resource'].account.account_name,
+                    action['resource'].resource_id,
+                    action['resource'],
+                    ex
+                ))
 
         return notices
 

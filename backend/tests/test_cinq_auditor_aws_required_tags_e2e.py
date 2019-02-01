@@ -23,7 +23,7 @@ def test_volume_ec2_s3(cinq_test_service):
     dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'collect_only', False)
     cinq_test_service.start_mocking_services('cloudwatch', 'ec2', 's3')
 
-    num_resources = 500
+    num_resources = 100
     compliant_buckets = []
     non_compliant_buckets = []
     compliant_ec2 = []
@@ -84,7 +84,7 @@ def test_volume_ec2_s3(cinq_test_service):
     compliant_resources = compliant_buckets + compliant_ec2
     non_compliant_resources = non_compliant_buckets + non_compliant_ec2
     for item in auditor._cinq_test_notices[recipient]['not_fixed']:
-        assert item['resource'].resource_id not in compliant_resources
-        assert item['resource'].resource_id in non_compliant_resources
+        assert item['resource'].id not in compliant_resources
+        assert item['resource'].id in non_compliant_resources
 
     assert len(non_compliant_resources) == len(auditor._cinq_test_notices[recipient]['not_fixed'])
