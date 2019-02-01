@@ -13,14 +13,22 @@ from cinq_collector_aws.resources import ELB
 
 
 class AWSRegionCollector(BaseCollector):
-    name = 'EC2 Region Collector'
+    name = 'AWS Region Collector'
     ns = 'collector_ec2'
     type = CollectorType.AWS_REGION
     interval = dbconfig.get('interval', ns, 15)
+    ec2_collection_enabled = dbconfig.get('ec2_instance_collection', ns, True)
+    beanstalk_collection_enabled = dbconfig.get('beanstalk_instance_collection', ns, True)
+    vpc_collection_enabled = dbconfig.get('vpc_instance_collection', ns, True)
+    elb_collection_enabled = dbconfig.get('elb_instance_collection', ns, True)
     options = (
         ConfigOption('enabled', True, 'bool', 'Enable the AWS Region-based Collector'),
         ConfigOption('interval', 15, 'int', 'Run frequency, in minutes'),
         ConfigOption('max_instances', 1000, 'int', 'Maximum number of instances per API call'),
+        ConfigOption('ec2_instance_collection', True, 'bool', 'Enable collection of Instance-Related Resources'),
+        ConfigOption('beanstalk_collection', True, 'bool', 'Enable collection of Elastic Beanstalks'),
+        ConfigOption('vpc_collection', True, 'bool', 'Enable collection of VPC Information'),
+        ConfigOption('elb_collection', True, 'bool', 'Enable collection of ELBs')
     )
 
     def __init__(self, account, region):
@@ -40,16 +48,25 @@ class AWSRegionCollector(BaseCollector):
 
     def run(self, *args, **kwargs):
         try:
-            self.update_instances()
-            self.update_volumes()
-            self.update_snapshots()
-            self.update_amis()
-            self.update_beanstalks()
-            self.update_vpcs()
-            self.update_elbs()
+            if self.ec2_collection_enabled:
+                self.update_instances()
+                self.update_volumes()
+                self.update_snapshots()
+                self.update_amis()
+
+            if self.beanstalk_collection_enabled:
+                self.update_beanstalks()
+
+            if self.vpc_collection_enabled:
+                self.update_vpcs()
+
+            if self.elb_collection_enabled:
+                self.update_elbs()
+
         except Exception as ex:
             self.log.exception(ex)
             raise
+
         finally:
             del self.session
 

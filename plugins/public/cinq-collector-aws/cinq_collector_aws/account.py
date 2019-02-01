@@ -3,7 +3,7 @@ from collections import defaultdict
 from botocore.exceptions import ClientError
 from datetime import datetime, timedelta
 from cloud_inquisitor import get_aws_session
-from cloud_inquisitor.config import dbconfig
+from cloud_inquisitor.config import dbconfig, ConfigOption
 from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import InquisitorError
 from cloud_inquisitor.plugins import BaseCollector, CollectorType
@@ -14,10 +14,18 @@ from cloud_inquisitor.wrappers import retry
 
 
 class AWSAccountCollector(BaseCollector):
-    name = 'EC2 Account Collector'
+    name = 'AWS Account Collector'
     ns = 'collector_ec2'
     type = CollectorType.AWS_ACCOUNT
     interval = dbconfig.get('interval', ns, 15)
+    s3_collection_enabled = dbconfig.get('s3_bucket_collection', ns, True)
+    cloudfront_collection_enabled = dbconfig.get('cloudfront_bucket_collection', ns, True)
+    route53_collection_enabled = dbconfig.get('route53_bucket_collection', ns, True)
+    options = (
+        ConfigOption('s3_bucket_collection', True, 'bool', 'Enable S3 Bucket Collection'),
+        ConfigOption('cloudfront_collection', True, 'bool', 'Enable Cloudfront DNS Collection'),
+        ConfigOption('route53_collection', True, 'bool', 'Enable Route53 DNS Collection')
+    )
 
     def __init__(self, account):
         super().__init__()
@@ -35,12 +43,19 @@ class AWSAccountCollector(BaseCollector):
 
     def run(self):
         try:
-            self.update_s3buckets()
-            self.update_cloudfront()
-            self.update_route53()
+            if s3_collection_enabled:
+                self.update_s3buckets()
+
+            if cloudfront_collection_enabled:
+                self.update_cloudfront()
+
+            if route53_collection_enabled:
+                self.update_route53()
+
         except Exception as ex:
             self.log.exception(ex)
             raise
+
         finally:
             del self.session
 
