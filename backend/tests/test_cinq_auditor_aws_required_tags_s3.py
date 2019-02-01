@@ -1,10 +1,13 @@
+import datetime
+import time
+
 import pytest
 from botocore.exceptions import ClientError
-
 from cloud_inquisitor.config import dbconfig
-from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, AuditActions, NS_CINQ_TEST
+from cloud_inquisitor.constants import AuditActions, NS_CINQ_TEST
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
-from tests.libs.lib_cinq_auditor_aws_required_tags import s3_upload_file_from_string, VALID_TAGSET, prep_s3_testing
+from tests.libs.lib_cinq_auditor_aws_required_tags import s3_upload_file_from_string, VALID_TAGSET, prep_s3_testing, \
+    STANDARD_ALERT_SETTINGS_STOP
 from tests.libs.util_cinq import setup_test_aws, aws_get_client, collect_resources
 
 
@@ -39,7 +42,6 @@ def test_basic_ops(cinq_test_service):
     # Initialize auditor
     auditor = MockRequiredTagsAuditor()
 
-    '''
     # Test 1 --- Test if auditor respect grace period settings
     cinq_test_service.modify_resource(
         bucket_name,
@@ -48,7 +50,6 @@ def test_basic_ops(cinq_test_service):
     )
     auditor.run()
     assert auditor._cinq_test_notices == {}
-    '''
 
     # Test 2 --- Test if auditor can pick up non-compliant resources correctly
     cinq_test_service.modify_resource(
@@ -59,7 +60,7 @@ def test_basic_ops(cinq_test_service):
 
     auditor.run()
     notices = auditor._cinq_test_notices
-    assert bucket_name == notices[recipient]['not_fixed'][0]['resource']['resource_id']
+    assert bucket_name == notices[recipient]['not_fixed'][0]['resource'].id
 
     # Test 3 --- Modify the issue creation date so it will meet the criteria of "remove" action
     cinq_test_service.modify_issue(
@@ -121,13 +122,13 @@ def test_remove_non_empty_bucket(cinq_test_service):
     cinq_test_service.modify_issue(
         auditor._cinq_test_notices[recipient]['not_fixed'][0]['issue'].id,
         'created',
-        0
+        time.time() - STANDARD_ALERT_SETTINGS_STOP
     )
     auditor.run()
 
     # Verify if the Lifecycle policy is added
     current_policy = client.get_bucket_lifecycle_configuration(Bucket=bucket_name)['Rules'][0]
-    assert current_policy['ID'] == 'cinqRemoveObjectsAndVersions'
+    assert current_policy['ID'] == 'cloudInquisitor'
     assert current_policy['Status'] == 'Enabled'
 
     '''
@@ -184,7 +185,7 @@ def test_fixed_buckets(cinq_test_service):
     auditor.run()
 
     notices = auditor._cinq_test_notices
-    assert notices[recipient]['not_fixed'][0]['resource']['resource_id'] == bucket_name
+    assert notices[recipient]['not_fixed'][0]['resource'].id == bucket_name
 
     client.put_bucket_tagging(
         Bucket=bucket_name,

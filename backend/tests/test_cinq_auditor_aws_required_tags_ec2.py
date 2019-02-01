@@ -56,4 +56,4 @@ def test_basic_ops(cinq_test_service):
     notices = auditor._cinq_test_notices
 
     assert recipient in notices
-    assert notices[recipient]['not_fixed'][0]['resource'].resource_id == resource['Instances'][0]['InstanceId']
+    assert notices[recipient]['not_fixed'][0]['resource'].id == resource['Instances'][0]['InstanceId']
