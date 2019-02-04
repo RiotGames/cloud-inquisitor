@@ -43,13 +43,13 @@ class AWSAccountCollector(BaseCollector):
 
     def run(self):
         try:
-            if s3_collection_enabled:
+            if self.s3_collection_enabled:
                 self.update_s3buckets()
 
-            if cloudfront_collection_enabled:
+            if self.cloudfront_collection_enabled:
                 self.update_cloudfront()
 
-            if route53_collection_enabled:
+            if self.route53_collection_enabled:
                 self.update_route53()
 
         except Exception as ex:
