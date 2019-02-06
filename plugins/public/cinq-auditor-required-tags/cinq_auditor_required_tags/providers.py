@@ -50,7 +50,7 @@ def process_action(resource, action, action_issuer='unknown'):
             )
             return action_status
     else:
-        logger.error('Failed to apply action {} to {}: Not supported'.format(action, resource.resource_id))
+        logger.error('Failed to apply action {} to {}: Not supported'.format(action, resource.id))
         return ActionStatus.FAILED
 
 
@@ -66,11 +66,11 @@ def stop_ec2_instance(client, resource):
     Returns:
         `ActionStatus`
     """
-    instance = EC2Instance.get(resource.resource_id)
+    instance = EC2Instance.get(resource.id)
     if instance.state in ('stopped', 'terminated'):
         return ActionStatus.IGNORED, {}
 
-    client.stop_instances(InstanceIds=[resource.resource_id])
+    client.stop_instances(InstanceIds=[resource.id])
     return ActionStatus.SUCCEED, {'instance_type': resource.instance_type, 'public_ip': resource.public_ip}
 
 
@@ -87,10 +87,10 @@ def terminate_ec2_instance(client, resource):
         `ActionStatus`
     """
     # TODO: Implement disabling of TerminationProtection
-    instance = EC2Instance.get(resource.resource_id)
+    instance = EC2Instance.get(resource.id)
     if instance.state == 'terminated':
         return ActionStatus.IGNORED, {}
-    client.terminate_instances(InstanceIds=[resource.resource_id])
+    client.terminate_instances(InstanceIds=[resource.id])
     return ActionStatus.SUCCEED, {'instance_type': resource.instance_type, 'public_ip': resource.public_ip}
 
 
