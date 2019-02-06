@@ -390,7 +390,7 @@ class RequiredTagsAuditor(BaseAuditor):
             except Exception as ex:
                 self.log.exception('Unexpected error while processing resource {}/{}/{}/{}'.format(
                     action['resource'].account.account_name,
-                    action['resource'].resource_id,
+                    action['resource'].id,
                     action['resource'],
                     ex
                 ))
