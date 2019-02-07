@@ -45,7 +45,7 @@
                 {% for issue in data['not_fixed'] %}
                 <tr>
                     <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                        {{ issue['resource'].resource_id }}
+                        {{ issue['resource'].id }}
                     </td>
                     <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
                         {% if issue['resource'].tags %}
@@ -120,7 +120,7 @@
                 {% for issue in data['fixed'] %}
                 <tr>
                     <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
-                        {{ issue['resource'].resource_id }}
+                        {{ issue['resource'].id }}
                     </td>
                     <td style="padding: 2px; background-color: {{loop.cycle('transparent', '#efefef') }};">
                         {% if issue['resource'].tags %}
