@@ -19,8 +19,8 @@ class AWSAccountCollector(BaseCollector):
     type = CollectorType.AWS_ACCOUNT
     interval = dbconfig.get('interval', ns, 15)
     s3_collection_enabled = dbconfig.get('s3_bucket_collection', ns, True)
-    cloudfront_collection_enabled = dbconfig.get('cloudfront_bucket_collection', ns, True)
-    route53_collection_enabled = dbconfig.get('route53_bucket_collection', ns, True)
+    cloudfront_collection_enabled = dbconfig.get('cloudfront_collection', ns, True)
+    route53_collection_enabled = dbconfig.get('route53_collection', ns, True)
     options = (
         ConfigOption('s3_bucket_collection', True, 'bool', 'Enable S3 Bucket Collection'),
         ConfigOption('cloudfront_collection', True, 'bool', 'Enable Cloudfront DNS Collection'),

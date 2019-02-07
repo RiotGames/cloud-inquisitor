@@ -18,9 +18,9 @@ class AWSRegionCollector(BaseCollector):
     type = CollectorType.AWS_REGION
     interval = dbconfig.get('interval', ns, 15)
     ec2_collection_enabled = dbconfig.get('ec2_instance_collection', ns, True)
-    beanstalk_collection_enabled = dbconfig.get('beanstalk_instance_collection', ns, True)
-    vpc_collection_enabled = dbconfig.get('vpc_instance_collection', ns, True)
-    elb_collection_enabled = dbconfig.get('elb_instance_collection', ns, True)
+    beanstalk_collection_enabled = dbconfig.get('beanstalk_collection', ns, True)
+    vpc_collection_enabled = dbconfig.get('vpc_collection', ns, True)
+    elb_collection_enabled = dbconfig.get('elb_collection', ns, True)
     options = (
         ConfigOption('enabled', True, 'bool', 'Enable the AWS Region-based Collector'),
         ConfigOption('interval', 15, 'int', 'Run frequency, in minutes'),
