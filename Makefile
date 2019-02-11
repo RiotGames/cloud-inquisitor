@@ -67,10 +67,11 @@ setup_frontend_config:
 	cd ${PATH_FRONTEND}; sudo -u ${SUDO_USER} -H npm i; sudo -u ${SUDO_USER} -H node_modules/.bin/gulp build.dev
 	sudo -u ${SUDO_USER} -H virtualenv --python=${PATH_PYTHON}/python3 ${PATH_VENV}
 
-	# Setup Keys
+	# Setup private key used to encrypt JWT session tokens
 	sudo -H sh -c 'mkdir -p ${APP_CONFIG_BASE_PATH}/ssl'
 	openssl genrsa -out private.key 2048
 	sudo -H mv private.key ${APP_CONFIG_BASE_PATH}/ssl
+	chown www-data:www-data ${APP_CONFIG_BASE_PATH}/ssl/private.key
 
 	# Prepare Cinq config file
 	sudo -H cp -f ${INS_DIR}/resources/config_files/logging.json ${APP_CONFIG_BASE_PATH}
