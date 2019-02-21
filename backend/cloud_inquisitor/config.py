@@ -81,7 +81,7 @@ class DBConfig(object):
         return namespace in self.__data
 
     def key_exists(self, namespace, key):
-        """Checks a namespace for the existance of a specific key
+        """Checks a namespace for the existence of a specific key
 
         Args:
             namespace (str): Namespace to check in

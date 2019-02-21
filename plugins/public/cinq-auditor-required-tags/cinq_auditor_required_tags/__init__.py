@@ -372,7 +372,9 @@ class RequiredTagsAuditor(BaseAuditor):
                 db.session.commit()
 
                 if action_status == ActionStatus.SUCCEED:
-                    for owner in action['owners'] + self.permanent_emails:
+                    for owner in [
+                        dict(t) for t in {tuple(d.items()) for d in (action['owners'] + self.permanent_emails)}
+                    ]:
                         if owner['value'] not in notification_contacts:
                             contact = NotificationContact(type=owner['type'], value=owner['value'])
                             notification_contacts[owner['value']] = contact
