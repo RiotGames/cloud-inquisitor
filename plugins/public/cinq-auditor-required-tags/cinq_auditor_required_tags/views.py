@@ -99,7 +99,7 @@ class RequiredInstanceTagsExport(BaseView):
                 resource = issue.resource
                 sheet = '{} - {}'.format(resource.account.account_name, issue.location)
                 row = [
-                    resource.resource_id,
+                    resource.id,
                     resource.account.account_name,
                     issue.location,
                     issue.created,
@@ -120,7 +120,7 @@ class RequiredInstanceTagsExport(BaseView):
             data_buffer.close()
         else:
             output = [{
-                'resourceId': issue.resource.resource_id,
+                'resourceId': issue.resource.id,
                 'missingTags': issue.missing_tags,
                 'notes': issue.notes,
                 'regionName': issue.location,

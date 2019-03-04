@@ -1,290 +1,190 @@
-import logging
 import json
-
-from botocore.exceptions import ClientError
+import logging
 from datetime import datetime, timedelta
 
-from cloud_inquisitor.config import dbconfig
-from cloud_inquisitor.plugins.types.accounts import AWSAccount
+from cinq_auditor_required_tags.utils import s3_removal_policy_exists, s3_removal_lifecycle_policy_exists
+from cloud_inquisitor.constants import ActionStatus
 
-from cinq_auditor_required_tags.exceptions import ResourceKillError, ResourceStopError, ResourceActionError
 from cloud_inquisitor import get_aws_session
-from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS
+from cloud_inquisitor.config import dbconfig
+from cloud_inquisitor.constants import AuditActions, NS_AUDITOR_REQUIRED_TAGS
 from cloud_inquisitor.log import auditlog
-from cloud_inquisitor.plugins.types.resources import EC2Instance
+from cloud_inquisitor.plugins.types.accounts import AWSAccount
 from cloud_inquisitor.plugins.types.enforcements import Enforcement
+from cloud_inquisitor.plugins.types.resources import EC2Instance
 
 logger = logging.getLogger(__name__)
 
 
-def process_action(resource, action, resource_type):
+def process_action(resource, action, action_issuer='unknown'):
     """Process an audit action for a resource, if possible
 
     Args:
         resource (:obj:`Resource`): A resource object to perform the action on
         action (`str`): Type of action to perform (`kill` or `stop`)
-        resource_type (`str`): Type of the resource
-
+        action_issuer (`str`): The issuer of the action
     Returns:
-        `bool` - Returns the result from the action function
+        `ActionStatus`
     """
-    func_action = action_mapper[resource_type][action]
+    func_action = action_mapper[resource.resource_type][action]
     if func_action:
-        session = get_aws_session(AWSAccount(resource.account))
-        client = session.client(
-            action_mapper[resource_type]['service_name'],
+        client = get_aws_session(AWSAccount(resource.account)).client(
+            action_mapper[resource.resource_type]['service_name'],
             region_name=resource.location
         )
-        return func_action(client, resource)
-
-    return False
+        try:
+            action_status, metrics = func_action(client, resource)
+            Enforcement.create(resource.account.account_name, resource.id, action, datetime.now(), metrics)
+        except Exception as ex:
+            action_status = ActionStatus.FAILED
+            logger.error('Failed to apply action {} to {}: {}'.format(action, resource.id, ex))
+        finally:
+            auditlog(
+                event='{}.{}.{}.{}'.format(action_issuer, resource.resource_type, action, action_status),
+                actor=action_issuer,
+                data={
+                    'resource_id': resource.id,
+                    'account_name': resource.account.account_name,
+                    'location': resource.location
+                }
+            )
+            return action_status
+    else:
+        logger.error('Failed to apply action {} to {}: Not supported'.format(action, resource.id))
+        return ActionStatus.FAILED
 
 
 def stop_ec2_instance(client, resource):
     """Stop an EC2 Instance
 
-    This function will attempt to stop a running instance. If the instance is already stopped the function will return
-    False, else True.
+    This function will attempt to stop a running instance.
 
     Args:
         client (:obj:`boto3.session.Session.client`): A boto3 client object
         resource (:obj:`Resource`): The resource object to stop
 
     Returns:
-        `bool`
+        `ActionStatus`
     """
-    try:
-        instance = EC2Instance.get(resource.resource_id)
-        if instance.state not in ('stopped', 'terminated'):
-            instance_type = "Not Found"
-            public_ip = "Not Found"
-            for prop in resource.properties:
-                if prop.name == "instance_type":
-                    instance_type = prop.value
-                if prop.name == "public_ip":
-                    public_ip = prop.value
+    instance = EC2Instance.get(resource.id)
+    if instance.state in ('stopped', 'terminated'):
+        return ActionStatus.IGNORED, {}
 
-            metrics = {"instance_type": instance_type, "public_ip": public_ip}
-
-            client.stop_instances(InstanceIds=[resource.resource_id])
-            logger.debug('Stopped instance {}/{}'.format(resource.account.account_name, resource.resource_id))
-            Enforcement.create(resource.account_id, resource.resource_id, 'STOP',
-                               datetime.now(), metrics)
-            auditlog(
-                event='required_tags.ec2.stop',
-                actor=NS_AUDITOR_REQUIRED_TAGS,
-                data={
-                    'resource_id': resource.resource_id,
-                    'account_name': resource.account.account_name,
-                    'location': resource.location
-                }
-            )
-
-            return True
-        else:
-            return False
-    except Exception as error:
-        logger.info('Failed to stop instance {}/{}: {}'.format(
-            resource.account.account_name,
-            resource.resource_id,
-            error
-        ))
-        raise ResourceStopError('Failed to stop instance {}/{}: {}'.format(
-            resource.account,
-            resource.resource_id,
-            error
-        ))
+    client.stop_instances(InstanceIds=[resource.id])
+    return ActionStatus.SUCCEED, {'instance_type': resource.instance_type, 'public_ip': resource.public_ip}
 
 
 def terminate_ec2_instance(client, resource):
     """Terminate an EC2 Instance
 
-    This function will terminate an EC2 Instance. Returns `True` if succesful, or raises an exception if not
+    This function will terminate an EC2 Instance.
 
     Args:
         client (:obj:`boto3.session.Session.client`): A boto3 client object
         resource (:obj:`Resource`): The resource object to terminate
 
     Returns:
-        `bool` - True if the instance was terminated. Will raise an exception if failed
+        `ActionStatus`
     """
-    try:
-        # Gather instance metrics before termination
-        instance_type = "Not Found"
-        public_ip = "Not Found"
-        for prop in resource.properties:
-            if prop.name == "instance_type":
-                instance_type = prop.value
-            if prop.name == "public_ip":
-                public_ip = prop.value
+    # TODO: Implement disabling of TerminationProtection
+    instance = EC2Instance.get(resource.id)
+    if instance.state == 'terminated':
+        return ActionStatus.IGNORED, {}
+    client.terminate_instances(InstanceIds=[resource.id])
+    return ActionStatus.SUCCEED, {'instance_type': resource.instance_type, 'public_ip': resource.public_ip}
 
-        metrics = {"instance_type": instance_type, "public_ip": public_ip}
 
-        client.modify_instance_attribute(InstanceId=resource.resource_id, Attribute='disableApiTermination', Value='False')
-        client.terminate_instances(InstanceIds=[resource.resource_id])
-        logger.info('Terminated instance {}/{}/{}'.format(
-            resource.account,
-            resource.location,
-            resource.resource_id
-        ))
-        Enforcement.create(resource.account_id, resource.resource_id, 'TERMINATE',
-                           datetime.now(), metrics)
-        auditlog(
-            event='required_tags.ec2.terminate',
-            actor=NS_AUDITOR_REQUIRED_TAGS,
-            data={
-                'resource_id': resource.resource_id,
-                'account_name': resource.account.account_name,
-                'location': resource.location
+def stop_s3_bucket(client, resource):
+    """
+    Stop an S3 bucket from being used
+
+    This function will try to
+        1. Add lifecycle policy to make sure objects inside it will expire
+        2. Block certain access to the bucket
+    """
+
+    bucket_policy = {
+        'Version': '2012-10-17',
+        'Id': 'PutObjPolicy',
+        'Statement': [
+            {
+                'Sid': 'cinqDenyObjectUploads',
+                'Effect': 'Deny',
+                'Principal': '*',
+                'Action': ['s3:PutObject', 's3:GetObject'],
+                'Resource': 'arn:aws:s3:::{}/*'.format(resource.id)
             }
-        )
-        return True
+        ]
+    }
 
-    except Exception as error:
-        logger.info('Failed to kill instance {}/{}/{}: {}'.format(
-            resource.account.account_name,
-            resource.location,
-            resource.resource_id,
-            error
+    s3_removal_lifecycle_policy = {
+        'Rules': [
+            {'Status': 'Enabled',
+             'NoncurrentVersionExpiration': {u'NoncurrentDays': 1},
+             'Filter': {u'Prefix': ''},
+             'Expiration': {
+                 u'Date': datetime.utcnow().replace(
+                     hour=0, minute=0, second=0, microsecond=0
+                 ) + timedelta(days=dbconfig.get('lifecycle_expiration_days', NS_AUDITOR_REQUIRED_TAGS, 3))
+             },
+             'AbortIncompleteMultipartUpload': {u'DaysAfterInitiation': 3},
+             'ID': 'cloudInquisitor'}
+        ]
+    }
+
+    policy_exists = s3_removal_policy_exists(client, resource)
+    lifecycle_policy_exists = s3_removal_lifecycle_policy_exists(client, resource)
+    if policy_exists and lifecycle_policy_exists:
+        return ActionStatus.IGNORED, {}
+
+    if not policy_exists:
+        client.put_bucket_policy(Bucket=resource.id, Policy=json.dumps(bucket_policy))
+        logger.info('Added policy to prevent putObject in s3 bucket {} in {}'.format(
+            resource.id,
+            resource.account.account_name
         ))
-        raise ResourceKillError('Failed to kill instance {}/{}/{}: {}'.format(
-            resource.account.account_name,
-            resource.location,
-            resource.resource_id,
-            error
+
+    if not lifecycle_policy_exists:
+        # Grab S3 Metrics before lifecycle policies start removing objects
+
+        client.put_bucket_lifecycle_configuration(
+            Bucket=resource.id,
+            LifecycleConfiguration=s3_removal_lifecycle_policy
+        )
+        logger.info('Added policy to delete bucket contents in s3 bucket {} in {}'.format(
+            resource.id,
+            resource.account.account_name
         ))
+
+    return ActionStatus.SUCCEED, resource.metrics()
 
 
 def delete_s3_bucket(client, resource):
-    try:
-        session = get_aws_session(AWSAccount(resource.account))
-        bucket = session.resource('s3', resource.location).Bucket(resource.resource_id)
-        days_until_expiry = dbconfig.get('lifecycle_expiration_days', NS_AUDITOR_REQUIRED_TAGS, 3)
-        # Separate rule for Object Markers is needed and can't be combined into a single rule per AWS API
-        lifecycle_policy = {
-            'Rules': [
-                {'Status': 'Enabled',
-                 'NoncurrentVersionExpiration': {u'NoncurrentDays': days_until_expiry},
-                 'Filter': {u'Prefix': ''},
-                 'Expiration': {
-                     'Date': datetime.utcnow().replace(
-                         hour=0, minute=0, second=0, microsecond=0
-                     ) + timedelta(days=days_until_expiry)
-                 },
-                 'AbortIncompleteMultipartUpload': {u'DaysAfterInitiation': days_until_expiry},
-                 'ID': 'cinqRemoveObjectsAndVersions'},
+    """Delete an S3 bucket
 
-                {'Status': 'Enabled',
-                 'Filter': {u'Prefix': ''},
-                 'Expiration': {
-                     'ExpiredObjectDeleteMarker': True
-                 },
-                 'ID': 'cinqRemoveDeletedExpiredMarkers'}
-            ]
-        }
+    This function will try to delete an S3 bucket
 
-        bucket_policy = {
-            'Version': '2012-10-17',
-            'Id': 'PutObjPolicy',
-            'Statement': [
-                {'Sid': 'cinqDenyObjectUploads',
-                 'Effect': 'Deny',
-                 'Principal': '*',
-                 'Action': ['s3:PutObject', 's3:GetObject'],
-                 'Resource': 'arn:aws:s3:::{}/*'.format(resource.resource_id)
-                 }
-            ]
-        }
+    Args:
+        client (:obj:`boto3.session.Session.client`): A boto3 client object
+        resource (:obj:`Resource`): The resource object to terminate
 
-        metrics = {'Unavailable': 'Unavailable'}
-        for prop in resource.properties:
-            if prop.name == "metrics":
-                metrics = prop.value
+    Returns:
+        `ActionStatus`
+    """
 
-        objects = list(bucket.objects.limit(count=1))
-        versions = list(bucket.object_versions.limit(count=1))
-        if not objects and not versions:
-            bucket.delete()
-            logger.info('Deleted s3 bucket {} in {}'.format(resource.resource_id, resource.account))
-            Enforcement.create(resource.account_id, resource.resource_id, 'DELETED',
-                               datetime.now(), metrics)
-            auditlog(
-                event='required_tags.s3.terminate',
-                actor=NS_AUDITOR_REQUIRED_TAGS,
-                data={
-                    'resource_id': resource.resource_id,
-                    'account_name': resource.account.account_name,
-                    'location': resource.location
-                }
-            )
-            return True
-
-        else:
-            try:
-                rules = bucket.LifecycleConfiguration().rules
-                for rule in rules:
-                    if rule['ID'] == 'cinqRemoveDeletedExpiredMarkers':
-                        rules_exists = True
-                        break
-                else:
-                    rules_exists = False
-            except ClientError:
-                rules_exists = False
-
-            try:
-                current_bucket_policy = bucket.Policy().policy
-            except ClientError as error:
-                if error.response['Error']['Code'] == 'NoSuchBucketPolicy':
-                    current_bucket_policy = 'missing'
-
-            try:
-                if not rules_exists:
-                    # Grab S3 Metrics before lifecycle policies start removing objects
-
-                    bucket.LifecycleConfiguration().put(LifecycleConfiguration=lifecycle_policy)
-                    logger.info('Added policies to delete bucket contents in s3 bucket {} in {}'.format(
-                        resource.resource_id,
-                        resource.account
-                    ))
-                    Enforcement.create(resource.account_id, resource.resource_id, 'LIFECYCLE_APPLIED',
-                                       datetime.now(), metrics)
-
-                if 'cinqDenyObjectUploads' not in current_bucket_policy:
-                    bucket.Policy().put(Policy=json.dumps(bucket_policy))
-                    logger.info('Added policy to prevent putObject in s3 bucket {} in {}'.format(
-                        resource.resource_id,
-                        resource.account
-                    ))
-
-            except ClientError as error:
-                logger.error(
-                    'Problem applying the bucket policy or lifecycle configuration to bucket {} / account {} / {}'
-                    .format(resource.resource_id, resource.account_id, error.response['Error']['Code']))
-
-            if rules_exists and 'cinqDenyObjectUploads' in current_bucket_policy:
-                # We're waiting for the lifecycle policy to delete data
-                raise ResourceActionError({'msg': 'wait_for_deletion'})
-
-    except ResourceActionError as error:
-        raise ResourceActionError(error)
-    except Exception as error:
-        logger.info(
-            'Failed to delete s3 bucket {} in {}, error is {}'.format(resource.resource_id, resource.account, error))
-
-        raise ResourceKillError(
-            'Failed to delete s3 bucket {} in {}. Reason: {}'.format(resource.resource_id, resource.account, error)
-        )
+    client.delete_bucket(Bucket=resource.id)
+    return ActionStatus.SUCCEED, resource.metrics()
 
 
 action_mapper = {
     'aws_ec2_instance': {
         'service_name': 'ec2',
-        'stop': stop_ec2_instance,
-        'kill': terminate_ec2_instance
+        AuditActions.STOP: stop_ec2_instance,
+        AuditActions.REMOVE: terminate_ec2_instance
     },
     'aws_s3_bucket': {
         'service_name': 's3',
-        'stop': None,
-        'kill': delete_s3_bucket
+        AuditActions.STOP: stop_s3_bucket,
+        AuditActions.REMOVE: delete_s3_bucket
     }
 }

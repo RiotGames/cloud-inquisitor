@@ -1,14 +1,14 @@
+import datetime
 import time
-from contextlib import suppress
 from datetime import datetime
 
 import pytimeparse
-from cinq_auditor_required_tags.exceptions import ResourceActionError
 from cinq_auditor_required_tags.providers import process_action
+from cloud_inquisitor.constants import ActionStatus
 
 from cloud_inquisitor import CINQ_PLUGINS
 from cloud_inquisitor.config import dbconfig, ConfigOption
-from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, NS_GOOGLE_ANALYTICS, NS_EMAIL, AuditActions
+from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, NS_GOOGLE_ANALYTICS, NS_EMAIL, AuditActions, GDPR_COMPLIANCE_TAG_VALUES, MAX_AGE_TAG_VALUES, GDPR_TAGS
 from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseAuditor
 from cloud_inquisitor.plugins.types.issues import RequiredTagsIssue
@@ -59,7 +59,8 @@ class RequiredTagsAuditor(BaseAuditor):
         ConfigOption('permanent_recipient', [], 'array', 'List of email addresses to receive all alerts'),
         ConfigOption('required_tags', ['owner', 'accounting', 'name'], 'array', 'List of required tags'),
         ConfigOption('lifecycle_expiration_days', 3, 'int',
-                     'How many days we should set in the bucket policy for non-empty S3 buckets removal')
+                     'How many days we should set in the bucket policy for non-empty S3 buckets removal'),
+        ConfigOption('gdpr_accounts', [], 'array', 'List of accounts requiring GDPR compliance')
     )
 
     def __init__(self):
@@ -83,6 +84,11 @@ class RequiredTagsAuditor(BaseAuditor):
             resource_type.resource_type_id: resource_type.resource_type
             for resource_type in db.ResourceType.find()
         }
+        self.gdpr_accounts = dbconfig.get('gdpr_accounts', self.ns, [])
+        self.resource_classes = {resource.resource_type: resource for resource in map(
+            lambda plugin: plugin.load(),
+            CINQ_PLUGINS['cloud_inquisitor.plugins.types']['plugins']
+        )}
 
     def run(self, *args, **kwargs):
         known_issues, new_issues, fixed_issues = self.get_resources()
@@ -108,14 +114,10 @@ class RequiredTagsAuditor(BaseAuditor):
     def get_known_resources_missing_tags(self):
         non_compliant_resources = {}
         audited_types = dbconfig.get('audit_scope', NS_AUDITOR_REQUIRED_TAGS, {'enabled': []})['enabled']
-        resource_types = {resource.resource_type: resource for resource in map(
-            lambda plugin: plugin.load(),
-            CINQ_PLUGINS['cloud_inquisitor.plugins.types']['plugins']
-        )}
 
         try:
             # resource_info is a tuple with the resource typename as [0] and the resource class as [1]
-            resources = filter(lambda resource_info: resource_info[0] in audited_types, resource_types.items())
+            resources = filter(lambda resource_info: resource_info[0] in audited_types, self.resource_classes.items())
             for resource_name, resource_class in resources:
                 for resource_id, resource in resource_class.get_all().items():
                     missing_tags, notes = self.check_required_tags_compliance(resource)
@@ -271,7 +273,7 @@ class RequiredTagsAuditor(BaseAuditor):
             'action_description': None,
             'last_alert': issue.last_alert,
             'issue': issue,
-            'resource': issue.resource,
+            'resource': self.resource_classes[self.resource_types[issue.resource.resource_type_id]](issue.resource),
             'owners': [],
             'stop_after': issue_alert_schedule['stop'],
             'remove_after': issue_alert_schedule['remove'],
@@ -328,68 +330,94 @@ class RequiredTagsAuditor(BaseAuditor):
         """
         notices = {}
         notification_contacts = {}
-        try:
-            for action in actions:
-                resource = action['resource']
+        for action in actions:
+            resource = action['resource']
+            action_status = ActionStatus.SUCCEED
 
-                try:
-                    with suppress(ResourceActionError):
-                        if action['action'] == AuditActions.REMOVE:
-                            if process_action(resource, 'kill', self.resource_types[resource.resource_type_id]):
-                                db.session.delete(action['issue'].issue)
+            try:
+                if action['action'] == AuditActions.REMOVE:
+                    action_status = process_action(
+                        resource,
+                        AuditActions.REMOVE,
+                        self.ns
+                    )
+                    if action_status == ActionStatus.SUCCEED:
+                        db.session.delete(action['issue'].issue)
 
-                        elif action['action'] == AuditActions.STOP:
-                            if process_action(resource, 'stop', self.resource_types[resource.resource_type_id]):
-                                action['issue'].update({
-                                    'missing_tags': action['missing_tags'],
-                                    'notes': action['notes'],
-                                    'last_alert': action['last_alert'],
-                                    'state': action['action']
-                                })
+                elif action['action'] == AuditActions.STOP:
+                    action_status = process_action(
+                            resource,
+                            AuditActions.STOP,
+                            self.ns
+                    )
+                    if action_status == ActionStatus.SUCCEED:
+                        action['issue'].update({
+                            'missing_tags': action['missing_tags'],
+                            'notes': action['notes'],
+                            'last_alert': action['last_alert'],
+                            'state': action['action']
+                        })
 
-                            else:
-                                # Resource is already stopped, so we are gonna skip the notification for it
-                                continue
+                elif action['action'] == AuditActions.FIXED:
+                    db.session.delete(action['issue'].issue)
 
-                        elif action['action'] == AuditActions.FIXED:
-                            db.session.delete(action['issue'].issue)
+                elif action['action'] == AuditActions.ALERT:
+                    action['issue'].update({
+                        'missing_tags': action['missing_tags'],
+                        'notes': action['notes'],
+                        'last_alert': action['last_alert'],
+                        'state': action['action']
+                    })
 
-                        elif action['action'] == AuditActions.ALERT:
-                            action['issue'].update({
-                                'missing_tags': action['missing_tags'],
-                                'notes': action['notes'],
-                                'last_alert': action['last_alert'],
-                                'state': action['action']
-                            })
-                        db.session.commit()
+                db.session.commit()
 
-                        for owner in action['owners'] + self.permanent_emails:
-                            if owner['value'] not in notification_contacts:
-                                contact = NotificationContact(type=owner['type'], value=owner['value'])
-                                notification_contacts[owner['value']] = contact
-                                notices[contact] = {
-                                    'fixed': [],
-                                    'not_fixed': []
-                                }
-                            else:
-                                contact = notification_contacts[owner['value']]
+                if action_status == ActionStatus.SUCCEED:
+                    for owner in [
+                        dict(t) for t in {tuple(d.items()) for d in (action['owners'] + self.permanent_emails)}
+                    ]:
+                        if owner['value'] not in notification_contacts:
+                            contact = NotificationContact(type=owner['type'], value=owner['value'])
+                            notification_contacts[owner['value']] = contact
+                            notices[contact] = {
+                                'fixed': [],
+                                'not_fixed': []
+                            }
+                        else:
+                            contact = notification_contacts[owner['value']]
 
-                            if action['action'] == AuditActions.FIXED:
-                                notices[contact]['fixed'].append(action)
-                            else:
-                                notices[contact]['not_fixed'].append(action)
-
-                except Exception as ex:
-                    self.log.exception('Unexpected error while processing resource {}/{}/{}/{}'.format(
-                        action['resource'].account.account_name,
-                        action['resource'].resource_id,
-                        action['resource'],
-                        ex
-                    ))
-        finally:
-            db.session.rollback()
+                        if action['action'] == AuditActions.FIXED:
+                            notices[contact]['fixed'].append(action)
+                        else:
+                            notices[contact]['not_fixed'].append(action)
+            except Exception as ex:
+                self.log.exception('Unexpected error while processing resource {}/{}/{}/{}'.format(
+                    action['resource'].account.account_name,
+                    action['resource'].id,
+                    action['resource'],
+                    ex
+                ))
 
         return notices
+
+    def validate_tag(self, key, value):
+        """Check whether a tag value is valid
+
+        Args:
+            key: A tag key
+            value: A tag value
+
+        Returns:
+            `(True or False)`
+            A boolean indicating whether or not the value is valid
+        """
+        if key == 'owner':
+            return validate_email(value, self.partial_owner_match)
+        elif key == 'gdpr_compliance':
+            return value in GDPR_COMPLIANCE_TAG_VALUES
+        elif key == 'max-age' or key == 'data_retention':
+            return value in MAX_AGE_TAG_VALUES
+        else:
+            return True
 
     def check_required_tags_compliance(self, resource):
         """Check whether a resource is compliance
@@ -418,20 +446,32 @@ class RequiredTagsAuditor(BaseAuditor):
         if self.audit_ignore_tag.lower() in resource_tags:
             return missing_tags, notes
 
+        required_tags = list(self.required_tags)
+
+        # Add GDPR tags to required tags if the account must be GDPR compliant
+        if resource.account.account_name in self.gdpr_accounts:
+            required_tags.extend(GDPR_TAGS)
+
         '''
         # Do not audit this resource if it is still in grace period
         if (datetime.utcnow() - resource.resource_creation_date).total_seconds() // 3600 < self.grace_period:
             return missing_tags, notes
         '''
 
-        # Check if the resource is missing required tags
-        for key in [tag.lower() for tag in self.required_tags]:
+        # Check if the resource is missing required tags or has invalid tag values
+        for key in [tag.lower() for tag in required_tags]:
             if key not in resource_tags:
                 missing_tags.append(key)
-
-            elif key == 'owner' and not validate_email(resource_tags[key], self.partial_owner_match):
+            elif not self.validate_tag(key, resource_tags[key]):
                 missing_tags.append(key)
-                notes.append('Owner tag is not a valid email address')
+                notes.append('{} tag is not valid'.format(key))
+
+        # Support deprecated "data_retention" tag as a replacement for "max-age"
+        if 'max-age' in missing_tags and 'data_retention' in resource_tags:
+            missing_tags.remove('max-age')
+            if not self.validate_tag('data_retention', resource_tags['data_retention']):
+                missing_tags.append('data_retention')
+                notes.append('data_retention tag is not valid')
 
         return missing_tags, notes
 

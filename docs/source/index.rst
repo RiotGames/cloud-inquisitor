@@ -12,10 +12,8 @@ Getting started
     :maxdepth: 2
 
     quickstart
-    local-development/index
-    userguide
-    overview/index
-    contributing
+    manual/index
+    contributing/index
     contributors
 
 External resources

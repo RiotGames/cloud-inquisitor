@@ -16,7 +16,7 @@ By default, the front-end dasbhoard shows:
 
 Below is a sample screenshot showing what the dashboard looks like:
 
-.. image:: images/cinq_dashboard.png
+.. image:: /images/cinq_dashboard.png
 
 Browse
 ------
@@ -28,9 +28,9 @@ On the left-hand side of the UI, you are able to directly examine raw data:
 * DNS - shows all the dns data that Cloud Inquisitor possess (shown below, first screenshot)
 * Search - this gives you the ability to search for instances across the Cloud Inquisitor database. The ``search`` page has help functionality within the page as shown below (second screenshot)
 
-.. image:: images/cinq_dns_collector.png
+.. image:: /images/cinq_dns_collector.png
 
-.. image:: images/cinq_search.png
+.. image:: /images/cinq_search.png
 
 Administration
 --------------
@@ -52,7 +52,7 @@ In this section you can review the current accounts that ``Cloud Inquisitor`` is
 For example, to add a new account, click the floating menu button in the bottom right hand side of the window 
 and select the "+" as shown below:
 
-.. image:: images/cinq_account_add.png
+.. image:: /images/cinq_account_add.png
 
 
 Config

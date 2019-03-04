@@ -57,6 +57,16 @@ function VpcListController(MetadataService, Utils) {
                 searchable: true,
                 selected: vm.params.vpcId
             },
+            isDefault: {
+                type: 'select',
+                label: 'VPC Type',
+                multiple: true,
+                values: {
+                    'default' : 'true',
+                    'user-defined' : 'false'
+                },
+                selected: vm.params.isDefault
+            },
             cidrV4: {
                 type: 'select',
                 label: 'IPv4 Prefix',
@@ -87,6 +97,7 @@ function VpcListController(MetadataService, Utils) {
             accounts: [],
             regions: [],
             vpcId: undefined,
+            isDefault: undefined,
             cidrV4: undefined,
             vpcFlowLogsStatus: undefined
 

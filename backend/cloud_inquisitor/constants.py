@@ -41,6 +41,12 @@ class AuditActions:
     STOP = 'STOP'
 
 
+class ActionStatus:
+    SUCCEED = 'succeed'
+    FAILED = 'failed'
+    IGNORED = 'ignored'
+
+
 # Collectors
 NS_COLLECTOR_EC2 = 'collector_ec2'
 
@@ -79,6 +85,9 @@ ROLE_USER = 'User'
 # region General variables
 UNAUTH_MESSAGE = 'Unauthorized, please log in'
 MSG_INVALID_USER_OR_PASSWORD = 'Invalid user or password provided'
+GDPR_TAGS = ['gdpr_compliance', 'max-age']
+GDPR_COMPLIANCE_TAG_VALUES = ['Not set', 'pending', 'v1']
+MAX_AGE_TAG_VALUES = ['Not set', '45d', '60d', '90d', '180d', 'unlimited']
 # endregion
 
 # region Default app settings

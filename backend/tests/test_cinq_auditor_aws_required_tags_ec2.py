@@ -1,7 +1,7 @@
 import datetime
 
 from cloud_inquisitor.config import dbconfig, DBCJSON
-from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS
+from cloud_inquisitor.constants import NS_AUDITOR_REQUIRED_TAGS, AuditActions
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
 from tests.libs.util_cinq import aws_get_client, setup_test_aws, collect_resources
 
@@ -56,4 +56,22 @@ def test_basic_ops(cinq_test_service):
     notices = auditor._cinq_test_notices
 
     assert recipient in notices
-    assert notices[recipient]['not_fixed'][0]['resource'].resource_id == resource['Instances'][0]['InstanceId']
+    assert notices[recipient]['not_fixed'][0]['resource'].id == resource['Instances'][0]['InstanceId']
+
+    # Test 3 --- Test if auditor can terminate ec2 correctly
+    cinq_test_service.modify_issue(
+        auditor._cinq_test_notices[recipient]['not_fixed'][0]['issue'].id,
+        'created',
+        0
+    )
+
+    auditor.run()
+    notices = auditor._cinq_test_notices
+
+    ''' Check if the action is correct'''
+    assert notices[recipient]['not_fixed'][0]['action'] == AuditActions.REMOVE
+
+    ''' Check if the instance is terminated '''
+    assert client.describe_instance_status(
+        InstanceIds=[notices[recipient]['not_fixed'][0]['resource'].id]
+    )['InstanceStatuses'][0]['InstanceState']['Name'] == 'terminated'
