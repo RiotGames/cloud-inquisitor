@@ -26,6 +26,7 @@ class RequiredTagsAuditor(BaseAuditor):
     collect_only = None
     start_delay = 0
     options = (
+        ConfigOption('action_taker_arn', '', 'string', 'Lambda entry point for action taker'),
         ConfigOption(
             'alert_settings', {
                 '*': {
@@ -42,7 +43,16 @@ class RequiredTagsAuditor(BaseAuditor):
             'audit_scope',
             # max_items is 99 here, but is pulled during runtime and adjusted to the
             #  max number of available resources it doesn't really matter what we put
-            {'enabled': [], 'available': ['aws_ec2_instance'], 'max_items': 99, 'min_items': 0},
+            {
+                'enabled': [],
+                'available': [
+                    'aws_ec2_instance',
+                    'aws_s3_bucket',
+                    'aws_rds_instance'
+                ],
+                'max_items': 99,
+                'min_items': 0
+            },
             'choice',
             'Select the services you would like to audit'
         ),
