@@ -172,7 +172,8 @@ def delete_s3_bucket(client, resource):
         `ActionStatus`
     """
 
-    client.delete_bucket(Bucket=resource.id)
+    if dbconfig.get('enable_delete_s3_buckets', NS_AUDITOR_REQUIRED_TAGS, False):
+        client.delete_bucket(Bucket=resource.id)
     return ActionStatus.SUCCEED, resource.metrics()
 
 
