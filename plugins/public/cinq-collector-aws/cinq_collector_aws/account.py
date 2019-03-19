@@ -8,7 +8,7 @@ from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import InquisitorError
 from cloud_inquisitor.plugins import BaseCollector, CollectorType
 from cloud_inquisitor.plugins.types.accounts import AWSAccount
-from cloud_inquisitor.plugins.types.resources import S3Bucket, CloudFrontDist, DNSZone, DNSRecord
+from cloud_inquisitor.plugins.types.resources import S3Bucket, CloudFrontDist, DNSZone, DNSRecord, RDS
 from cloud_inquisitor.utils import get_resource_id
 from cloud_inquisitor.wrappers import retry
 
@@ -21,10 +21,19 @@ class AWSAccountCollector(BaseCollector):
     s3_collection_enabled = dbconfig.get('s3_bucket_collection', ns, True)
     cloudfront_collection_enabled = dbconfig.get('cloudfront_collection', ns, True)
     route53_collection_enabled = dbconfig.get('route53_collection', ns, True)
+    rds_collection_enabled = dbconfig.get('rds_collection', ns, True)
+    rds_function_name = db.config.get('rds_function_name', ns, True)
+    rds_role = dbconfig.get('role_name', 'default')
+    rds_collector_account = db.config.get('rds_collector_account', ns, True)
+    rds_collector_region = db.config.get('rds_collector_region', ns, True)
     options = (
         ConfigOption('s3_bucket_collection', True, 'bool', 'Enable S3 Bucket Collection'),
         ConfigOption('cloudfront_collection', True, 'bool', 'Enable Cloudfront DNS Collection'),
-        ConfigOption('route53_collection', True, 'bool', 'Enable Route53 DNS Collection')
+        ConfigOption('route53_collection', True, 'bool', 'Enable Route53 DNS Collection'),
+        ConfigOption('rds_collection', True, 'bool', 'Enable collection of RDS Databases'),
+        ConfigOption('rds_function_name', True, 'bool', 'Name of Lambda Function to execute'),
+        ConfigOption('rds_collector_account', True, 'string', 'Account RDS Lambda Collector lives within'),
+        ConfigOption('rds_collector_region', True, 'string', 'AWS Region RDS Lambda Collector lives within')
     )
 
     def __init__(self, account):
@@ -52,12 +61,85 @@ class AWSAccountCollector(BaseCollector):
             if self.route53_collection_enabled:
                 self.update_route53()
 
+            if self.rds_collection_enabled:
+                self.update_rds_databases()
+
         except Exception as ex:
             self.log.exception(ex)
             raise
 
         finally:
             del self.session
+
+    @retry
+    def update_rds_databases(self):
+        """Update list of RDS Databases for the account / region
+
+        Returns:
+            `None`
+        """
+        self.log.debug('Updating RDS Databases for {}'.format(
+            self.account.account_name
+        ))
+        # All RDS resources are polled via a Lambda collector in a central account
+        rds_session = get_aws_session(self.rds_collector_account)
+        # Existing RDS resources come from database
+        existing_rds_dbs = RDS.get_all(self.account)
+
+        try:
+            # Special session pinned to a single account for Lambda invocation so we
+            # don't have to manage lambdas in every account & region
+            lambda_client = rds_session.client('lambda', region_name=self.rds_collector_region)
+
+            # The AWS Config Lambda will collect all the non-compliant resources for all regions
+            # within the account
+            input_payload = {"AccountId": self.account.account_id,
+                             "RoleName": self.rds_role
+                             }
+
+            rds_dbs = lambda_client.invoke(FunctionName=self.rds_function_name, InvocationType='Event',
+                                           PayLoad=input_payload
+                                           )
+
+            for db in rds_dbs.values:
+                tags = {t['Key']: t['Value'] for t in db.tags or {}}
+                properties = {
+                    'metrics': {db.metrics},
+                    'tags': tags
+                }
+                if db.id in existing_rds_dbs:
+                    rds = existing_rds_dbs[db.id]
+                    if rds.update(db, properties):
+                        self.log.debug('Change detected for RDS instance {}/{} '
+                                       .format(db.id, properties))
+                else:
+                    RDS.create(
+                        db.id,
+                        account_id=self.account.account_id,
+                        location=db.location,
+                        properties=properties,
+                        tags=tags
+                    )
+            db.session.commit()
+
+            # Removal of RDS instances
+            rk = set(rds_dbs.keys())
+            erk = set(existing_rds_dbs.keys())
+
+            for resource_id in erk - rk:
+                db.session.delete(existing_rds_dbs[resource_id].resource)
+                self.log.debug('Removed RDS instances {}/{}'.format(
+                    self.account.account_name,
+                    resource_id
+                ))
+            db.session.commit()
+
+        except Exception as e:
+            self.log.exception('There was a problem during VPC collection for {}/{}'.format(
+                self.account.account_name,
+                e
+            ))
+            db.session.rollback()
 
     @retry
     def update_s3buckets(self):
@@ -82,7 +164,7 @@ class AWSAccountCollector(BaseCollector):
                         bucket_region = 'us-east-1'
 
                 except ClientError as e:
-                    self.log.error('Could not get bucket location..bucket possibly removed / {}'.format(e))
+                    self.log.info('Could not get bucket location..bucket possibly removed / {}'.format(e))
                     bucket_region = 'unavailable'
 
                 try:
@@ -92,8 +174,8 @@ class AWSAccountCollector(BaseCollector):
                     if e.response['Error']['Code'] == 'NoSuchBucketPolicy':
                         bucket_policy = None
                     else:
-                        self.log.error('There was a problem collecting bucket policy for bucket {} on account {}, {}'
-                                       .format(data.name, self.account, e.response))
+                        self.log.info('There was a problem collecting bucket policy for bucket {} on account {}, {}'
+                                      .format(data.name, self.account, e.response))
                         bucket_policy = 'cinq cannot poll'
 
                 try:
@@ -103,8 +185,8 @@ class AWSAccountCollector(BaseCollector):
                     if e.response['Error']['Code'] == 'NoSuchWebsiteConfiguration':
                         website_enabled = 'Disabled'
                     else:
-                        self.log.error('There was a problem collecting website config for bucket {} on account {}'
-                                       .format(data.name, self.account))
+                        self.log.info('There was a problem collecting website config for bucket {} on account {}'
+                                      .format(data.name, self.account))
                         website_enabled = 'cinq cannot poll'
 
                 try:
@@ -123,7 +205,7 @@ class AWSAccountCollector(BaseCollector):
                     metrics = {'size': bucket_size, 'object_count': bucket_obj_count}
 
                 except Exception as e:
-                    self.log.error('Could not retrieve bucket statistics / {}'.format(e))
+                    self.log.info('Could not retrieve bucket statistics / {}'.format(e))
                     metrics = {'found': False}
 
                 properties = {

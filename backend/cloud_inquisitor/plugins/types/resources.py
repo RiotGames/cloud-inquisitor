@@ -1452,3 +1452,58 @@ class VPC(BaseResource):
                 updated |= self.delete_tag(key)
 
         return updated
+
+
+class RDSInstance(BaseResource):
+    """RDS Object"""
+    resource_type = 'aws_rds_instance'
+    resource_name = 'RDS'
+
+    # region Object properties
+    @property
+    def metrics(self):
+        """ Returns RDS Metrics for CINQ Enforcement
+
+            Example:
+            {
+              "publicly_accessible": False,
+              "db_instance_class": "m4.large",
+              "multi_az": True,
+              "storage_type": "gp2",
+              "allocated_storage": "20"
+            }
+
+        Returns:
+            `json`
+
+        """
+        return self.get_property('metrics').value
+
+    def update(self, data, properties):
+        """Updates the object information based on live data, if there were any changes made. Any changes will be
+        automatically applied to the object, but will not be automatically persisted. You must manually call
+        `db.session.add(RDS)` on the object.
+
+        Args:
+            data (bunch): Data fetched from AWS API
+            properties (bunch): Properties of the RDS DB Instance as fetched from AWS API
+
+        Returns:
+            True if there were any changes to the object, else false
+        """
+
+        updated = self.set_property('metrics', data.metrics)
+
+        tags = {x['Key']: x['Value'] for x in data.tags or {}}
+        existing_tags = {x.key: x for x in self.tags}
+
+        # Check for new tags
+        for key, value in list(tags.items()):
+            updated |= self.set_tag(key, value)
+
+        # Check for updated or removed tags
+        for key in list(existing_tags.keys()):
+            if key not in tags:
+                updated |= self.delete_tag(key)
+
+        return updated
