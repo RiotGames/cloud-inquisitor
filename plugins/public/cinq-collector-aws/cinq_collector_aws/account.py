@@ -31,9 +31,10 @@ class AWSAccountCollector(BaseCollector):
         ConfigOption('cloudfront_collection', True, 'bool', 'Enable Cloudfront DNS Collection'),
         ConfigOption('route53_collection', True, 'bool', 'Enable Route53 DNS Collection'),
         ConfigOption('rds_collection', True, 'bool', 'Enable collection of RDS Databases'),
-        ConfigOption('rds_function_name', True, 'bool', 'Name of Lambda Function to execute'),
-        ConfigOption('rds_collector_account', True, 'string', 'Account RDS Lambda Collector lives within'),
-        ConfigOption('rds_collector_region', True, 'string', 'AWS Region RDS Lambda Collector lives within')
+        ConfigOption('rds_function_name', True, 'bool', 'Name of RDS Lambda Collector Function to execute'),
+        ConfigOption('rds_role', True, 'string', 'Name of IAM role to assume in TARGET accounts'),
+        ConfigOption('rds_collector_account', True, 'string', 'AccountID where RDS Lambda Collector runs'),
+        ConfigOption('rds_collector_region', True, 'string', 'AWS Region where RDS Lambda Collector runs')
     )
 
     def __init__(self, account):
