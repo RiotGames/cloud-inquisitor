@@ -8,7 +8,7 @@ from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import InquisitorError
 from cloud_inquisitor.plugins import BaseCollector, CollectorType
 from cloud_inquisitor.plugins.types.accounts import AWSAccount
-from cloud_inquisitor.plugins.types.resources import S3Bucket, CloudFrontDist, DNSZone, DNSRecord, RDS
+from cloud_inquisitor.plugins.types.resources import S3Bucket, CloudFrontDist, DNSZone, DNSRecord, RDSInstance
 from cloud_inquisitor.utils import get_resource_id
 from cloud_inquisitor.wrappers import retry
 
@@ -102,22 +102,22 @@ class AWSAccountCollector(BaseCollector):
                                            PayLoad=input_payload
                                            )
 
-            for db in rds_dbs.values:
-                tags = {t['Key']: t['Value'] for t in db.tags or {}}
+            for db_instance in rds_dbs.values:
+                tags = {t['Key']: t['Value'] for t in db_instance.tags or {}}
                 properties = {
-                    'metrics': {db.metrics},
+                    'metrics': db_instance.metrics,
                     'tags': tags
                 }
-                if db.id in existing_rds_dbs:
-                    rds = existing_rds_dbs[db.id]
-                    if rds.update(db, properties):
+                if db_instance.id in existing_rds_dbs:
+                    rds = existing_rds_dbs[db_instance.id]
+                    if rds.update(db_instance, properties):
                         self.log.debug('Change detected for RDS instance {}/{} '
-                                       .format(db.id, properties))
+                                       .format(db_instance.id, properties))
                 else:
                     RDS.create(
-                        db.id,
+                        db_instance.id,
                         account_id=self.account.account_id,
-                        location=db.location,
+                        location=db_instance.location,
                         properties=properties,
                         tags=tags
                     )
