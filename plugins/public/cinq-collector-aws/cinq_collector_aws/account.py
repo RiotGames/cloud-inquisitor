@@ -22,10 +22,10 @@ class AWSAccountCollector(BaseCollector):
     cloudfront_collection_enabled = dbconfig.get('cloudfront_collection', ns, True)
     route53_collection_enabled = dbconfig.get('route53_collection', ns, True)
     rds_collection_enabled = dbconfig.get('rds_collection', ns, True)
-    rds_function_name = db.config.get('rds_function_name', ns, True)
+    rds_function_name = dbconfig.get('rds_function_name', ns, True)
     rds_role = dbconfig.get('role_name', 'default')
-    rds_collector_account = db.config.get('rds_collector_account', ns, True)
-    rds_collector_region = db.config.get('rds_collector_region', ns, True)
+    rds_collector_account = dbconfig.get('rds_collector_account', ns, True)
+    rds_collector_region = dbconfig.get('rds_collector_region', ns, True)
     options = (
         ConfigOption('s3_bucket_collection', True, 'bool', 'Enable S3 Bucket Collection'),
         ConfigOption('cloudfront_collection', True, 'bool', 'Enable Cloudfront DNS Collection'),
