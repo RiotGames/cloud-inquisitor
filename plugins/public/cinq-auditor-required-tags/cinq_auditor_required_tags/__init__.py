@@ -53,7 +53,7 @@ class RequiredTagsAuditor(BaseAuditor):
         ConfigOption('email_subject', 'Required tags audit notification', 'string',
                      'Subject of the email notification'),
         ConfigOption('enabled', False, 'bool', 'Enable the Required Tags auditor'),
-        ConfigOption('enable_delete_s3_buckets', False, 'bool',
+        ConfigOption('enable_delete_s3_buckets', True, 'bool',
                      'Enable actual S3 bucket deletion. This might cause domain hijacking'),
         ConfigOption('grace_period', 4, 'int', 'Only audit resources X minutes after being created'),
         ConfigOption('interval', 30, 'int', 'How often the auditor executes, in minutes.'),
