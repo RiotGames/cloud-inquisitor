@@ -49,7 +49,7 @@ def get_aws_session(account):
     from cloud_inquisitor.plugins.types.accounts import AWSAccount
 
     if not isinstance(account, AWSAccount):
-        raise InquisitorError('Non AWSAccount  passed to get_aws_session, got {}'.format(account.__class__.__name__))
+        raise InquisitorError('Non AWSAccount passed to get_aws_session, got {}'.format(account.__class__.__name__))
 
     # If no keys are on supplied for the account, use sts.assume_role instead
     session = get_local_aws_session()

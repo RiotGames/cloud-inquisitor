@@ -1492,9 +1492,9 @@ class RDSInstance(BaseResource):
             True if there were any changes to the object, else false
         """
 
-        updated = self.set_property('metrics', data.metrics)
+        updated = self.set_property('metrics', properties['metrics'])
 
-        tags = {x['Key']: x['Value'] for x in data.tags or {}}
+        tags = {x['Key']: x['Value'] for x in data['tags'] or {}}
         existing_tags = {x.key: x for x in self.tags}
 
         # Check for new tags
