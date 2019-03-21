@@ -27,7 +27,7 @@ class AWSAccountCollector(BaseCollector):
     rds_role = dbconfig.get('role_name', 'default')
     rds_collector_account = dbconfig.get('rds_collector_account', ns, True)
     rds_collector_region = dbconfig.get('rds_collector_region', ns, True)
-    rds_config_rule_name = dbconfig.get('rds_configrule_name', ns, True)
+    rds_config_rule_name = dbconfig.get('rds_config_rule_name', ns, True)
     options = (
         ConfigOption('s3_bucket_collection', True, 'bool', 'Enable S3 Bucket Collection'),
         ConfigOption('cloudfront_collection', True, 'bool', 'Enable Cloudfront DNS Collection'),
