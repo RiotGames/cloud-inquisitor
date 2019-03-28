@@ -192,6 +192,11 @@ def stop_rds_instance(client, resource):
         Payload=json.dumps(resource_info).encode('utf-8')
     )
 
+    if response.get('StatusCode') == 200:
+        return ActionStatus.SUCCEED, resource.metrics()
+    else:
+        return ActionStatus.FAILED, {}
+
 
 def terminate_rds_instance(client, resource):
     resource_info = {
@@ -205,6 +210,11 @@ def terminate_rds_instance(client, resource):
         FunctionName=dbconfig.get('action_taker_arn', NS_AUDITOR_REQUIRED_TAGS, ''),
         Payload=json.dumps(resource_info).encode('utf-8')
     )
+
+    if response.get('StatusCode') == 200:
+        return ActionStatus.SUCCEED, resource.metrics()
+    else:
+        return ActionStatus.FAILED, {}
 
 
 action_mapper = {
