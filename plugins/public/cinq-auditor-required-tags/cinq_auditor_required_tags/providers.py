@@ -181,11 +181,11 @@ def delete_s3_bucket(client, resource):
 
 def stop_rds_instance(client, resource):
     resource_info = {
+        'accountId': resource.account.account_id,
+        'accountName': resource.account.account_name,
         'action': 'stop',
-        'platform': 'aws',
-        'resource_type': 'rds',
-        'account_id': resource.account.account_id,
-        'resource_id': resource.id,
+        'region': resource.location,
+        'resourceId': resource.id
     }
     response = client.invoke(
         FunctionName=dbconfig.get('action_taker_arn', NS_AUDITOR_REQUIRED_TAGS, ''),
@@ -195,11 +195,11 @@ def stop_rds_instance(client, resource):
 
 def terminate_rds_instance(client, resource):
     resource_info = {
-        'action': 'remove',
-        'platform': 'aws',
-        'resource_type': 'rds',
-        'account_id': resource.account.account_id,
-        'resource_id': resource.id,
+        'accountId': resource.account.account_id,
+        'accountName': resource.account.account_name,
+        'action': 'terminate',
+        'region': resource.location,
+        'resourceId': resource.id
     }
     response = client.invoke(
         FunctionName=dbconfig.get('action_taker_arn', NS_AUDITOR_REQUIRED_TAGS, ''),
