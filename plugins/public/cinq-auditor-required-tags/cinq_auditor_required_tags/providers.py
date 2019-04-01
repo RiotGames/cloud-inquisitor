@@ -226,7 +226,6 @@ action_mapper = {
     'aws_s3_bucket': {
         'service_name': 's3',
         AuditActions.STOP: stop_s3_bucket,
-        # To avoid potential domain hijacking issue, Do not delete s3 bucket for now
         AuditActions.REMOVE: delete_s3_bucket
     },
     'aws_rds_instance': {
