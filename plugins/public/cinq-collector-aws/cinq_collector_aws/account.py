@@ -124,6 +124,7 @@ class AWSAccountCollector(BaseCollector):
                 else:
                     RDSInstance.create(
                         db_instance['resource_name'],
+                        creation_date=datetime.utcnow(),
                         account_id=self.account.account_id,
                         location=db_instance['location'],
                         properties=properties,
