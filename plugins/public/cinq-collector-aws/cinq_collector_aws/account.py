@@ -23,21 +23,21 @@ class AWSAccountCollector(BaseCollector):
     cloudfront_collection_enabled = dbconfig.get('cloudfront_collection', ns, True)
     route53_collection_enabled = dbconfig.get('route53_collection', ns, True)
     rds_collection_enabled = dbconfig.get('rds_collection', ns, True)
-    rds_function_name = dbconfig.get('rds_function_name', ns, True)
-    rds_role = dbconfig.get('role_name', 'default')
-    rds_collector_account = dbconfig.get('rds_collector_account', ns, True)
-    rds_collector_region = dbconfig.get('rds_collector_region', ns, True)
-    rds_config_rule_name = dbconfig.get('rds_config_rule_name', ns, True)
+    rds_function_name = dbconfig.get('rds_function_name', ns, '')
+    rds_role = dbconfig.get('role_name', ns, 'default')
+    rds_collector_account = dbconfig.get('rds_collector_account', ns, '')
+    rds_collector_region = dbconfig.get('rds_collector_region', ns, '')
+    rds_config_rule_name = dbconfig.get('rds_config_rule_name', ns, '')
     options = (
         ConfigOption('s3_bucket_collection', True, 'bool', 'Enable S3 Bucket Collection'),
         ConfigOption('cloudfront_collection', True, 'bool', 'Enable Cloudfront DNS Collection'),
         ConfigOption('route53_collection', True, 'bool', 'Enable Route53 DNS Collection'),
         ConfigOption('rds_collection', True, 'bool', 'Enable collection of RDS Databases'),
-        ConfigOption('rds_function_name', True, 'string', 'Name of RDS Lambda Collector Function to execute'),
-        ConfigOption('rds_role', True, 'string', 'Name of IAM role to assume in TARGET accounts'),
-        ConfigOption('rds_collector_account', True, 'string', 'AccountID where RDS Lambda Collector runs'),
-        ConfigOption('rds_collector_region', True, 'string', 'AWS Region where RDS Lambda Collector runs'),
-        ConfigOption('rds_config_rule_name', True, 'string', 'Name of AWS Config rule to evaluate')
+        ConfigOption('rds_function_name', '', 'string', 'Name of RDS Lambda Collector Function to execute'),
+        ConfigOption('rds_role', '', 'string', 'Name of IAM role to assume in TARGET accounts'),
+        ConfigOption('rds_collector_account', '', 'string', 'Account Name where RDS Lambda Collector runs'),
+        ConfigOption('rds_collector_region', '', 'string', 'AWS Region where RDS Lambda Collector runs'),
+        ConfigOption('rds_config_rule_name', '', 'string', 'Name of AWS Config rule to evaluate')
     )
 
     def __init__(self, account):
@@ -114,7 +114,8 @@ class AWSAccountCollector(BaseCollector):
                 tags = {t['Key']: t['Value'] for t in db_instance['tags'] or {}}
                 properties = {
                     'tags': tags,
-                    'metrics': metrics
+                    'metrics': metrics,
+                    'creation_date': datetime.utcnow()
                 }
                 if db_instance['resource_name'] in existing_rds_dbs:
                     rds = existing_rds_dbs[db_instance['resource_name']]
@@ -124,7 +125,6 @@ class AWSAccountCollector(BaseCollector):
                 else:
                     RDSInstance.create(
                         db_instance['resource_name'],
-                        creation_date=datetime.utcnow(),
                         account_id=self.account.account_id,
                         location=db_instance['location'],
                         properties=properties,
