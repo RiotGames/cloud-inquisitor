@@ -1459,6 +1459,15 @@ class RDSInstance(BaseResource):
     resource_type = 'aws_rds_instance'
     resource_name = 'RDS'
 
+    @property
+    def resource_creation_date(self):
+        """Returns the date and time the bucket was created.
+
+        Returns:
+            `datetime`
+        """
+        return self.creation_date
+
     # region Object properties
     @property
     def metrics(self):
@@ -1493,6 +1502,7 @@ class RDSInstance(BaseResource):
         """
 
         updated = self.set_property('metrics', properties['metrics'])
+        updated |= self.set_property('creation_date', data.creation_date)
 
         tags = {x['Key']: x['Value'] for x in data['tags'] or {}}
         existing_tags = {x.key: x for x in self.tags}
