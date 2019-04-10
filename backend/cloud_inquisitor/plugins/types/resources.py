@@ -1466,7 +1466,7 @@ class RDSInstance(BaseResource):
         Returns:
             `datetime`
         """
-        return self.creation_date
+        return parse_date(self.get_property('creation_date').value)
 
     # region Object properties
     @property
