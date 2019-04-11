@@ -109,3 +109,25 @@ def test_rds_generic(cinq_test_service):
 
     assert resources_to_stop == []
     assert resources_to_terminate == []
+
+
+def test_rds_corrupted_data(cinq_test_service):
+    # Prep
+    setup_info = setup_test_aws(cinq_test_service)
+    recipient = setup_info['recipient']
+    account = setup_info['account']
+
+    auditor = MockRequiredTagsAuditor()
+
+    new_resource = create_resource(
+        resource_type=RDSInstance,
+        resource_id=uuid.uuid4().hex,
+        account_id=account.account_id,
+        properties={},
+        tags={},
+        auto_add=True,
+        auto_commit=True
+    )
+
+    auditor.run(enable_process_action=False)
+    assert auditor._cinq_test_notices == {}

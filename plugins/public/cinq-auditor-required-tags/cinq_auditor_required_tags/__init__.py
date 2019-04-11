@@ -166,12 +166,18 @@ class RequiredTagsAuditor(BaseAuditor):
             else:
                 fixed_issues.append(existing_issue)
 
-        new_issues = {
-            resource_id: resource for resource_id, resource in found_issues.items()
-            if
-            ((datetime.utcnow() - resource[
-                'resource'].resource_creation_date).total_seconds() // 3600) >= self.grace_period
-        }
+        new_issues = {}
+        for resource_id, resource in found_issues.items():
+            try:
+                if (
+                        (datetime.utcnow() - resource['resource'].resource_creation_date).total_seconds() // 3600
+                ) >= self.grace_period:
+                    new_issues[resource_id] = resource
+            except Exception as ex:
+                self.log.error(
+                    'Failed to construct new issue {}, Error: {}'.format(resource_id, ex)
+                )
+
         db.session.commit()
         return known_issues, new_issues, fixed_issues
 
