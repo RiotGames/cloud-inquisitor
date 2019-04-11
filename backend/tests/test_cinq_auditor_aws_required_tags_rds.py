@@ -7,21 +7,15 @@ from cloud_inquisitor.plugins.types.resources import RDSInstance
 from tests.libs.cinq_test_cls import MockRequiredTagsAuditor
 from tests.libs.lib_cinq_auditor_aws_required_tags import prep_rds_testing, VALID_TAGS, STANDARD_ALERT_SETTINGS_STOP
 from tests.libs.util_cinq import setup_test_aws
-from tests.libs.util_db import create_resource
+from tests.libs.util_db import create_resource, set_tags
 
 
 def test_rds_generic(cinq_test_service):
     """
-    Test will pass if for an S3 bucket meet the following condition:
-        - Bucket is empty
-        - No Bucket Policy was set
-        - No Lifecycle Policy was set
-        - No tag was set
-
-    The Auditor will:
-        - Detect non-compliant S3 buckets
-        - Respect grace period settings
-        - Be able to remove an empty bucket successfully when the "REMOVE" criteria are met
+    1. We will generate batch of compliant and non-compliant RDS resources, run the auditor and check if it works as
+        expected
+    2. We will make random non-compliant RDS instance meets the FIXED, STOP or REMOVE criteria and check if it works as
+        expected
     """
     # Prep
     setup_info = setup_test_aws(cinq_test_service)
@@ -73,11 +67,12 @@ def test_rds_generic(cinq_test_service):
 
     resources_to_terminate = []
     resources_to_stop = []
+    resources_fixed = []
 
     for item in issue_not_fixed:
-        mock_selector = random.randint(0, 2)
+        mock_selector = random.randint(0, 3)
 
-        if mock_selector == 2:
+        if mock_selector == 3:
             # Mock resources that should be terminated
             cinq_test_service.modify_issue(
                 item['issue'].id,
@@ -86,7 +81,7 @@ def test_rds_generic(cinq_test_service):
             )
             resources_to_terminate.append(item['resource'].id)
 
-        elif mock_selector == 1:
+        elif mock_selector == 2:
             # Mock resources that should be stopped
             cinq_test_service.modify_issue(
                 item['issue'].id,
@@ -94,12 +89,16 @@ def test_rds_generic(cinq_test_service):
                 item['issue'].created - STANDARD_ALERT_SETTINGS_STOP - 1
             )
             resources_to_stop.append(item['resource'].id)
+        elif mock_selector == 1:
+            set_tags(item['resource'], VALID_TAGS)
+            resources_fixed.append(item['resource'].id)
         else:
             # Leave the issue as-is
             pass
 
     auditor.run(enable_process_action=False)
     issue_not_fixed = auditor._cinq_test_notices[recipient]['not_fixed']
+    issue_fixed = auditor._cinq_test_notices[recipient]['fixed']
 
     for item in issue_not_fixed:
         if item['action'] == AuditActions.STOP:
@@ -107,8 +106,12 @@ def test_rds_generic(cinq_test_service):
         elif item['action'] == AuditActions.REMOVE:
             resources_to_terminate.remove(item['resource'].id)
 
+    for item in issue_fixed:
+        resources_fixed.remove(item['resource'].resource_id)
+
     assert resources_to_stop == []
     assert resources_to_terminate == []
+    assert resources_fixed == []
 
 
 def test_rds_corrupted_data(cinq_test_service):

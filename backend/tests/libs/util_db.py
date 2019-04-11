@@ -91,5 +91,12 @@ def modify_resource(resource_id, resource_property, value):
         db.session.rollback()
 
 
+def set_tags(resource, tags):
+    for k, v in tags.items():
+        resource.set_tag(k, v)
+
+    db.session.commit()
+
+
 def set_test_user_role(role):
     dbconfig.set(NS_CINQ_TEST, 'user_role', role)
