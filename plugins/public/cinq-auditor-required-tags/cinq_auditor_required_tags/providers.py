@@ -30,14 +30,15 @@ def process_action(resource, action, action_issuer='unknown'):
         `ActionStatus`
     """
     func_action = action_mapper[resource.resource_type][action]
+    extra_info = {}
     if func_action:
         client = get_aws_session(AWSAccount(resource.account)).client(
             action_mapper[resource.resource_type]['service_name'],
             region_name=resource.location
         )
         try:
-            action_status, metrics = func_action(client, resource)
-            Enforcement.create(resource.account.account_name, resource.id, action, datetime.now(), metrics)
+            action_status, extra_info = func_action(client, resource)
+            Enforcement.create(resource.account.account_name, resource.id, action, datetime.now(), extra_info)
         except Exception as ex:
             action_status = ActionStatus.FAILED
             logger.error('Failed to apply action {} to {}: {}'.format(action, resource.id, ex))
@@ -48,7 +49,8 @@ def process_action(resource, action, action_issuer='unknown'):
                 data={
                     'resource_id': resource.id,
                     'account_name': resource.account.account_name,
-                    'location': resource.location
+                    'location': resource.location,
+                    'info': extra_info
                 }
             )
             return action_status
@@ -181,41 +183,42 @@ def delete_s3_bucket(client, resource):
 
 
 def stop_rds_instance(client, resource):
-    resource_info = {
-        'accountId': resource.account.account_id,
-        'accountName': resource.account.account_name,
-        'action': 'stop',
-        'region': resource.location,
-        'resourceId': resource.id
-    }
-    response = client.invoke(
-        FunctionName=dbconfig.get('action_taker_arn', NS_AUDITOR_REQUIRED_TAGS, ''),
-        Payload=json.dumps(resource_info).encode('utf-8')
-    )
-
-    if response.get('StatusCode') == 200:
-        return ActionStatus.SUCCEED, resource.metrics()
-    else:
-        return ActionStatus.FAILED, {}
+    operate_rds_instance(client, resource, 'stop')
 
 
 def terminate_rds_instance(client, resource):
+    operate_rds_instance(client, resource, 'terminate')
+
+
+def operate_rds_instance(client, resource, action):
     resource_info = {
+        'platform': 'AWS',
         'accountId': resource.account.account_id,
         'accountName': resource.account.account_name,
-        'action': 'terminate',
+        'action': action,
         'region': resource.location,
-        'resourceId': resource.id
+        'resourceId': resource.id,
+        'resourceType': 'rds',
+        'resourceSubType': resource.engine
     }
-    response = client.invoke(
-        FunctionName=dbconfig.get('action_taker_arn', NS_AUDITOR_REQUIRED_TAGS, ''),
-        Payload=json.dumps(resource_info).encode('utf-8')
-    )
 
-    if response.get('StatusCode') == 200:
-        return ActionStatus.SUCCEED, resource.metrics()
-    else:
-        return ActionStatus.FAILED, {}
+    try:
+        response = client.invoke(
+            FunctionName=dbconfig.get('action_taker_arn', NS_AUDITOR_REQUIRED_TAGS, ''),
+            Payload=json.dumps(resource_info).encode('utf-8')
+        )
+
+        if response.get('success'):
+            return ActionStatus.SUCCEED, resource.metrics()
+        else:
+            failure_message = response.get('message')
+
+            if response['Data']['ActionTaken'] == 'ignored':
+                return ActionStatus.IGNORED, {'message': failure_message}
+            else:
+                return ActionStatus.FAILED, {'message': failure_message}
+    except Exception as ex:
+        return AuditActions.IGNORE, {'message': ex}
 
 
 action_mapper = {
