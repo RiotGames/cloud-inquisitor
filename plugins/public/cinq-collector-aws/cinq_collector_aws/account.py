@@ -24,7 +24,7 @@ class AWSAccountCollector(BaseCollector):
     route53_collection_enabled = dbconfig.get('route53_collection', ns, True)
     rds_collection_enabled = dbconfig.get('rds_collection', ns, True)
     rds_function_name = dbconfig.get('rds_function_name', ns, '')
-    rds_role = dbconfig.get('role_name', ns, 'default')
+    rds_role = dbconfig.get('rds_role', ns, 'infosec_audits')
     rds_collector_account = dbconfig.get('rds_collector_account', ns, '')
     rds_collector_region = dbconfig.get('rds_collector_region', ns, '')
     rds_config_rule_name = dbconfig.get('rds_config_rule_name', ns, '')
@@ -105,31 +105,36 @@ class AWSAccountCollector(BaseCollector):
             response = lambda_client.invoke(FunctionName=self.rds_function_name, InvocationType='RequestResponse',
                                             Payload=input_payload
                                             )
+            print(response)
             rds_dbs = json.loads(response['Payload'].read().decode('utf-8'))
+            if 'errorMessage' in rds_dbs:
+                self.log.error('RDS Lambda Execution Failed / {}'.format(rds_dbs['errorMessage']))
+                raise
 
-            for db_instance in rds_dbs:
-                metrics = None
-                if 'metrics' in db_instance.keys():
-                    metrics = db_instance['metrics']
-                tags = {t['Key']: t['Value'] for t in db_instance['tags'] or {}}
-                properties = {
-                    'tags': tags,
-                    'metrics': metrics,
-                    'creation_date': datetime.utcnow()
-                }
-                if db_instance['resource_name'] in existing_rds_dbs:
-                    rds = existing_rds_dbs[db_instance['resource_name']]
-                    if rds.update(db_instance, properties):
-                        self.log.debug('Change detected for RDS instance {}/{} '
-                                       .format(db_instance['resource_name'], properties))
-                else:
-                    RDSInstance.create(
-                        db_instance['resource_name'],
-                        account_id=self.account.account_id,
-                        location=db_instance['location'],
-                        properties=properties,
-                        tags=tags
-                    )
+            if rds_dbs:
+                for db_instance in rds_dbs:
+                    metrics = None
+                    if 'metrics' in db_instance.keys():
+                        metrics = db_instance['metrics']
+                    tags = {t['Key']: t['Value'] for t in db_instance['tags'] or {}}
+                    properties = {
+                        'tags': tags,
+                        'metrics': metrics,
+                        'creation_date': datetime.utcnow()
+                    }
+                    if db_instance['resource_name'] in existing_rds_dbs:
+                        rds = existing_rds_dbs[db_instance['resource_name']]
+                        if rds.update(db_instance, properties):
+                            self.log.debug('Change detected for RDS instance {}/{} '
+                                           .format(db_instance['resource_name'], properties))
+                    else:
+                        RDSInstance.create(
+                            db_instance['resource_name'],
+                            account_id=self.account.account_id,
+                            location=db_instance['location'],
+                            properties=properties,
+                            tags=tags
+                        )
             db.session.commit()
 
             # Removal of RDS instances

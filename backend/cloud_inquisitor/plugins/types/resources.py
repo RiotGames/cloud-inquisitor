@@ -1381,11 +1381,11 @@ class VPC(BaseResource):
     @property
     def is_default(self):
         """ Returns whether the VPC is the Default VPC
-        
+
         Returns:
             `boolean`
-        
-        
+
+
         """
         return self.get_property('is_default').value
 
@@ -1502,7 +1502,7 @@ class RDSInstance(BaseResource):
         """
 
         updated = self.set_property('metrics', properties['metrics'])
-        updated |= self.set_property('creation_date', data.creation_date)
+        updated |= self.set_property('resource_creation_date', properties['creation_date'])
 
         tags = {x['Key']: x['Value'] for x in data['tags'] or {}}
         existing_tags = {x.key: x for x in self.tags}
