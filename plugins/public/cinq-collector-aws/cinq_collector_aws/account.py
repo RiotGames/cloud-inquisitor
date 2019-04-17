@@ -105,7 +105,6 @@ class AWSAccountCollector(BaseCollector):
             response = lambda_client.invoke(FunctionName=self.rds_function_name, InvocationType='RequestResponse',
                                             Payload=input_payload
                                             )
-            print(response)
             rds_dbs = json.loads(response['Payload'].read().decode('utf-8'))
             if 'errorMessage' in rds_dbs:
                 self.log.error('RDS Lambda Execution Failed / {}'.format(rds_dbs['errorMessage']))
@@ -131,7 +130,7 @@ class AWSAccountCollector(BaseCollector):
                         RDSInstance.create(
                             db_instance['resource_name'],
                             account_id=self.account.account_id,
-                            location=db_instance['location'],
+                            location=db_instance['region'],
                             properties=properties,
                             tags=tags
                         )
