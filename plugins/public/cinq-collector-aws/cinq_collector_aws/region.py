@@ -1,12 +1,12 @@
 from datetime import datetime
-
+import json
 from cloud_inquisitor import get_aws_session
 from cloud_inquisitor.config import dbconfig, ConfigOption
 from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import InquisitorError
 from cloud_inquisitor.plugins import BaseCollector, CollectorType
 from cloud_inquisitor.plugins.types.accounts import AWSAccount
-from cloud_inquisitor.plugins.types.resources import EC2Instance, EBSVolume, EBSSnapshot, AMI, BeanStalk, VPC
+from cloud_inquisitor.plugins.types.resources import EC2Instance, EBSVolume, EBSSnapshot, AMI, BeanStalk, VPC, RDSInstance
 from cloud_inquisitor.utils import to_utc_date, isoformat, parse_date
 from cloud_inquisitor.wrappers import retry
 from cinq_collector_aws.resources import ELB
@@ -671,17 +671,17 @@ class AWSRegionCollector(BaseCollector):
             # The AWS Config Lambda will collect all the non-compliant resources for all regions
             # within the account
             input_payload = json.dumps({"account_id": self.account.account_number,
-                                        "region", self.region,
+                                        "region": self.region,
                                         "role": self.rds_role,
                                         "config_rule_name": self.rds_config_rule_name
                                         }).encode('utf-8')
             response = lambda_client.invoke(FunctionName=self.rds_function_name, InvocationType='RequestResponse',
                                             Payload=input_payload
                                             )
-            rds_dbs = json.loads(response['Payload'].read().decode('utf-8'))
+            rds_dbs = json.loads(response['Payload'].read().decode('utf-8'))['data']
             if 'errorMessage' in rds_dbs:
                 self.log.error('RDS Lambda Execution Failed / {} / {} / {}'.
-                                format(self.account_name, self.region, rds_dbs['errorMessage']))
+                                format(self.account.account_name, self.region, rds_dbs['errorMessage']))
                 raise
 
             if rds_dbs:
@@ -693,7 +693,7 @@ class AWSRegionCollector(BaseCollector):
                     properties = {
                         'tags': tags,
                         'metrics': metrics,
-                        'engine': engine,
+                        'engine': rds_dbs['engine'],
                         'creation_date': datetime.utcnow()
                     }
                     if db_instance['resource_name'] in existing_rds_dbs:
