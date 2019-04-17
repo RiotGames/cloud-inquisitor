@@ -671,7 +671,7 @@ class AWSRegionCollector(BaseCollector):
             # The AWS Config Lambda will collect all the non-compliant resources for all regions
             # within the account
             input_payload = json.dumps({"account_id": self.account.account_number,
-                                        "region", self.account.region_name,
+                                        "region", self.region,
                                         "role": self.rds_role,
                                         "config_rule_name": self.rds_config_rule_name
                                         }).encode('utf-8')
@@ -680,7 +680,8 @@ class AWSRegionCollector(BaseCollector):
                                             )
             rds_dbs = json.loads(response['Payload'].read().decode('utf-8'))
             if 'errorMessage' in rds_dbs:
-                self.log.error('RDS Lambda Execution Failed / {}'.format(rds_dbs['errorMessage']))
+                self.log.error('RDS Lambda Execution Failed / {} / {} / {}'.
+                                format(self.account_name, self.region, rds_dbs['errorMessage']))
                 raise
 
             if rds_dbs:
@@ -727,8 +728,7 @@ class AWSRegionCollector(BaseCollector):
             db.session.commit()
 
         except Exception as e:
-            self.log.exception('There was a problem during RDS collection for {}/{}'.format(
-                self.account.account_name,
-                e
+            self.log.exception('There was a problem during RDS collection for {}/{}/{}'.format(
+                self.account.account_name, self.account.region, e
             ))
             db.session.rollback()
