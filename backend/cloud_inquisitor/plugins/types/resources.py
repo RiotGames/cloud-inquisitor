@@ -1381,11 +1381,11 @@ class VPC(BaseResource):
     @property
     def is_default(self):
         """ Returns whether the VPC is the Default VPC
-        
+
         Returns:
             `boolean`
-        
-        
+
+
         """
         return self.get_property('is_default').value
 
@@ -1488,6 +1488,17 @@ class RDSInstance(BaseResource):
         """
         return self.get_property('metrics').value
 
+    @property
+    def engine(self):
+        """ Return the RDS Database type
+
+        Returns:
+            `string`
+
+        """
+
+        return self.get_property('engine').value
+
     def update(self, data, properties):
         """Updates the object information based on live data, if there were any changes made. Any changes will be
         automatically applied to the object, but will not be automatically persisted. You must manually call
@@ -1502,7 +1513,8 @@ class RDSInstance(BaseResource):
         """
 
         updated = self.set_property('metrics', properties['metrics'])
-        updated |= self.set_property('creation_date', data.creation_date)
+        updated |= self.set_property('engine', properties['engine'])
+        updated |= self.set_property('creation_date', properties['creation_date'])
 
         tags = {x['Key']: x['Value'] for x in data['tags'] or {}}
         existing_tags = {x.key: x for x in self.tags}
