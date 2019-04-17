@@ -42,7 +42,8 @@ def test_rds_generic(cinq_test_service):
             account_id=account.account_id,
             properties={
                 'creation_date': datetime.datetime(2000, 1, 1),
-                'metrics': {}
+                'metrics': {},
+                'engine': 'mysql'
             },
             tags=tags,
             auto_add=True,
