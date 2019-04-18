@@ -208,12 +208,14 @@ def operate_rds_instance(client, resource, action):
             Payload=json.dumps(resource_info).encode('utf-8')
         )
 
-        if response.get('success'):
+        response_payload = json.loads(response['Payload'].read().decode('utf-8'))
+
+        if response_payload.get('success'):
             return ActionStatus.SUCCEED, resource.metrics()
         else:
-            failure_message = response.get('message')
+            failure_message = response_payload.get('message')
 
-            if response['data']['actionTaken'] == 'ignored':
+            if response_payload['data']['actionTaken'] == 'ignored':
                 return ActionStatus.IGNORED, {'message': failure_message}
             else:
                 return ActionStatus.FAILED, {'message': failure_message}
