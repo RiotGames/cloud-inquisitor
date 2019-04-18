@@ -213,7 +213,7 @@ def operate_rds_instance(client, resource, action):
         else:
             failure_message = response.get('message')
 
-            if response['Data']['ActionTaken'] == 'ignored':
+            if response['data']['actionTaken'] == 'ignored':
                 return ActionStatus.IGNORED, {'message': failure_message}
             else:
                 return ActionStatus.FAILED, {'message': failure_message}
