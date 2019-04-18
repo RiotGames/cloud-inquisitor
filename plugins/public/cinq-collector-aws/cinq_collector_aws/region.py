@@ -678,57 +678,55 @@ class AWSRegionCollector(BaseCollector):
             response = lambda_client.invoke(FunctionName=self.rds_function_name, InvocationType='RequestResponse',
                                             Payload=input_payload
                                             )
-            rds_dbs = json.loads(response['Payload'].read().decode('utf-8'))['data']
-            if 'errorMessage' in rds_dbs:
+            response_payload = json.loads(response['Payload'].read().decode('utf-8'))
+            if response_payload['success']:
+                rds_dbs = response_payload['data']
+                if rds_dbs:
+                    for db_instance in rds_dbs:
+                        tags = {t['Key']: t['Value'] for t in db_instance['tags'] or {}}
+                        properties = {
+                            'tags': tags,
+                            'metrics': None,
+                            'engine': db_instance['engine'],
+                            'creation_date': datetime.utcnow()
+                        }
+                        if db_instance['resource_name'] in existing_rds_dbs:
+                            rds = existing_rds_dbs[db_instance['resource_name']]
+                            if rds.update(db_instance, properties):
+                                self.log.debug('Change detected for RDS instance {}/{} '
+                                               .format(db_instance['resource_name'], properties))
+                        else:
+                            RDSInstance.create(
+                                db_instance['resource_name'],
+                                account_id=self.account.account_id,
+                                location=db_instance['region'],
+                                properties=properties,
+                                tags=tags
+                            )
+                    # Removal of RDS instances
+                    rk = set()
+                    erk = set()
+                    for database in rds_dbs:
+                        rk.add(database['resource_name'])
+                    for existing in existing_rds_dbs.keys():
+                        erk.add(existing)
+
+                    for resource_id in erk - rk:
+                        db.session.delete(existing_rds_dbs[resource_id].resource)
+                        self.log.debug('Removed RDS instances {}/{}'.format(
+                            self.account.account_name,
+                            resource_id
+                        ))
+                    db.session.commit()
+
+            else:
                 self.log.error('RDS Lambda Execution Failed / {} / {} / {}'.
-                                format(self.account.account_name, self.region, rds_dbs['errorMessage']))
-                raise
+                                format(self.account.account_name, self.region, response_payload))
 
-            if rds_dbs:
-                for db_instance in rds_dbs:
-                    metrics = None
-                    if 'metrics' in db_instance.keys():
-                        metrics = db_instance['metrics']
-                    tags = {t['Key']: t['Value'] for t in db_instance['tags'] or {}}
-                    properties = {
-                        'tags': tags,
-                        'metrics': metrics,
-                        'engine': rds_dbs['engine'],
-                        'creation_date': datetime.utcnow()
-                    }
-                    if db_instance['resource_name'] in existing_rds_dbs:
-                        rds = existing_rds_dbs[db_instance['resource_name']]
-                        if rds.update(db_instance, properties):
-                            self.log.debug('Change detected for RDS instance {}/{} '
-                                           .format(db_instance['resource_name'], properties))
-                    else:
-                        RDSInstance.create(
-                            db_instance['resource_name'],
-                            account_id=self.account.account_id,
-                            location=db_instance['region'],
-                            properties=properties,
-                            tags=tags
-                        )
-            db.session.commit()
 
-            # Removal of RDS instances
-            rk = set()
-            erk = set()
-            for database in rds_dbs:
-                rk.add(database['resource_name'])
-            for existing in existing_rds_dbs.keys():
-                erk.add(existing)
-
-            for resource_id in erk - rk:
-                db.session.delete(existing_rds_dbs[resource_id].resource)
-                self.log.debug('Removed RDS instances {}/{}'.format(
-                    self.account.account_name,
-                    resource_id
-                ))
-            db.session.commit()
 
         except Exception as e:
             self.log.exception('There was a problem during RDS collection for {}/{}/{}'.format(
-                self.account.account_name, self.account.region, e
+                self.account.account_name, self.region, e
             ))
             db.session.rollback()
