@@ -74,7 +74,6 @@ class AWSAccountCollector(BaseCollector):
         try:
             existing_buckets = S3Bucket.get_all(self.account)
             buckets = {bucket.name: bucket for bucket in s3.buckets.all()}
-            self.log.info('Buckets are {}'.format(buckets))
             for data in buckets.values():
                 # This section ensures that we handle non-existent or non-accessible sub-resources
                 try:
