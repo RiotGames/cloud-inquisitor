@@ -687,7 +687,8 @@ class AWSRegionCollector(BaseCollector):
                         properties = {
                             'tags': tags,
                             'metrics': None,
-                            'engine': db_instance['engine']
+                            'engine': db_instance['engine'],
+                            'creation_date': db_instance['creation_date']
                         }
                         if db_instance['resource_name'] in existing_rds_dbs:
                             rds = existing_rds_dbs[db_instance['resource_name']]
