@@ -687,8 +687,7 @@ class AWSRegionCollector(BaseCollector):
                         properties = {
                             'tags': tags,
                             'metrics': None,
-                            'engine': db_instance['engine'],
-                            'creation_date': datetime.utcnow()
+                            'engine': db_instance['engine']
                         }
                         if db_instance['resource_name'] in existing_rds_dbs:
                             rds = existing_rds_dbs[db_instance['resource_name']]
@@ -722,8 +721,6 @@ class AWSRegionCollector(BaseCollector):
             else:
                 self.log.error('RDS Lambda Execution Failed / {} / {} / {}'.
                                 format(self.account.account_name, self.region, response_payload))
-
-
 
         except Exception as e:
             self.log.exception('There was a problem during RDS collection for {}/{}/{}'.format(
