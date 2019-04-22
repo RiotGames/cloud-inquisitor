@@ -29,13 +29,23 @@ def process_action(resource, action, action_issuer='unknown'):
     Returns:
         `ActionStatus`
     """
+    from cinq_collector_aws import AWSRegionCollector
+
     func_action = action_mapper[resource.resource_type][action]
     extra_info = {}
     if func_action:
-        client = get_aws_session(AWSAccount(resource.account)).client(
-            action_mapper[resource.resource_type]['service_name'],
-            region_name=resource.location
-        )
+        if action_mapper[resource.resource_type]['service_name'] == 'lambda':
+            client = get_aws_session(
+                AWSAccount.get(dbconfig.get('rds_collector_account', AWSRegionCollector.ns, ''))
+            ).client(
+                'lambda',
+                dbconfig.get('rds_collector_region', AWSRegionCollector.ns, '')
+            )
+        else:
+            client = get_aws_session(AWSAccount(resource.account)).client(
+                action_mapper[resource.resource_type]['service_name'],
+                region_name=resource.location
+            )
         try:
             action_status, extra_info = func_action(client, resource)
             Enforcement.create(resource.account.account_name, resource.id, action, datetime.now(), extra_info)
@@ -211,7 +221,7 @@ def operate_rds_instance(client, resource, action):
         response_payload = json.loads(response['Payload'].read().decode('utf-8'))
 
         if response_payload.get('success'):
-            return ActionStatus.SUCCEED, resource.metrics()
+            return ActionStatus.SUCCEED, response_payload.get('data', {})
         else:
             failure_message = response_payload.get('message')
 
