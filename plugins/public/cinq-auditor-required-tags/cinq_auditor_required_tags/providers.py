@@ -203,7 +203,7 @@ def terminate_rds_instance(client, resource):
 def operate_rds_instance(client, resource, action):
     resource_info = {
         'platform': 'AWS',
-        'accountId': resource.account.account_id,
+        'accountId': str(resource.account.account_id),
         'accountName': resource.account.account_name,
         'action': action,
         'region': resource.location,
