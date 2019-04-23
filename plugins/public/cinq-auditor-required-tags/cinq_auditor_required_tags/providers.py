@@ -193,7 +193,7 @@ def delete_s3_bucket(client, resource):
 
 
 def stop_rds_instance(client, resource):
-    operate_rds_instance(client, resource, 'stop')
+    return operate_rds_instance(client, resource, 'stop')
 
 
 def terminate_rds_instance(client, resource):
