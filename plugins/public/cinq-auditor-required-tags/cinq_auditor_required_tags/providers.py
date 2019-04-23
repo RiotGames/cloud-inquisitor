@@ -48,7 +48,7 @@ def process_action(resource, action, action_issuer='unknown'):
             )
         try:
             action_status, extra_info = func_action(client, resource)
-            Enforcement.create(resource.account.account_name, resource.id, action, datetime.now(), extra_info)
+            Enforcement.create(resource.account.account_id, resource.id, action, datetime.now(), extra_info)
         except Exception as ex:
             action_status = ActionStatus.FAILED
             logger.error('Failed to apply action {} to {}: {}'.format(action, resource.id, ex))
