@@ -197,7 +197,7 @@ def stop_rds_instance(client, resource):
 
 
 def terminate_rds_instance(client, resource):
-    operate_rds_instance(client, resource, 'terminate')
+    return operate_rds_instance(client, resource, 'terminate')
 
 
 def operate_rds_instance(client, resource, action):
