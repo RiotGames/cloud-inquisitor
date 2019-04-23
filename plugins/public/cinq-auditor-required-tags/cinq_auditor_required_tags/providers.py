@@ -47,6 +47,7 @@ def process_action(resource, action, action_issuer='unknown'):
                 region_name=resource.location
             )
         try:
+            logger.error(f'Trying to {action} resource {resource.id} for account {resource.account.account_name} / region {resource.location}')
             action_status, extra_info = func_action(client, resource)
             Enforcement.create(resource.account.account_id, resource.id, action, datetime.now(), extra_info)
         except Exception as ex:
@@ -203,7 +204,7 @@ def terminate_rds_instance(client, resource):
 def operate_rds_instance(client, resource, action):
     resource_info = {
         'platform': 'AWS',
-        'accountId': str(resource.account.account_id),
+        'accountId': AWSAccount(resource.account).account_number,
         'accountName': resource.account.account_name,
         'action': action,
         'region': resource.location,
