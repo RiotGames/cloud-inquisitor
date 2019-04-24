@@ -45,6 +45,7 @@ class ActionStatus:
     SUCCEED = 'succeed'
     FAILED = 'failed'
     IGNORED = 'ignored'
+    UNKNOWN = 'unknown'
 
 
 # Collectors

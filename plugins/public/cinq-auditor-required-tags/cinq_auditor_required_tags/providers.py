@@ -34,6 +34,8 @@ def process_action(resource, action, action_issuer='unknown'):
 
     func_action = action_mapper[resource.resource_type][action]
     extra_info = {}
+    action_status = ActionStatus.UNKNOWN
+
     if func_action:
         if action_mapper[resource.resource_type]['service_name'] == 'lambda':
             client = get_aws_session(
@@ -227,7 +229,7 @@ def operate_rds_instance(client, resource, action):
         else:
             failure_message = response_payload.get('message')
 
-            if response_payload['data']['actionTaken'] == 'ignored':
+            if response_payload['data'].get('actionTaken', None) == 'ignored':
                 return ActionStatus.IGNORED, {'message': failure_message}
             else:
                 return ActionStatus.FAILED, {'message': failure_message}
