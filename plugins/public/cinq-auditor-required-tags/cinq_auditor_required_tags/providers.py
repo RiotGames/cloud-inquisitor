@@ -217,12 +217,15 @@ def operate_rds_instance(client, resource, action):
     }
 
     try:
+        logger.info('Auditor Request Payload: {}'.format(resource_info))
+
         response = client.invoke(
             FunctionName=dbconfig.get('action_taker_arn', NS_AUDITOR_REQUIRED_TAGS, ''),
             Payload=json.dumps(resource_info).encode('utf-8')
         )
 
         response_payload = json.loads(response['Payload'].read().decode('utf-8'))
+        logger.info('Server Response Payload: {}'.format(response_payload))
 
         if response_payload.get('success'):
             return ActionStatus.SUCCEED, response_payload.get('data', {})
