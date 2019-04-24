@@ -13,6 +13,7 @@ from cloud_inquisitor.plugins.types.enforcements import Enforcement
 from cloud_inquisitor.plugins.types.resources import EC2Instance
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def noop(client, resource):
@@ -47,7 +48,7 @@ def process_action(resource, action, action_issuer='unknown'):
                 region_name=resource.location
             )
         try:
-            logger.error(f'Trying to {action} resource {resource.id} for account {resource.account.account_name} / region {resource.location}')
+            logger.info(f'Trying to {action} resource {resource.id} for account {resource.account.account_name} / region {resource.location}')
             action_status, extra_info = func_action(client, resource)
             Enforcement.create(resource.account.account_id, resource.id, action, datetime.now(), extra_info)
         except Exception as ex:
