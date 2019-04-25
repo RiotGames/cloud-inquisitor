@@ -230,14 +230,9 @@ def operate_rds_instance(client, resource, action):
         if response_payload.get('success'):
             return ActionStatus.SUCCEED, response_payload.get('data', {})
         else:
-            failure_message = response_payload.get('message')
-
-            if response_payload['data'].get('actionTaken', None) == 'ignored':
-                return ActionStatus.IGNORED, {'message': failure_message}
-            else:
-                return ActionStatus.FAILED, {'message': failure_message}
+            return ActionStatus.FAILED, {'message': response_payload.get('message')}
     except Exception as ex:
-        return AuditActions.IGNORE, {'message': ex}
+        return ActionStatus.UNKNOWN, {'message': ex}
 
 
 action_mapper = {
