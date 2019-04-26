@@ -55,7 +55,7 @@ def process_action(resource, action, action_issuer='unknown'):
             Enforcement.create(resource.account.account_id, resource.id, action, datetime.now(), extra_info)
         except Exception as ex:
             action_status = ActionStatus.FAILED
-            logger.error('Failed to apply action {} to {}: {}'.format(action, resource.id, ex))
+            logger.exception('Failed to apply action {} to {}: {}'.format(action, resource.id, ex))
         finally:
             auditlog(
                 event='{}.{}.{}.{}'.format(action_issuer, resource.resource_type, action, action_status),
@@ -216,23 +216,20 @@ def operate_rds_instance(client, resource, action):
         'resourceSubType': resource.engine
     }
 
-    try:
-        logger.info('Auditor Request Payload: {}'.format(resource_info))
+    logger.info('Auditor Request Payload: {}'.format(resource_info))
 
-        response = client.invoke(
-            FunctionName=dbconfig.get('action_taker_arn', NS_AUDITOR_REQUIRED_TAGS, ''),
-            Payload=json.dumps(resource_info).encode('utf-8')
-        )
+    response = client.invoke(
+        FunctionName=dbconfig.get('action_taker_arn', NS_AUDITOR_REQUIRED_TAGS, ''),
+        Payload=json.dumps(resource_info).encode('utf-8')
+    )
 
-        response_payload = json.loads(response['Payload'].read().decode('utf-8'))
-        logger.info('Server Response Payload: {}'.format(response_payload))
+    response_payload = json.loads(response['Payload'].read().decode('utf-8'))
+    logger.info('Server Response Payload: {}'.format(response_payload))
 
-        if response_payload.get('success'):
-            return ActionStatus.SUCCEED, response_payload.get('data', {})
-        else:
-            return ActionStatus.FAILED, {'message': response_payload.get('message')}
-    except Exception as ex:
-        return ActionStatus.UNKNOWN, {'message': ex}
+    if response_payload.get('success'):
+        return ActionStatus.SUCCEED, response_payload.get('data', {})
+    else:
+        return ActionStatus.FAILED, {'message': response_payload.get('message')}
 
 
 action_mapper = {
