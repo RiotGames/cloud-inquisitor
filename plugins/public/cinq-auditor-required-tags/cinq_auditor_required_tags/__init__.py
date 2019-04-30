@@ -313,15 +313,14 @@ class RequiredTagsAuditor(BaseAuditor):
             action_item['action'] = AuditActions.REMOVE
             action_item['action_description'] = 'Resource removed'
             action_item['last_alert'] = remove_schedule
-            if issue.update({'last_alert': remove_schedule}):
-                db.session.add(issue.issue)
 
         elif stop_schedule and time_elapsed >= stop_schedule:
-            action_item['action'] = AuditActions.STOP
-            action_item['action_description'] = 'Resource stopped'
-            action_item['last_alert'] = stop_schedule
-            if issue.update({'last_alert': stop_schedule}):
-                db.session.add(issue.issue)
+            if issue.get_property('state').value == AuditActions.STOP:
+                action_item['action'] = AuditActions.IGNORE
+            else:
+                action_item['action'] = AuditActions.STOP
+                action_item['action_description'] = 'Resource stopped'
+                action_item['last_alert'] = stop_schedule
 
         else:
             alert_selection = self.determine_alert(
@@ -333,12 +332,9 @@ class RequiredTagsAuditor(BaseAuditor):
                 action_item['action'] = AuditActions.ALERT
                 action_item['action_description'] = '{} alert'.format(alert_selection)
                 action_item['last_alert'] = alert_selection
-                if issue.update({'last_alert': alert_selection}):
-                    db.session.add(issue.issue)
             else:
                 action_item['action'] = AuditActions.IGNORE
 
-        db.session.commit()
         return action_item
 
     def process_action(self, resource, action):
