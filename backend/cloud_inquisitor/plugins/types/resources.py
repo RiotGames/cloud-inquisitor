@@ -1381,11 +1381,11 @@ class VPC(BaseResource):
     @property
     def is_default(self):
         """ Returns whether the VPC is the Default VPC
-        
+
         Returns:
             `boolean`
-        
-        
+
+
         """
         return self.get_property('is_default').value
 
@@ -1440,6 +1440,83 @@ class VPC(BaseResource):
         updated |= self.set_property('vpc_flow_logs_log_stream', properties['vpc_flow_logs_log_group'])
 
         tags = {x['Key']: x['Value'] for x in data.tags or {}}
+        existing_tags = {x.key: x for x in self.tags}
+
+        # Check for new tags
+        for key, value in list(tags.items()):
+            updated |= self.set_tag(key, value)
+
+        # Check for updated or removed tags
+        for key in list(existing_tags.keys()):
+            if key not in tags:
+                updated |= self.delete_tag(key)
+
+        return updated
+
+
+class RDSInstance(BaseResource):
+    """RDS Object"""
+    resource_type = 'aws_rds_instance'
+    resource_name = 'RDS'
+
+    @property
+    def resource_creation_date(self):
+        """Returns the date and time the bucket was created.
+
+        Returns:
+            `datetime`
+        """
+        return parse_date(self.get_property('creation_date').value)
+
+    # region Object properties
+    @property
+    def metrics(self):
+        """ Returns RDS Metrics for CINQ Enforcement
+
+            Example:
+            {
+              "publicly_accessible": False,
+              "db_instance_class": "m4.large",
+              "multi_az": True,
+              "storage_type": "gp2",
+              "allocated_storage": "20"
+            }
+
+        Returns:
+            `json`
+
+        """
+        return self.get_property('metrics').value
+
+    @property
+    def engine(self):
+        """ Return the RDS Database type
+
+        Returns:
+            `string`
+
+        """
+
+        return self.get_property('engine').value
+
+    def update(self, data, properties):
+        """Updates the object information based on live data, if there were any changes made. Any changes will be
+        automatically applied to the object, but will not be automatically persisted. You must manually call
+        `db.session.add(RDS)` on the object.
+
+        Args:
+            data (bunch): Data fetched from AWS API
+            properties (bunch): Properties of the RDS DB Instance as fetched from AWS API
+
+        Returns:
+            True if there were any changes to the object, else false
+        """
+
+        updated = self.set_property('metrics', properties['metrics'])
+        updated |= self.set_property('engine', properties['engine'])
+        updated |= self.set_property('creation_date', properties['creation_date'])
+
+        tags = {x['Key']: x['Value'] for x in data['tags'] or {}}
         existing_tags = {x.key: x for x in self.tags}
 
         # Check for new tags

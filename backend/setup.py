@@ -32,6 +32,7 @@ setuptools.setup(
             'ebssnapshot_type = cloud_inquisitor.plugins.types.resources:EBSSnapshot',
             'ebsvolume_type = cloud_inquisitor.plugins.types.resources:EBSVolume',
             'ec2instance_type = cloud_inquisitor.plugins.types.resources:EC2Instance',
+            'rdsinstance_type = cloud_inquisitor.plugins.types.resources:RDSInstance',
             's3bucket_type = cloud_inquisitor.plugins.types.resources:S3Bucket',
             'vpc_type = cloud_inquisitor.plugins.types.resources:VPC'
         ],

@@ -7,9 +7,9 @@ branches:
     - /^dev(-.+)?$/
 matrix:
   include:
-  - name: "Test with Python 3.5"
-    python: "3.5"
-    env: PATH_PYTHON=/home/travis/virtualenv/python3.5/bin
+  - name: "Test with Python 3.6"
+    python: "3.6"
+    env: PATH_PYTHON=/home/travis/virtualenv/python3.6/bin
   - name: "Test with Python 3.7"
     python: "3.7"
     env: PATH_PYTHON=/home/travis/virtualenv/python3.7/bin

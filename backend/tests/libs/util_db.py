@@ -4,6 +4,7 @@ from cloud_inquisitor.config import dbconfig
 from cloud_inquisitor.constants import NS_CINQ_TEST
 from cloud_inquisitor.database import db
 from cloud_inquisitor.schema import Resource, ResourceProperty, IssueProperty, Issue
+from tests.libs.var_const import CINQ_TEST_REGION
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,27 @@ def get_resource(resource_id):
         return qry[0]
     except IndexError:
         return None
+
+
+def create_resource(
+        resource_type,
+        resource_id,
+        account_id,
+        properties=None,
+        tags=None,
+        location=CINQ_TEST_REGION,
+        auto_add=True,
+        auto_commit=False
+):
+    return resource_type.create(
+        resource_id,
+        account_id=account_id,
+        properties=properties,
+        tags=tags,
+        location=location,
+        auto_add=auto_add,
+        auto_commit=auto_commit
+    )
 
 
 def modify_issue(issue_id, issue_property, value):
@@ -67,6 +89,13 @@ def modify_resource(resource_id, resource_property, value):
         logger.error('Failed to modify resource property {}: {}'.format(resource_property, e))
     finally:
         db.session.rollback()
+
+
+def set_tags(resource, tags):
+    for k, v in tags.items():
+        resource.set_tag(k, v)
+
+    db.session.commit()
 
 
 def set_test_user_role(role):

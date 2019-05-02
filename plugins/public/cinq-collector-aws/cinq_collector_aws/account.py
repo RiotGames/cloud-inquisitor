@@ -21,10 +21,11 @@ class AWSAccountCollector(BaseCollector):
     s3_collection_enabled = dbconfig.get('s3_bucket_collection', ns, True)
     cloudfront_collection_enabled = dbconfig.get('cloudfront_collection', ns, True)
     route53_collection_enabled = dbconfig.get('route53_collection', ns, True)
+
     options = (
         ConfigOption('s3_bucket_collection', True, 'bool', 'Enable S3 Bucket Collection'),
         ConfigOption('cloudfront_collection', True, 'bool', 'Enable Cloudfront DNS Collection'),
-        ConfigOption('route53_collection', True, 'bool', 'Enable Route53 DNS Collection')
+        ConfigOption('route53_collection', True, 'bool', 'Enable Route53 DNS Collection'),
     )
 
     def __init__(self, account):
@@ -73,7 +74,6 @@ class AWSAccountCollector(BaseCollector):
         try:
             existing_buckets = S3Bucket.get_all(self.account)
             buckets = {bucket.name: bucket for bucket in s3.buckets.all()}
-
             for data in buckets.values():
                 # This section ensures that we handle non-existent or non-accessible sub-resources
                 try:
@@ -82,7 +82,7 @@ class AWSAccountCollector(BaseCollector):
                         bucket_region = 'us-east-1'
 
                 except ClientError as e:
-                    self.log.error('Could not get bucket location..bucket possibly removed / {}'.format(e))
+                    self.log.info('Could not get bucket location..bucket possibly removed / {}'.format(e))
                     bucket_region = 'unavailable'
 
                 try:
@@ -92,8 +92,8 @@ class AWSAccountCollector(BaseCollector):
                     if e.response['Error']['Code'] == 'NoSuchBucketPolicy':
                         bucket_policy = None
                     else:
-                        self.log.error('There was a problem collecting bucket policy for bucket {} on account {}, {}'
-                                       .format(data.name, self.account, e.response))
+                        self.log.info('There was a problem collecting bucket policy for bucket {} on account {}, {}'
+                                      .format(data.name, self.account, e.response))
                         bucket_policy = 'cinq cannot poll'
 
                 try:
@@ -103,8 +103,8 @@ class AWSAccountCollector(BaseCollector):
                     if e.response['Error']['Code'] == 'NoSuchWebsiteConfiguration':
                         website_enabled = 'Disabled'
                     else:
-                        self.log.error('There was a problem collecting website config for bucket {} on account {}'
-                                       .format(data.name, self.account))
+                        self.log.info('There was a problem collecting website config for bucket {} on account {}'
+                                      .format(data.name, self.account))
                         website_enabled = 'cinq cannot poll'
 
                 try:
@@ -123,7 +123,7 @@ class AWSAccountCollector(BaseCollector):
                     metrics = {'size': bucket_size, 'object_count': bucket_obj_count}
 
                 except Exception as e:
-                    self.log.error('Could not retrieve bucket statistics / {}'.format(e))
+                    self.log.info('Could not retrieve bucket statistics / {}'.format(e))
                     metrics = {'found': False}
 
                 properties = {

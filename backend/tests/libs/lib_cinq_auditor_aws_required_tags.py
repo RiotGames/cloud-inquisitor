@@ -7,6 +7,8 @@ IGNORE_TAGSET = [{'Key': dbconfig.get('audit_ignore_tag', NS_AUDITOR_REQUIRED_TA
 VALID_TAGSET = [
     {'Key': x, 'Value': 'value@example.com'} for x in dbconfig.get('required_tags', NS_AUDITOR_REQUIRED_TAGS, [])
 ]
+VALID_TAGS = {x: 'value@example.com' for x in dbconfig.get('required_tags', NS_AUDITOR_REQUIRED_TAGS, {})}
+
 
 STANDARD_ALERT_SETTINGS_STOP = 7200
 STANDARD_ALERT_SETTINGS_REMOVE = 14400
@@ -39,3 +41,9 @@ def prep_s3_testing(cinq_test_service, collect_only=False):
     dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'alert_settings', DBCJSON(STANDARD_ALERT_SETTINGS))
 
     cinq_test_service.start_mocking_services('cloudwatch', 's3')
+
+
+def prep_rds_testing(cinq_test_service, collect_only=False):
+    set_audit_scope('aws_rds_instance')
+    dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'collect_only', collect_only)
+    dbconfig.set(NS_AUDITOR_REQUIRED_TAGS, 'alert_settings', DBCJSON(STANDARD_ALERT_SETTINGS))
