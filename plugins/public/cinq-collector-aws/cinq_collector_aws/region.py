@@ -703,21 +703,21 @@ class AWSRegionCollector(BaseCollector):
                                 properties=properties,
                                 tags=tags
                             )
-                    # Removal of RDS instances
-                    rk = set()
-                    erk = set()
-                    for database in rds_dbs:
-                        rk.add(database['resource_name'])
-                    for existing in existing_rds_dbs.keys():
-                        erk.add(existing)
+                # Removal of RDS instances
+                rk = set()
+                erk = set()
+                for database in rds_dbs:
+                    rk.add(database['resource_name'])
+                for existing in existing_rds_dbs.keys():
+                    erk.add(existing)
 
-                    for resource_id in erk - rk:
-                        db.session.delete(existing_rds_dbs[resource_id].resource)
-                        self.log.debug('Removed RDS instances {}/{}'.format(
-                            self.account.account_name,
-                            resource_id
-                        ))
-                    db.session.commit()
+                for resource_id in erk - rk:
+                    db.session.delete(existing_rds_dbs[resource_id].resource)
+                    self.log.debug('Removed RDS instances {}/{}'.format(
+                        self.account.account_name,
+                        resource_id
+                    ))
+                db.session.commit()
 
             else:
                 self.log.error('RDS Lambda Execution Failed / {} / {} / {}'.
