@@ -52,7 +52,8 @@ def process_action(resource, action, action_issuer='unknown'):
         try:
             logger.info(f'Trying to {action} resource {resource.id} for account {resource.account.account_name} / region {resource.location}')
             action_status, extra_info = func_action(client, resource)
-            Enforcement.create(resource.account.account_id, resource.id, action, datetime.now(), extra_info)
+            if action_status == ActionStatus.SUCCEED:
+                Enforcement.create(resource.account.account_id, resource.id, action, datetime.now(), extra_info)
         except Exception as ex:
             action_status = ActionStatus.FAILED
             logger.exception('Failed to apply action {} to {}: {}'.format(action, resource.id, ex))
