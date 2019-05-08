@@ -212,7 +212,7 @@ def operate_rds_instance(client, resource, action):
         'accountName': resource.account.account_name,
         'action': action,
         'region': resource.location,
-        'resourceId': resource.id,
+        'resourceId': resource.instance_name,
         'resourceType': 'rds',
         'resourceSubType': resource.engine
     }

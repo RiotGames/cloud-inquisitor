@@ -688,16 +688,20 @@ class AWSRegionCollector(BaseCollector):
                             'tags': tags,
                             'metrics': None,
                             'engine': db_instance['engine'],
-                            'creation_date': db_instance['creation_date']
+                            'creation_date': db_instance['creation_date'],
+                            'instance_name': db_instance['instance_name']
                         }
-                        if db_instance['resource_name'] in existing_rds_dbs:
-                            rds = existing_rds_dbs[db_instance['resource_name']]
+                        if db_instance['resource_id'] in existing_rds_dbs:
+                            rds = existing_rds_dbs[db_instance['resource_id']]
                             if rds.update(db_instance, properties):
-                                self.log.debug('Change detected for RDS instance {}/{} '
-                                               .format(db_instance['resource_name'], properties))
+                                self.log.debug(
+                                    'Change detected for RDS instance {}/{} '.format(
+                                        db_instance['resource_id'], properties
+                                    )
+                                )
                         else:
                             RDSInstance.create(
-                                db_instance['resource_name'],
+                                db_instance['resource_id'],
                                 account_id=self.account.account_id,
                                 location=db_instance['region'],
                                 properties=properties,
@@ -707,7 +711,7 @@ class AWSRegionCollector(BaseCollector):
                 rk = set()
                 erk = set()
                 for database in rds_dbs:
-                    rk.add(database['resource_name'])
+                    rk.add(database['resource_id'])
                 for existing in existing_rds_dbs.keys():
                     erk.add(existing)
 
