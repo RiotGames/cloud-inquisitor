@@ -683,6 +683,17 @@ class AWSRegionCollector(BaseCollector):
                 rds_dbs = response_payload['data']
                 if rds_dbs:
                     for db_instance in rds_dbs:
+                        # Ignore DocumentDB for now
+                        if db_instance['engine'] == 'docdb':
+                            self.log.info(
+                                'Ignoring DocumentDB... Account Name: {}, Region: {}, Instance Name: {}'.format(
+                                    self.account.account_name,
+                                    self.region,
+                                    db_instance['instance_name']
+                                )
+                            )
+                            continue
+
                         tags = {t['Key']: t['Value'] for t in db_instance['tags'] or {}}
                         properties = {
                             'tags': tags,
