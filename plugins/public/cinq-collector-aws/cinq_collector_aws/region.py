@@ -27,6 +27,8 @@ class AWSRegionCollector(BaseCollector):
     rds_collector_account = dbconfig.get('rds_collector_account', ns, '')
     rds_collector_region = dbconfig.get('rds_collector_region', ns, '')
     rds_config_rule_name = dbconfig.get('rds_config_rule_name', ns, '')
+    rds_ignore_db_types = dbconfig.get('rds_ignore_db_types', ns, [])
+
     options = (
         ConfigOption('enabled', True, 'bool', 'Enable the AWS Region-based Collector'),
         ConfigOption('interval', 15, 'int', 'Run frequency, in minutes'),
@@ -40,7 +42,8 @@ class AWSRegionCollector(BaseCollector):
         ConfigOption('rds_role', '', 'string', 'Name of IAM role to assume in TARGET accounts'),
         ConfigOption('rds_collector_account', '', 'string', 'Account Name where RDS Lambda Collector runs'),
         ConfigOption('rds_collector_region', '', 'string', 'AWS Region where RDS Lambda Collector runs'),
-        ConfigOption('rds_config_rule_name', '', 'string', 'Name of AWS Config rule to evaluate')
+        ConfigOption('rds_config_rule_name', '', 'string', 'Name of AWS Config rule to evaluate'),
+        ConfigOption('rds_ignore_db_types', [], 'array', 'RDS types we would like to ignore')
     )
 
     def __init__(self, account, region):
@@ -684,7 +687,7 @@ class AWSRegionCollector(BaseCollector):
                 if rds_dbs:
                     for db_instance in rds_dbs:
                         # Ignore DocumentDB for now
-                        if db_instance['engine'] == 'docdb':
+                        if db_instance['engine'] in self.rds_ignore_db_types:
                             self.log.info(
                                 'Ignoring DocumentDB... Account Name: {}, Region: {}, Instance Name: {}'.format(
                                     self.account.account_name,
