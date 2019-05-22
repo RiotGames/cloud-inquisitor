@@ -689,7 +689,7 @@ class AWSRegionCollector(BaseCollector):
                         # Ignore DocumentDB for now
                         if db_instance['engine'] in self.rds_ignore_db_types:
                             self.log.info(
-                                'Ignoring DocumentDB... Account Name: {}, Region: {}, Instance Name: {}'.format(
+                                'Ignoring DB Instance... Account Name: {}, Region: {}, Instance Name: {}'.format(
                                     self.account.account_name,
                                     self.region,
                                     db_instance['instance_name']
