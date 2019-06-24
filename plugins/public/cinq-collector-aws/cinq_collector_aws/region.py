@@ -692,7 +692,7 @@ class AWSRegionCollector(BaseCollector):
                                 'Ignoring DB Instance... Account Name: {}, Region: {}, Instance Name: {}'.format(
                                     self.account.account_name,
                                     self.region,
-                                    db_instance['instance_name']
+                                    db_instance['resource_name']
                                 )
                             )
                             continue
@@ -703,7 +703,7 @@ class AWSRegionCollector(BaseCollector):
                             'metrics': None,
                             'engine': db_instance['engine'],
                             'creation_date': db_instance['creation_date'],
-                            'instance_name': db_instance['instance_name']
+                            'instance_name': db_instance['resource_name']
                         }
                         if db_instance['resource_id'] in existing_rds_dbs:
                             rds = existing_rds_dbs[db_instance['resource_id']]

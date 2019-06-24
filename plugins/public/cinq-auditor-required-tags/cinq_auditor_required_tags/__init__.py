@@ -487,6 +487,9 @@ class RequiredTagsAuditor(BaseAuditor):
                 missing_tags.append(key)
                 notes.append('{} tag is not valid'.format(key))
 
+        if missing_tags and resource.resource_type == 'aws_rds_instance':
+            notes.append('Instance name = {}'.format(resource.instance_name))
+
         return missing_tags, notes
 
     def notify(self, notices):
