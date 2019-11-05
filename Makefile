@@ -6,6 +6,8 @@ PATH_FRONTEND ?= ${PATH_CINQ}/frontend
 PATH_PYTHON ?= /usr/bin
 PATH_VENV ?= ${PATH_CINQ}/cinq-venv
 APP_WORKER_PROCS ?= 12
+APP_WORKER_PROC_THREADS ?= 5
+APP_WORKER_PROC_THREAD_DELAY ?= 10
 APP_CONFIG_BASE_PATH ?= /usr/local/etc/cloud-inquisitor
 APP_DB_URI ?= "mysql://cinq:secretpass@127.0.0.1:3306/cinq_dev"
 APP_KMS_ACCOUNT_NAME ?= account
@@ -108,7 +110,7 @@ init_cinq_db:
 	sudo -u ${SUDO_USER} -H ${PATH_VENV}/bin/cloud-inquisitor db upgrade
 
 enable_supervisor:
-	sed -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" -e "s|APP_PYENV_PATH|${PATH_VENV}|g" -e "s|APP_WORKER_PROCS|${APP_WORKER_PROCS}|g" ${INS_DIR}/resources/config_files/supervisor.conf > /etc/supervisor/conf.d/cinq.conf
+	sed -e "s|APP_CONFIG_BASE_PATH|${APP_CONFIG_BASE_PATH}|g" -e "s|APP_PYENV_PATH|${PATH_VENV}|g" -e "s|APP_WORKER_PROCS|${APP_WORKER_PROCS}|g" -e "s|APP_WORKER_PROC_THREADS|${APP_WORKER_PROC_THREADS}|g" -e "s|APP_WORKER_PROC_THREAD_DELAY|${APP_WORKER_PROC_THREAD_DELAY}|g" ${INS_DIR}/resources/config_files/supervisor.conf > /etc/supervisor/conf.d/cinq.conf
 
 enable_test:
 	echo "WARNING: Running Cinq test will DESTROY your data in your database. Please make sure you run it on a dedicated test environment"
