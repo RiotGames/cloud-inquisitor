@@ -706,8 +706,9 @@ class AWSRegionCollector(BaseCollector):
                 # Removal of RDS instances
                 rk = set()
                 erk = set()
-                for database in rds_dbs:
-                    rk.add(database['resource_name'])
+                if rds_dbs:
+                    for database in rds_dbs:
+                        rk.add(database['resource_name'])
                 for existing in existing_rds_dbs.keys():
                     erk.add(existing)
 
