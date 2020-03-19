@@ -27,6 +27,8 @@ class AWSRegionCollector(BaseCollector):
     rds_collector_account = dbconfig.get('rds_collector_account', ns, '')
     rds_collector_region = dbconfig.get('rds_collector_region', ns, '')
     rds_config_rule_name = dbconfig.get('rds_config_rule_name', ns, '')
+    rds_ignore_db_types = dbconfig.get('rds_ignore_db_types', ns, [])
+
     options = (
         ConfigOption('enabled', True, 'bool', 'Enable the AWS Region-based Collector'),
         ConfigOption('interval', 15, 'int', 'Run frequency, in minutes'),
@@ -40,7 +42,8 @@ class AWSRegionCollector(BaseCollector):
         ConfigOption('rds_role', '', 'string', 'Name of IAM role to assume in TARGET accounts'),
         ConfigOption('rds_collector_account', '', 'string', 'Account Name where RDS Lambda Collector runs'),
         ConfigOption('rds_collector_region', '', 'string', 'AWS Region where RDS Lambda Collector runs'),
-        ConfigOption('rds_config_rule_name', '', 'string', 'Name of AWS Config rule to evaluate')
+        ConfigOption('rds_config_rule_name', '', 'string', 'Name of AWS Config rule to evaluate'),
+        ConfigOption('rds_ignore_db_types', [], 'array', 'RDS types we would like to ignore')
     )
 
     def __init__(self, account, region):
@@ -683,21 +686,36 @@ class AWSRegionCollector(BaseCollector):
                 rds_dbs = response_payload['data']
                 if rds_dbs:
                     for db_instance in rds_dbs:
+                        # Ignore DocumentDB for now
+                        if db_instance['engine'] in self.rds_ignore_db_types:
+                            self.log.info(
+                                'Ignoring DB Instance... Account Name: {}, Region: {}, Instance Name: {}'.format(
+                                    self.account.account_name,
+                                    self.region,
+                                    db_instance['resource_name']
+                                )
+                            )
+                            continue
+
                         tags = {t['Key']: t['Value'] for t in db_instance['tags'] or {}}
                         properties = {
                             'tags': tags,
                             'metrics': None,
                             'engine': db_instance['engine'],
-                            'creation_date': db_instance['creation_date']
+                            'creation_date': db_instance['creation_date'],
+                            'instance_name': db_instance['resource_name']
                         }
-                        if db_instance['resource_name'] in existing_rds_dbs:
-                            rds = existing_rds_dbs[db_instance['resource_name']]
+                        if db_instance['resource_id'] in existing_rds_dbs:
+                            rds = existing_rds_dbs[db_instance['resource_id']]
                             if rds.update(db_instance, properties):
-                                self.log.debug('Change detected for RDS instance {}/{} '
-                                               .format(db_instance['resource_name'], properties))
+                                self.log.debug(
+                                    'Change detected for RDS instance {}/{} '.format(
+                                        db_instance['resource_id'], properties
+                                    )
+                                )
                         else:
                             RDSInstance.create(
-                                db_instance['resource_name'],
+                                db_instance['resource_id'],
                                 account_id=self.account.account_id,
                                 location=db_instance['region'],
                                 properties=properties,
@@ -708,7 +726,7 @@ class AWSRegionCollector(BaseCollector):
                 erk = set()
                 if rds_dbs:
                     for database in rds_dbs:
-                        rk.add(database['resource_name'])
+                        rk.add(database['resource_id'])
                 for existing in existing_rds_dbs.keys():
                     erk.add(existing)
 

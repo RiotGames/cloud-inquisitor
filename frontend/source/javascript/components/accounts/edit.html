@@ -15,8 +15,10 @@
 
                 <md-input-container class="md-block" flex>
                     <label>Account Type</label>
-                    <md-select name="accountType" ng-model="vm.account.accountType" ng-change="vm.onAccountTypeChange()" disabled>
-                        <md-option ng-repeat="accountType in vm.accountTypes" ng-value="accountType.name">{{accountType.name}}</md-option>
+                    <md-select name="accountType" ng-model="vm.account.accountType" ng-change="vm.onAccountTypeChange()"
+                        disabled>
+                        <md-option ng-repeat="accountType in vm.accountTypes" ng-value="accountType.name">
+                            {{accountType.name}}</md-option>
                     </md-select>
 
                     <div ng-messages="accountEdit.accountName.$error" role="alert" multiple>
@@ -28,14 +30,16 @@
             <div layout-gt-md="row">
                 <md-input-container class="md-block" flex>
                     <label>Required Groups</label>
-                    <md-chips ng-model="vm.account.requiredRoles" placeholder="Enter role"></md-chips>
+                    <md-chips ng-model="vm.account.requiredRoles" placeholder="Enter role" md-add-on-blur="true">
+                    </md-chips>
                 </md-input-container>
 
                 <span style="width: 40px"></span>
 
                 <md-input-container class="md-block" flex>
                     <label for="contacts">Contacts</label>
-                    <md-chips id="contacts" ng-model="vm.account.contacts" md-transform-chip="vm.onChipAdd($chip)">
+                    <md-chips id="contacts" ng-model="vm.account.contacts" md-transform-chip="vm.onChipAdd($chip)"
+                        md-add-on-blur="true">
                         <md-chip-template>{{$chip.value}}</md-chip-template>
                     </md-chips>
                 </md-input-container>
@@ -44,7 +48,8 @@
             <div layout-gt-md="row">
                 <md-input-container class="md-block" flex>
                     <label>Enabled</label>
-                    <md-switch ng-model="vm.account.enabled" aria-label="Enabled" ng-true-value="true" ng-false-value="false" class="md-primary"></md-switch>
+                    <md-switch ng-model="vm.account.enabled" aria-label="Enabled" ng-true-value="true"
+                        ng-false-value="false" class="md-primary"></md-switch>
                 </md-input-container>
             </div>
 
@@ -67,17 +72,15 @@
 
                     <md-input-container class="md-block" ng-if="property.type === 'array'">
                         <label>{{property.name}}</label>
-                        <md-chips ng-model="vm.account.properties[property.key]" placeholder="Enter values" flex></md-chips>
+                        <md-chips ng-model="vm.account.properties[property.key]" placeholder="Enter values"
+                            md-add-on-blur="true" flex>
+                        </md-chips>
                     </md-input-container>
 
                     <md-input-container class="md-block" ng-if="property.type === 'bool'">
-                        <md-switch id="bool_value"
-                                   name="bool_value"
-                                   aria-label="Value"
-                                   ng-model="vm.account.properties[property.key]"
-                                   ng-true-value="true"
-                                   ng-false-value="false"
-                                   class="md-primary">
+                        <md-switch id="bool_value" name="bool_value" aria-label="Value"
+                            ng-model="vm.account.properties[property.key]" ng-true-value="true" ng-false-value="false"
+                            class="md-primary">
                             {{vm.config.value ? "Enabled" : "Disabled"}}
                         </md-switch>
                     </md-input-container>
@@ -86,6 +89,7 @@
         </md-content>
     </section>
 
-    <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!accountEdit.$valid">Update Account</md-button>
+    <md-button class="md-primary md-raised md-hue-2" type="submit" ng-disabled="!accountEdit.$valid">Update Account
+    </md-button>
     <md-button class="md-warn md-raised md-hue-2" onclick="history.back()">Cancel</md-button>
 </form>
