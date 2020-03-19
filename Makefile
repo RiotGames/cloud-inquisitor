@@ -22,15 +22,15 @@ USE_USER_DATA ?= false
 
 install_libs_tarvisci:
 	curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-	apt-get install -qq build-essential apt-transport-https ca-certificates libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client nodejs python3-dev software-properties-common swig
+	DEBIAN_FRONTEND=noninteractive apt-get install -qq build-essential apt-transport-https ca-certificates libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client nodejs python3-dev software-properties-common swig
 	${PATH_PYTHON}/pip3 install codacy-coverage
 
 install_libs:
 	apt-get update
-	apt-get install -qq curl build-essential apt-transport-https ca-certificates git libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client python3-dev software-properties-common supervisor swig
+	DEBIAN_FRONTEND=noninteractive apt-get -qq install curl build-essential apt-transport-https ca-certificates git libffi-dev libldap2-dev libmysqlclient-dev libncurses5-dev libsasl2-dev libxml2-dev libxmlsec1-dev mysql-client python3-dev software-properties-common supervisor swig
 	curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 	apt-get update
-	apt-get install -qq nodejs
+	DEBIAN_FRONTEND=noninteractive apt-get -qq install nodejs
 	curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
 	python3 /tmp/get-pip.py
 	pip3 install -U virtualenv
@@ -39,7 +39,7 @@ install_service_mysql:
 	DEBIAN_FRONTEND=noninteractive apt-get -qq install mysql-server
 
 install_service_nginx:
-	apt-get -qq install nginx
+	DEBIAN_FRONTEND=noninteractive apt-get -qq install nginx
 
 install_files_localdev:
 	# Prepare directories
@@ -126,7 +126,7 @@ clean:
 
 make_image_aws:
 	apt-get update
-	apt-get install -qq curl unzip
+	DEBIAN_FRONTEND=noninteractive apt-get install -qq curl unzip
 	curl https://releases.hashicorp.com/packer/1.3.3/packer_1.3.3_linux_amd64.zip -o /tmp/packer.zip
 	unzip -o /tmp/packer.zip -d /usr/local/bin
 	chmod +x /usr/local/bin/packer

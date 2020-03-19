@@ -63,7 +63,7 @@ class RequiredTagsAuditor(BaseAuditor):
                      'Subject of the email notification'),
         ConfigOption('enabled', False, 'bool', 'Enable the Required Tags auditor'),
         ConfigOption('enable_delete_s3_buckets', True, 'bool',
-                     'Enable actual S3 bucket deletion. This might cause domain hijacking'),
+                     'Enable actual S3 bucket deletion. This might make you vulnerable to domain hijacking'),
         ConfigOption('grace_period', 4, 'int', 'Only audit resources X minutes after being created'),
         ConfigOption('interval', 30, 'int', 'How often the auditor executes, in minutes.'),
         ConfigOption('partial_owner_match', True, 'bool', 'Allow partial matches of the Owner tag'),
@@ -486,6 +486,9 @@ class RequiredTagsAuditor(BaseAuditor):
             elif not self.validate_tag(key, resource_tags[key]):
                 missing_tags.append(key)
                 notes.append('{} tag is not valid'.format(key))
+
+        if missing_tags and resource.resource_type == 'aws_rds_instance':
+            notes.append('Instance name = {}'.format(resource.instance_name))
 
         return missing_tags, notes
 

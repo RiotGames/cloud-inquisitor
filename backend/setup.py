@@ -112,7 +112,7 @@ setuptools.setup(
         'munch~=2.1',
         'mysqlclient~=1.3',
         'pyexcel-xlsx~=0.5',
-        'pytest~=4.0',
+        'pytest~=5.0',
         'pytest-cov~=2.6',
         'rainbow-logging-handler~=2.2',
         'requests~=2.19',

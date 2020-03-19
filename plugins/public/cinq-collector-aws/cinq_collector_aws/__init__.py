@@ -1,2 +1,2 @@
 from .account import AWSAccountCollector
-from .region import  AWSRegionCollector
+from .region import AWSRegionCollector

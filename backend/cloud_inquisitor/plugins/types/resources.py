@@ -1468,6 +1468,10 @@ class RDSInstance(BaseResource):
         """
         return parse_date(self.get_property('creation_date').value)
 
+    @property
+    def instance_name(self):
+        return self.get_property('instance_name').value
+
     # region Object properties
     @property
     def metrics(self):
@@ -1515,6 +1519,7 @@ class RDSInstance(BaseResource):
         updated = self.set_property('metrics', properties['metrics'])
         updated |= self.set_property('engine', properties['engine'])
         updated |= self.set_property('creation_date', properties['creation_date'])
+        updated |= self.set_property('instance_name', properties['instance_name'])
 
         tags = {x['Key']: x['Value'] for x in data['tags'] or {}}
         existing_tags = {x.key: x for x in self.tags}

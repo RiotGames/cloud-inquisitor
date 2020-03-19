@@ -4,7 +4,8 @@
             <div layout-gt-md="row">
                 <md-input-container class="md-block" flex>
                     <label for="namespace_prefix">Namespace</label>
-                    <input id="namespace_prefix" name="namespace_prefix" type="text" ng-model="vm.namespace.name" required disabled />
+                    <input id="namespace_prefix" name="namespace_prefix" type="text" ng-model="vm.namespace.name"
+                        required disabled />
                 </md-input-container>
 
                 <span style="width: 20px;"></span>
@@ -42,7 +43,8 @@
 
             <div layout-gt-md="row">
                 <md-input-container class="md-block" flex>
-                    <input id="description" name="description" type="text" ng-model="vm.config.description" aria-label="Description" />
+                    <input id="description" name="description" type="text" ng-model="vm.config.description"
+                        aria-label="Description" />
                 </md-input-container>
             </div>
 
@@ -64,18 +66,14 @@
 
                 <md-input-container class="md-block" flex ng-if="vm.config.type == 'array'">
                     <label for="array_value">Value</label>
-                    <md-chips id="array_value" ng-model="vm.config.value" placeholder="Enter values" flex></md-chips>
+                    <md-chips id="array_value" ng-model="vm.config.value" placeholder="Enter values"
+                        md-add-on-blur="true" flex></md-chips>
                 </md-input-container>
 
                 <md-input-container class="md-block" flex ng-if="vm.config.type == 'json'">
                     <label for="json_value">Value</label>
-                    <textarea
-                            id="json_value"
-                            name="json_value"
-                            ng-model="vm.config.value"
-                            max-rows="20"
-                            json
-                            ng-class="{'error': configAdd.json_value.$error.json}"></textarea>
+                    <textarea id="json_value" name="json_value" ng-model="vm.config.value" max-rows="20" json
+                        ng-class="{'error': configAdd.json_value.$error.json}"></textarea>
 
                     <div ng-messages="configAdd.json_value.$error" role="alert" multiple>
                         <div ng-message="json" class="my-message">Invalid JSON provided</div>
@@ -83,14 +81,8 @@
                 </md-input-container>
 
                 <md-input-container class="md-block" ng-if="vm.config.type == 'bool'">
-                    <md-switch
-                            id="bool_value"
-                            name="bool_value"
-                            aria-label="Value"
-                            ng-model="vm.config.value"
-                            ng-true-value="true"
-                            ng-false-value="false"
-                            class="md-primary">
+                    <md-switch id="bool_value" name="bool_value" aria-label="Value" ng-model="vm.config.value"
+                        ng-true-value="true" ng-false-value="false" class="md-primary">
                         {{vm.config.value ? "Enabled" : "Disabled"}}
                     </md-switch>
                 </md-input-container>
@@ -99,19 +91,22 @@
                     <div layout-gt-md="row">
                         <md-input-container class="md-block" flex>
                             <label for="string_value">Available Values</label>
-                            <md-chips ng-model="vm.config.value.available" placeholder="Enter values"></md-chips>
+                            <md-chips ng-model="vm.config.value.available" placeholder="Enter values"
+                                md-add-on-blur="true"></md-chips>
                         </md-input-container>
                     </div>
 
                     <div layout-gt-md="row">
                         <md-input-container class="md-block">
                             <label for="string_value">Min Items Required</label>
-                            <input type="number" ng-model="vm.config.value.min_items" ng-value="vm.config.value.min_items"/>
+                            <input type="number" ng-model="vm.config.value.min_items"
+                                ng-value="vm.config.value.min_items" />
                         </md-input-container>
 
                         <md-input-container class="md-block">
                             <label for="string_value">Max Items Allowed</label>
-                            <input type="number" ng-model="vm.config.value.max_items" ng-value="vm.config.value.max_items"/>
+                            <input type="number" ng-model="vm.config.value.max_items"
+                                ng-value="vm.config.value.max_items" />
                         </md-input-container>
                     </div>
 
@@ -119,7 +114,8 @@
                         <md-input-container class="md-block" flex>
                             <label for="string_value">Value</label>
                             <md-select ng-model="vm.config.value.enabled" multiple="true">
-                                <md-option ng-value="optVal" ng-repeat="optVal in vm.config.value.available">{{ optVal }}</md-option>
+                                <md-option ng-value="optVal" ng-repeat="optVal in vm.config.value.available">
+                                    {{ optVal }}</md-option>
                             </md-select>
                         </md-input-container>
                     </div>
