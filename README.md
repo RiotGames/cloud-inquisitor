@@ -6,7 +6,7 @@ Cloud Inquisitor is currently undergoing a refresh to embrace newer cloud-native
 
 You can follow our work in the branch `cinq_next_master`.
 
-The project will no longer accept PRs against the 1.0 code base and will be grooming and closing any issues we do not believe will be pertanent to Cloud Inquisitors new alignment.
+The project will no longer accept external PRs against the code base and will be grooming and closing any issues we do not believe will be pertanent to Cloud Inquisitors new alignment.
 
 However, we will still accept feature requests in the form of an issue but will prioritize the replacement of target features within Cloud Inquisitor over new features. 
 
