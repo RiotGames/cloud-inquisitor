@@ -1,2 +1,0 @@
-recursive-include cloud_inquisitor/data *.py *.ini README *.mako *.txt *.html *.json
-global-exclude __pycache__ *.pyc

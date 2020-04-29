@@ -1,2 +1,0 @@
-class TestSetupError(Exception):
-    pass
