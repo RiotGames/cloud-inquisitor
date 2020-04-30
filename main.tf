@@ -78,15 +78,6 @@ provider "aws" {
     region     = "us-west-2"
 }
 
-terraform {
-     backend "s3" {
-         bucket = "cinq-next"
-         key    = "state.tf"
-         region = "us-west-2"
-         encrypt = "true"
-     }
- }
-
 module "us-west-2" {
     source = "./terraform_modules/workflow"
 
@@ -117,6 +108,7 @@ module "us-west-2" {
         }
     }
     EOF
+
 }
 
 output "module" {

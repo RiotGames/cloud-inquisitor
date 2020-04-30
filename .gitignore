@@ -674,3 +674,5 @@ healthchecksdb
 MigrationBackup/
 
 # End of https://www.gitignore.io/api/go,osx,git,vim,linux,emacs,python,windows,terraform,visualstudio,visualstudiocode
+
+state.tf
