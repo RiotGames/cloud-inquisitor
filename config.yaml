@@ -1,0 +1,59 @@
+test-workflow-1:
+    event_rules:
+        ec2_tag_auditing: >
+            {
+                "source": [
+                    "aws.ec2"
+                ],
+                "detail-type": [
+                    "AWS API Call via CloudTrail"
+                ],
+                "detail": {
+                    "eventSource": [
+                        "ec2.amazonaws.com"
+                    ],
+                    "eventName": [
+                        "ModifyInstanceAttribute",
+                        "RunInstances",
+                        "StartInstances",
+                        "StopInstances",
+                        "TerminateInstances"
+                    ]
+                }
+            }
+        s3_tag_auditing: >
+            {
+                "source": [
+                    "aws.s3"
+                ],
+                "detail-type": [
+                    "AWS API Call via CloudTrail"
+                ],
+                "detail": {
+                    "eventSource": [
+                        "s3.amazonaws.com"
+                    ],
+                    "eventName": [
+                        "CreateBucket",
+                        "DeleteBucket",
+                        "PutBucketTagging"
+                    ]
+                }
+            }
+    workflow: >
+        {
+            "Comment": "A Hello World example of the Amazon States Language using Pass states",
+            "StartAt": "Hello",
+            "States": {
+                "Hello": {
+                    "Type": "Pass",
+                    "Result": "Hello",
+                    "Next": "World"
+                },
+                "World": {
+                    "Type": "Pass",
+                    "Result": "World",
+                    "End": true
+                }
+            }
+        }
