@@ -3,9 +3,13 @@ variable "name" {
     description = "name of the step function to create"
 }
 
-variable "declaration" {
+variable "step_function_selector" {
     type = string
     description = "declaration of the state machine"
+}
+
+output "step_function_map" {
+    value = local.step_functions
 }
 
 output "step_function_role_arn" {

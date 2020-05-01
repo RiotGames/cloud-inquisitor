@@ -2,8 +2,7 @@ module "step_function" {
     source = "../step_function"
 
     name = var.name
-    declaration = var.step_function_declaration
-
+    step_function_selector = var.step_function_selector
     /*providers = {
         aws = "aws.${var.region}"
     }*/

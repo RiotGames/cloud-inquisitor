@@ -40,20 +40,5 @@ test-workflow-1:
                     ]
                 }
             }
-    workflow: >
-        {
-            "Comment": "A Hello World example of the Amazon States Language using Pass states",
-            "StartAt": "Hello",
-            "States": {
-                "Hello": {
-                    "Type": "Pass",
-                    "Result": "Hello",
-                    "Next": "World"
-                },
-                "World": {
-                    "Type": "Pass",
-                    "Result": "World",
-                    "End": true
-                }
-            }
-        }
+    step_functions:
+        type: "hello_world" 

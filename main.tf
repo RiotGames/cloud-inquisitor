@@ -90,25 +90,7 @@ module "us-west-2" {
         "rds_tag_auditing": local.rds_rule
     }
 
-    step_function_declaration = <<EOF
-    {
-        "Comment": "A Hello World example of the Amazon States Language using Pass states",
-        "StartAt": "Hello",
-        "States": {
-            "Hello": {
-                "Type": "Pass",
-                "Result": "Hello",
-                "Next": "World"
-            },
-            "World": {
-                "Type": "Pass",
-                "Result": "World",
-                "End": true
-            }
-        }
-    }
-    EOF
-
+    step_function_selector = "hello_world"
 }
 
 output "module" {

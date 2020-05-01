@@ -8,14 +8,14 @@ variable "event_rules" {
     description = "list of event objects"
 }
 
+variable "step_function_selector" {
+    type = string
+    description = "step function to run"
+}
+
 variable "region" {
     type = string
     description = "region to deploy workflow in"
-}
-
-variable "step_function_declaration" {
-    type = string
-    description = "state declaration of the step function to run"
 }
 
 output "name" {
@@ -24,10 +24,6 @@ output "name" {
 
 output "rule_list" {
     value = var.event_rules
-}
-
-output "step_function_declaration" {
-    value = var.step_function_declaration
 }
 
 output "step_function_module" {
