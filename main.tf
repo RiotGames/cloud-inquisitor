@@ -81,8 +81,11 @@ provider "aws" {
 module "us-west-2" {
     source = "./terraform_modules/workflow"
 
-    name = "test-us-west-2"
+    name = "cinq_next_test"
+    environment = "dev"
     region = "us-west-2"
+    version_str = "v0_0_0"
+
 
     event_rules = { 
         "ec2_tag_auditing":  local.ec2_rule,

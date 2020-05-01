@@ -1,5 +1,5 @@
 resource "aws_iam_role" "step_function_role" {
-  name               = "sfn-${var.name}-role"
+  name               = "${var.environment}-${var.name}-sfn-iam-role-${var.region}-${var.version_str}"
   assume_role_policy = data.aws_iam_policy_document.sfn_assume_role_policy_document.json
 }
 
@@ -20,7 +20,7 @@ data "aws_iam_policy_document" "sfn_assume_role_policy_document" {
 }
 
 resource "aws_iam_role_policy" "step_function_role_policy" {
-  name = "sfn-${var.name}-role-policy"
+  name = "${var.environment}-${var.name}-sfn-iam-role-policy-${var.region}-${var.version_str}"
   role = aws_iam_role.step_function_role.id
 
   policy = <<EOF
