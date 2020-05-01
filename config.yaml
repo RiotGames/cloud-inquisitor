@@ -1,4 +1,6 @@
 test-workflow-1:
+    regions:
+        - all
     event_rules:
         ec2_tag_auditing: >
             {
