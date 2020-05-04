@@ -28,20 +28,79 @@ A Cloud Inquisitor workflow is a set of rules/conditions that, when triggered, w
 
 ## Workflows
 
-Workflows pair traps and triggers. 
-
-Current supported traps are:
-
-  - Cloudwatch Events
+Workflows pair environment triggers with remediation actions. 
 
 Current supported triggers are:
 
-  - Step Functions
+  - Cloudwatch Events
 
-### Event Rules
+Current supported remediation actions are:
+
+  - Invoke Step Functions
+
+
+Example usage of terraform module:
+
+```terraform
+locals {
+  ec2_rule = <<RuleOne
+      {
+          "source": [
+              "aws.ec2"
+          ],
+          "detail-type": [
+              "AWS API Call via CloudTrail"
+          ],
+          "detail": {
+              "eventSource": [
+                  "ec2.amazonaws.com"
+              ],
+              "eventName": [
+                  "ModifyInstanceAttribute",
+                  "RunInstances",
+                  "StartInstances",
+                  "StopInstances",
+                  "TerminateInstances"
+              ]
+          }
+      } 
+  RuleOne
+}
+
+module "us-west-2" {
+    source = "./terraform_modules/workflow"
+
+    name = "cinq_next_test"
+    environment = "dev"
+    region = "us-west-2"
+    version_str = "v0_0_0"
+
+
+    event_rules = { 
+        "ec2_tag_auditing":  local.ec2_rule
+    }
+
+    step_function_selector = "hello_world"
+}
+```
+
+This configuration allows a map of Cloudwatch Event rules (and a label to give them) to be provisioned by the module and configure the Cloudwatch Event target 
+ to be the selected.
+
+### Environment Triggers
+
+#### Cloudwatch Event Rules
 
 AWS Cloudwatch Events (soon to be Event Bus) allows certain API calls to be trapped and trigger another AWS resource. These rules can be grouped together to trigger the same AWS resource.
 
-### Step Functions
+### Remediation Actions
 
-AWS Step Functions allow for a state machine to be used to monitor and remediate resources.   
+#### Invoke Step Functions
+
+AWS Step Functions allow for a state machine to be used to monitor and remediate resources. All Step Functions that can be used are predefined and can be seelcted by providing the `step_function_selector` in the workflow module declaration.
+
+Current Step Functions include:
+
+  - _Hello World ("hello_world:)_
+
+    The Hello World Step Function is a two stage state machine that prints out "hello" and "world". This is an easy to use function for ensuring event triggers are working properly.
