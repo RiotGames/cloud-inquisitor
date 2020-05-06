@@ -1,79 +1,3 @@
-
-locals {
-  config = yamldecode(file("./config.yaml"))
-
-    ec2_rule = <<RuleOne
-        {
-            "source": [
-                "aws.ec2"
-            ],
-            "detail-type": [
-                "AWS API Call via CloudTrail"
-            ],
-            "detail": {
-                "eventSource": [
-                    "ec2.amazonaws.com"
-                ],
-                "eventName": [
-                    "ModifyInstanceAttribute",
-                    "RunInstances",
-                    "StartInstances",
-                    "StopInstances",
-                    "TerminateInstances"
-                ]
-            }
-        } 
-    RuleOne
-
-    s3_rule = <<RuleTwo
-        {
-            "source": [
-                "aws.s3"
-            ],
-            "detail-type": [
-                "AWS API Call via CloudTrail"
-            ],
-            "detail": {
-                "eventSource": [
-                    "s3.amazonaws.com"
-                ],
-                "eventName": [
-                    "CreateBucket",
-                    "DeleteBucket",
-                    "PutBucketTagging"
-                ]
-            }
-        }
-    RuleTwo
-
-    rds_rule = <<RuleTwo
-        {
-            "source": [
-                "aws.rds"
-            ],
-            "detail-type": [
-                "AWS API Call via CloudTrail"
-            ],
-            "detail": {
-                "eventSource": [
-                    "rds.amazonaws.com"
-                ],
-                "eventName": [
-                    "AddTagsToResource",
-                    "RemoveTagsFromResource",
-                    "CreateDBInstance",
-                    "DeleteDBInstance",
-                    "StopDBInstance"
-                ]
-            }
-        }
-    RuleTwo
-}
-
-output "config" {
-    value = local.config
-}
-
 provider "aws" {
     region     = "us-west-2"
 }
@@ -88,9 +12,9 @@ module "us-west-2" {
 
 
     event_rules = { 
-        "ec2_tag_auditing":  local.ec2_rule,
-        "s3_tag_auditing": local.s3_rule,
-        "rds_tag_auditing": local.rds_rule
+        "ec2_tag_auditing": file("./event_rules/ec2_tags.json"),
+        "s3_tag_auditing": file("./event_rules/s3_tags.json"),
+        "rds_tag_auditing": file("./event_rules/rds_tags.json")
     }
 
     step_function_selector = "hello_world"
