@@ -1,0 +1,18 @@
+{
+    "source": [
+        "aws.s3"
+    ],
+    "detail-type": [
+        "AWS API Call via CloudTrail"
+    ],
+    "detail": {
+        "eventSource": [
+            "s3.amazonaws.com"
+        ],
+        "eventName": [
+            "CreateBucket",
+            "DeleteBucket",
+            "PutBucketTagging"
+        ]
+    }
+}
