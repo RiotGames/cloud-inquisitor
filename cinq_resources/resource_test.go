@@ -127,3 +127,31 @@ func TestAuditTaggableResource(t *testing.T) {
 		}
 	}
 }
+
+func TestTaggableMethods(t *testing.T) {
+	var tResource TaggableResource
+	tResource = &testResource{
+		tags: map[string]string {
+			"tag1": "value1",
+		},
+	}
+
+	tags := tResource.GetTags()
+
+	if val, ok := tags["tag1"]; !ok || val != "value1" {
+		t.Fatal("taggable resource should have return tag pair (tag1, value1)")
+	} 
+
+	missingTags := tResource.GetMissingTags()
+	if len(missingTags) != 2 {
+		t.Fatal("two tags should be missing [tag2, tag3]: ", missingTags)
+	}
+
+	if missingTags[0] != "tag2" && missingTags[1] != "tag3" {
+		t.Fatal("tag returned that is not expected: ", missingTags[0])
+	}
+
+	if missingTags[1] != "tag2" && missingTags[1] != "tag3" {
+		t.Fatal("tag returned that is not expected: ", missingTags[0])
+	}
+}
