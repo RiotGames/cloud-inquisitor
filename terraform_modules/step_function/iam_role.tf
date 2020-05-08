@@ -40,3 +40,22 @@ resource "aws_iam_role_policy" "step_function_role_policy" {
 }
 EOF
 }
+
+resource "aws_iam_role" "lambda_role" {
+  name = "${var.environment}-${var.name}-lambda-iam-role-${var.region}-${var.version_str}"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}

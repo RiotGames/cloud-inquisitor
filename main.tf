@@ -17,7 +17,30 @@ module "us-west-2" {
         "rds_tag_auditing": file("./event_rules/rds_tags.json")
     }
 
-    step_function_selector = "hello_world"
+    step_function_selector = "tag_auditor"
+    step_function_tag_auditor_init_seconds = 10
+    step_function_tag_auditor_notify_seconds = 20
+    step_function_tag_auditor_prevent_seconds = 30
+    step_function_tag_auditor_remove_seconds = 40
+    step_function_lambda_paths = {
+        "tag_auditor_init": {
+            "file": abspath("./builds/tag_auditor"),
+            "handler": "tag_auditor"
+        },
+        "tag_auditor_notify": {
+            "file": abspath("./builds/tag_auditor"),
+            "handler": "tag_auditor"
+        },
+        "tag_auditor_prevent": {
+            "file": abspath("./builds/tag_auditor"),
+            "handler": "tag_auditor"
+        },
+        "tag_auditor_remove": {
+            "file": abspath("./builds/tag_auditor"),
+            "handler": "tag_auditor"
+        }
+    }
+
 }
 
 output "module" {
