@@ -1,6 +1,6 @@
 AVAILABLE_REGIONS = $(shell aws ec2 describe-regions | jq -r ".Regions[].RegionName")
 
-AUDITORS = $(shell ls src/serverless)
+AUDITORS = $(shell ls cloud-inquisitor/serverless)
 
 .PHONY: providers_tf build
 
@@ -18,4 +18,4 @@ build_dir:
 	mkdir -p builds
 
 $(AUDITORS): build_dir
-	go build -o ./builds/$@ src/serverless/$@/*.go 	
+	GOARCH=amd64 GOOS=linux go build -o ./builds/$@ cloud-inquisitor/serverless/$@/*.go 	
