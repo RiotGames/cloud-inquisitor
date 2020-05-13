@@ -40,10 +40,16 @@ variable "step_function_tag_auditor_init_seconds" {
     default = 14400 //4 hours
 }
 
-variable "step_function_tag_auditor_notify_seconds" {
+variable "step_function_tag_auditor_first_notify_seconds" {
     type = number
     description = "number of seconds between notification steps"
     default = 604800 //7 days
+}
+
+variable "step_function_tag_auditor_second_notify_seconds" {
+    type = number
+    description = "number of seconds between notification steps"
+    default = 518400 //7 days
 }
 
 variable "step_function_tag_auditor_prevent_seconds" {

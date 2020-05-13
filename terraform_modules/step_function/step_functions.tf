@@ -15,7 +15,8 @@ data "template_file" "tag_auditor" {
   template = "${file("${path.module}/step_function_definitions/tag_auditing.tpl")}"
   vars = merge({
     init_seconds     = var.tag_auditor_init_seconds,
-    notify_seconds   = var.tag_auditor_notify_seconds,
+    first_notify_seconds   = var.tag_auditor_first_notify_seconds,
+    second_notify_seconds   = var.tag_auditor_second_notify_seconds,
     prevent_seconds  = var.tag_auditor_prevent_seconds,
     remove_seconds   = var.tag_auditor_remove_seconds,
   }, local.lambda_arns)

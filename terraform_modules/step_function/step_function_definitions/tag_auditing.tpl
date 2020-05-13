@@ -19,7 +19,7 @@
         },
         "Wait For Second Notification" : {
             "Type": "Wait",
-            "Seconds": ${notify_seconds},
+            "Seconds": ${first_notify_seconds},
             "Next": "Second Notification"
         },
         "Second Notification": {
@@ -29,7 +29,7 @@
         },
         "Wait For Third Notification" : {
             "Type": "Wait",
-            "Seconds": ${notify_seconds},
+            "Seconds": ${second_notify_seconds},
             "Next": "Third Notification"
         },
         "Third Notification": {

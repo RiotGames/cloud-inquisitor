@@ -19,13 +19,14 @@ module "us-west-2" {
 
     step_function_selector = "tag_auditor"
     step_function_tag_auditor_init_seconds = 10
-    step_function_tag_auditor_notify_seconds = 20
+    step_function_tag_auditor_first_notify_seconds = 20
+    step_function_tag_auditor_second_notify_seconds = 20
     step_function_tag_auditor_prevent_seconds = 30
     step_function_tag_auditor_remove_seconds = 40
     step_function_lambda_paths = {
         "tag_auditor_init": {
-            "file": abspath("./builds/tag_auditor"),
-            "handler": "tag_auditor"
+            "file": abspath("./builds/resource_initializer"),
+            "handler": "resource_initializer"
         },
         "tag_auditor_notify": {
             "file": abspath("./builds/tag_auditor"),

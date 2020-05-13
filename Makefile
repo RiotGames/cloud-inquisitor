@@ -4,6 +4,10 @@ AUDITORS = $(shell ls cloud-inquisitor/serverless)
 
 .PHONY: providers_tf build
 
+clean:
+	rm -rf builds
+	rm -rf terraform_modules/step_function/lambda_zips
+
 providers_tf: $(AVAILABLE_REGIONS)
 
 provider_file:
@@ -12,7 +16,7 @@ provider_file:
 $(AVAILABLE_REGIONS): provider_file
 	echo "provider \"aws\" {\n  alias  = \"$@\"\n  region = \"$@\"\n}\n\n" >> regions.tf
 
-build: $(AUDITORS)
+build: clean $(AUDITORS)
 
 build_dir:
 	mkdir -p builds

@@ -1,18 +1,30 @@
 package cloudinquisitor
 
 import (
+	"encoding/json"
+	"errors"
+
 	"github.com/aws/aws-lambda-go/events"
 
 	log "github.com/sirupsen/logrus"
 )
 
-type Action = byte
+type Action = string
+type Service = string
 
 const (
-	ACTION_ERROR Action = iota
-	ACTION_NOTIFY
-	ACTION_PREVENT
-	ACTION_REMOVE
+	ACTION_ERROR   Action = "ACTION_ERROR"
+	ACTION_NOTIFY  Action = "ACTION_NOTIFY"
+	ACTION_PREVENT Action = "ACTION_PREVENT"
+	ACTION_REMOVE  Action = "ACTION_REMOVE"
+	ACTION_NONE    Action = "ACTION_NONE"
+)
+
+const (
+	SERVICE_STUB    Service = "STUB"
+	SERVICE_AWS_EC2 Service = "AWS_EC2"
+	SERVICE_AWS_RDS Service = "AWS_RDS"
+	SERVICE_AWS_S3  Service = "AWS_S3"
 )
 
 // Resource is an interaface that vaugely describes a
@@ -45,6 +57,8 @@ type Resource interface {
 	// TakeAction is provided to give an easy hook for
 	// taking custom actions against resources based on
 	TakeAction(Action) error
+	// GetType returns an ENUM of the supported services
+	GetType() Service
 }
 
 // TaggableResource is an interface which introduces
@@ -56,17 +70,57 @@ type TaggableResource interface {
 	GetMissingTags() []string
 }
 
-func NewResource(event events.CloudWatchEvent) (ResourceResource, error) {
+type PassableResource struct {
+	Resource interface{}
+	Type     Service
+	Finished bool
+}
+
+func (p PassableResource) GetResource() (Resource, error) {
+	switch p.Type {
+	case SERVICE_STUB:
+		structJson, err := json.Marshal(p.Resource)
+		if err != nil {
+			log.Error(err.Error())
+			return nil, errors.New("unable to marshal stub resoruce")
+		}
+
+		var resource StubResource
+		err = json.Unmarshal(structJson, &resource)
+		if err != nil {
+			log.Error(err.Error())
+			return nil, errors.New("unable to unmarshal stub resoruce")
+		}
+
+		return &resource, nil
+	default:
+		return nil, errors.New("no matching resource for type " + p.Type)
+	}
+}
+
+func NewResource(event events.CloudWatchEvent) (Resource, error) {
 	var resource Resource = nil
 	switch event.Source {
 	case "aws.ec2":
 		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		resource = &StubResource{
+			State: 0,
+		}
 	case "aws.rds":
 		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		resource = &StubResource{
+			State: 0,
+		}
 	case "aws.s3":
 		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		resource = &StubResource{
+			State: 0,
+		}
 	default:
 		log.Warningf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		resource = &StubResource{
+			State: 0,
+		}
 	}
 	return resource, nil
 }

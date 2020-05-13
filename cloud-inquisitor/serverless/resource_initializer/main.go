@@ -10,10 +10,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (cloudinquisitor.Resource, error) {
+func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (cloudinquisitor.PassableResource, error) {
 	resource, _ := cloudinquisitor.NewResource(event)
 	log.Printf("resource: %#v\n", resource)
-	return resource, nil
+	return cloudinquisitor.PassableResource{
+		Resource: resource,
+		Type:     resource.GetType(),
+		Finished: false,
+	}, nil
 }
 
 func main() {

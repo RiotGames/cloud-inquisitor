@@ -9,7 +9,7 @@ data "archive_file" "lambda_files" {
     for_each    = var.step_function_lambda_paths
     type        = "zip"
     source_file = each.value["file"]
-    output_path = "${path.module}/lamba_zips/${each.key}.zip"
+    output_path = "${path.module}/lambda_zips/${each.key}.zip"
 }
 
 resource "aws_lambda_function" "step_function_lambdas" {
