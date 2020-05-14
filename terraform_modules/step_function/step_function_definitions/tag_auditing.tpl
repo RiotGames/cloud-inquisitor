@@ -5,17 +5,47 @@
         "Init": {
             "Type": "Task",
             "Resource": "${tag_auditor_init}",
-            "Next": "Wait For First Notification"
+            "Next": "Check if Fixed After Init"
+        },
+        "Check if Fixed After Init": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": false,
+                    "Next": "Wait For First Notification"
+                },
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": true,
+                    "Next": "Resource Has Been Remediated"
+                }
+            ]
         },
         "Wait For First Notification" : {
             "Type": "Wait",
             "Seconds": ${init_seconds},
-            "Next": "Fist Notification"
+            "Next": "First Notification"
         },
         "First Notification": {
             "Type": "Task",
             "Resource": "${tag_auditor_notify}",
-            "Next": "Wait For Second Notification"
+            "Next": "Check if Fixed After First Notification"
+        },
+        "Check if Fixed After First Notification": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": false,
+                    "Next": "Wait For Second Notification"
+                },
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": true,
+                    "Next": "Resource Has Been Remediated"
+                }
+            ]
         },
         "Wait For Second Notification" : {
             "Type": "Wait",
@@ -25,7 +55,22 @@
         "Second Notification": {
             "Type": "Task",
             "Resource": "${tag_auditor_notify}",
-            "Next": "Wait For Third Notification"
+            "Next": "Check if Fixed After Second Notification"
+        },
+        "Check if Fixed After Second Notification": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": false,
+                    "Next": "Wait For Third Notification"
+                },
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": true,
+                    "Next": "Resource Has Been Remediated"
+                }
+            ]
         },
         "Wait For Third Notification" : {
             "Type": "Wait",
@@ -35,7 +80,22 @@
         "Third Notification": {
             "Type": "Task",
             "Resource": "${tag_auditor_notify}",
-            "Next": "Wait For Prevent"
+            "Next": "Check if Fixed After Third Notification"
+        },
+        "Check if Fixed After Third Notification": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": false,
+                    "Next": "Wait For Prevent"
+                },
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": true,
+                    "Next": "Resource Has Been Remediated"
+                }
+            ]
         },
         "Wait For Prevent" : {
             "Type": "Wait",
@@ -45,7 +105,22 @@
         "Prevent": {
             "Type": "Task",
             "Resource": "${tag_auditor_prevent}",
-            "Next": "Wait For Remove"
+            "Next": "Check if Fixed After Prevent"
+        },
+        "Check if Fixed After Prevent": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": false,
+                    "Next": "Wait For Remove"
+                },
+                {
+                    "Variable": "$.Finished",
+                    "BooleanEquals": true,
+                    "Next": "Resource Has Been Remediated"
+                }
+            ]
         },
         "Wait For Remove" : {
             "Type": "Wait",
@@ -55,7 +130,10 @@
         "Remove": {
             "Type": "Task",
             "Resource": "${tag_auditor_remove}",
-            "End": true
+            "Next": "Resource Has Been Remediated"
+        },
+        "Resource Has Been Remediated": {
+            "Type": "Succeed"
         }
     }
 }
