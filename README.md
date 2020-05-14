@@ -81,6 +81,13 @@ module "us-west-2" {
     }
 
     step_function_selector = "hello_world"
+
+    step_function_lambda_paths = {
+        "hello_world_greeter": {
+            "file": abspath("./builds/greeter"),
+            "handler": "greeter"
+        }
+    }
 }
 ```
 
@@ -101,6 +108,14 @@ AWS Step Functions allow for a state machine to be used to monitor and remediate
 
 Current Step Functions include:
 
-  - _Hello World ("hello_world:)_
+  - _Hello World ("hello_world")_
 
     The Hello World Step Function is a two stage state machine that prints out "hello" and "world". This is an easy to use function for ensuring event triggers are working properly.
+
+  - _AWS Resource Tag Auditor (""tag_auditor")_
+
+    The AWS Resource Tag Auditor is a multi-stage state machine that notifies, prevents, and removes resources that do not have the mandated key-pair values.
+
+    This auditor takes a number of variables which include time between state transitions and lambdas to run for the major events of the workflow: initiation, notification, prevention, removal.
+
+    

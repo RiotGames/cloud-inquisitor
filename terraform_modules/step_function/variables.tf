@@ -43,13 +43,13 @@ variable "tag_auditor_first_notify_seconds" {
 variable "tag_auditor_second_notify_seconds" {
     type = number
     description = "number of seconds between notification steps"
-    default = 518400 //7 days
+    default = 518400 //6 days
 }
 
 variable "tag_auditor_prevent_seconds" {
     type = number
     description = "number of seconds between last notification step and prevent step"
-    default = 604800 //7 days
+    default = 86400 //1 days
 }
 
 variable "tag_auditor_remove_seconds" {

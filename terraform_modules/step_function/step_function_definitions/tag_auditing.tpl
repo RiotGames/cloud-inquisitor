@@ -12,7 +12,7 @@
             "Seconds": ${init_seconds},
             "Next": "Fist Notification"
         },
-        "Fist Notification": {
+        "First Notification": {
             "Type": "Task",
             "Resource": "${tag_auditor_notify}",
             "Next": "Wait For Second Notification"

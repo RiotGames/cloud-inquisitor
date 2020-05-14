@@ -13,11 +13,12 @@ type Action = string
 type Service = string
 
 const (
-	ACTION_ERROR   Action = "ACTION_ERROR"
-	ACTION_NOTIFY  Action = "ACTION_NOTIFY"
-	ACTION_PREVENT Action = "ACTION_PREVENT"
-	ACTION_REMOVE  Action = "ACTION_REMOVE"
-	ACTION_NONE    Action = "ACTION_NONE"
+	ACTION_ERROR         Action = "ACTION_ERROR"
+	ACTION_NOTIFY        Action = "ACTION_NOTIFY"
+	ACTION_PREVENT       Action = "ACTION_PREVENT"
+	ACTION_REMOVE        Action = "ACTION_REMOVE"
+	ACTION_FIXED_BY_USER Action = "ACTION_FIXED_BY_USER"
+	ACTION_NONE          Action = "ACTION_NONE"
 )
 
 const (
