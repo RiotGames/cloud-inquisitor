@@ -94,6 +94,19 @@ module "us-west-2" {
 This configuration allows a map of Cloudwatch Event rules (and a label to give them) to be provisioned by the module and configure the Cloudwatch Event target 
  to be the selected.
 
+The map *step_function_lambda_paths* allows some dynamic step function variables to be set. For a given step function, there is a list of lambdas that must be provided for the step function to be deployed. The format for setting a lambda is:
+
+```json
+{
+    "step_function_lambda_name": {
+        "file": "path to lambda binary",
+        "handler": "name of binary/handler to run"
+    }
+}
+```
+
+Even though this project currently only has Golang based lambdas, there is no reason a different  langauge could be targets as long as it follows the pattern supplied. The File given will be zipped and uploaded to AWS and the handler is the binary/script/target to be ran.
+
 ### Environment Triggers
 
 #### Cloudwatch Event Rules
@@ -118,4 +131,19 @@ Current Step Functions include:
 
     This auditor takes a number of variables which include time between state transitions and lambdas to run for the major events of the workflow: initiation, notification, prevention, removal.
 
-    
+    _Step Function Lambdas_
+    | lambda variable name | 
+    |---|
+    |tag_auditor_init|
+    |tag_auditor_notify|
+    |tag_auditor_prevent|
+    |tag_auditor_remove|
+
+    _Step Function Variables_
+    |variable|unit|default|
+    |---|---|---|
+    |step_function_tag_auditor_init_seconds|seconds|14400 (4 hrs)
+    |step_function_tag_auditor_first_notify_seconds|seconds|604800 (7 days)
+    step_function_tag_auditor_second_notify_seconds|seconds|518400 (6 days)
+    step_function_tag_auditor_prevent_seconds|seconds|86400 (1 day)
+    step_function_tag_auditor_remove_seconds|seconds|604800 (7 days)
