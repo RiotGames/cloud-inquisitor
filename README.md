@@ -148,4 +148,4 @@ Current Step Functions include:
     step_function_tag_auditor_prevent_seconds|seconds|86400 (1 day)
     step_function_tag_auditor_remove_seconds|seconds|604800 (7 days)
 
-    ![tag auditor variables](./docs/tag_auditor.png =200x200)
+    ![tag auditor variables](./docs/tag_auditor.png){ width=250px }
