@@ -147,3 +147,5 @@ Current Step Functions include:
     step_function_tag_auditor_second_notify_seconds|seconds|518400 (6 days)
     step_function_tag_auditor_prevent_seconds|seconds|86400 (1 day)
     step_function_tag_auditor_remove_seconds|seconds|604800 (7 days)
+
+    ![tag auditor variables](./docs/tag_auditor.png)
