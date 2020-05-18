@@ -49,7 +49,7 @@ variable "step_function_tag_auditor_first_notify_seconds" {
 variable "step_function_tag_auditor_second_notify_seconds" {
     type = number
     description = "number of seconds between notification steps"
-    default = 518400 //7 days
+    default = 518400 //6 days
 }
 
 variable "step_function_tag_auditor_prevent_seconds" {

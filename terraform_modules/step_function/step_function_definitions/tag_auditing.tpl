@@ -100,9 +100,9 @@
         "Wait For Prevent" : {
             "Type": "Wait",
             "Seconds": ${prevent_seconds},
-            "Next": "Prevent"
+            "Next": "Check if Fixed or Prevent"
         },
-        "Prevent": {
+        "Check if Fixed or Prevent": {
             "Type": "Task",
             "Resource": "${tag_auditor_prevent}",
             "Next": "Check if Fixed After Prevent"
@@ -125,9 +125,9 @@
         "Wait For Remove" : {
             "Type": "Wait",
             "Seconds": ${remove_seconds},
-            "Next": "Remove"
+            "Next": "Check if Fixed or Remove"
         },
-        "Remove": {
+        "Check if Fixed or Remove": {
             "Type": "Task",
             "Resource": "${tag_auditor_remove}",
             "Next": "Resource Has Been Remediated"
