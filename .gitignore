@@ -676,3 +676,7 @@ MigrationBackup/
 # End of https://www.gitignore.io/api/go,osx,git,vim,linux,emacs,python,windows,terraform,visualstudio,visualstudiocode
 
 state.tf
+
+# for this projects
+terraform_modules/step_function/lamba_zips
+terraform_modules/step_function/lamba_zips/**

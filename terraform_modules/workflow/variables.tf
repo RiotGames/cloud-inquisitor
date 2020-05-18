@@ -28,7 +28,41 @@ variable "step_function_selector" {
     description = "step function to run"
 }
 
+variable "step_function_lambda_paths" {
+    type = map(map(string))
+    description = "map(string) of lambda name to lambda binary path"
+    default = {}
+}
 
+variable "step_function_tag_auditor_init_seconds" {
+    type = number
+    description = "number of seconds between start of step function and first notification step"
+    default = 14400 //4 hours
+}
+
+variable "step_function_tag_auditor_first_notify_seconds" {
+    type = number
+    description = "number of seconds between notification steps"
+    default = 604800 //7 days
+}
+
+variable "step_function_tag_auditor_second_notify_seconds" {
+    type = number
+    description = "number of seconds between notification steps"
+    default = 518400 //6 days
+}
+
+variable "step_function_tag_auditor_prevent_seconds" {
+    type = number
+    description = "number of seconds between last notification step and prevent step"
+    default = 604800 //7 days
+}
+
+variable "step_function_tag_auditor_remove_seconds" {
+    type = number
+    description = "number of seconds between prevent step and remove step"
+    default = 604800 //7 days
+}
 
 output "name" {
     value = var.name
