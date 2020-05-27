@@ -99,6 +99,7 @@ func (t *AWSRDSInstance) RefreshState() error {
 		return err
 	}
 
+	t.Tags = make(map[string]string)
 	for _, tag := range result.TagList {
 		t.Tags[*tag.Key] = *tag.Value
 	}
