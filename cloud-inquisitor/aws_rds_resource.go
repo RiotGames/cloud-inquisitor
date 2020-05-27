@@ -3,6 +3,7 @@ package cloudinquisitor
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,6 +16,7 @@ type AWSRDSInstance struct {
 	State        int
 	AccountID    string
 	Region       string
+	ResourceArn  string
 	ResourceID   string
 	ResourceType string
 
@@ -23,11 +25,30 @@ type AWSRDSInstance struct {
 	InstanceClass      string
 	InstanceStatus     string
 	PubliclyAccessible bool
+
+	Tags map[string]string
 }
 
 // Audit : AWS RDS Instance Audit
 func (t *AWSRDSInstance) Audit() (Action, error) {
 	var result Action
+
+	requiredTags, err := GetConfig("required_tags")
+	if err != nil {
+		return ACTION_ERROR, err
+	}
+
+	compliant := true
+	for _, tag := range strings.Split(requiredTags, ",") {
+		if _, ok := t.Tags[tag]; !ok {
+			compliant = false
+			break
+		}
+	}
+
+	if compliant {
+		return ACTION_FIXED_BY_USER, nil
+	}
 
 	switch t.State {
 	case 0, 1, 2:
@@ -62,7 +83,7 @@ func (t *AWSRDSInstance) RefreshState() error {
 		&rds.DescribeDBInstancesInput{DBInstanceIdentifier: aws.String(t.ResourceID)},
 	)
 
-	if err != nil {
+	if err != nil || len(output.DBInstances) < 1 {
 		return err
 	}
 
@@ -70,6 +91,17 @@ func (t *AWSRDSInstance) RefreshState() error {
 	t.InstanceClass = *output.DBInstances[0].DBInstanceClass
 	t.InstanceStatus = *output.DBInstances[0].DBInstanceStatus
 	t.PubliclyAccessible = *output.DBInstances[0].PubliclyAccessible
+
+	input := &rds.ListTagsForResourceInput{ResourceName: &t.ResourceArn}
+	result, err := rdsClient.ListTagsForResource(input)
+
+	if err != nil {
+		return err
+	}
+
+	for _, tag := range result.TagList {
+		t.Tags[*tag.Key] = *tag.Value
+	}
 
 	return nil
 }
@@ -93,6 +125,21 @@ func (t *AWSRDSInstance) SendNotification() error {
 // TakeAction -
 func (t *AWSRDSInstance) TakeAction(a Action) error {
 	log.Printf("taking action %#v on resource: %#v\n", a, *t)
+
+	actionMode, err := GetConfig("action_mode")
+	if err != nil {
+		return err
+	}
+
+	switch actionMode {
+	case "dryrun":
+		log.Printf("Dry-run mode specified")
+		return nil
+	case "normal":
+		break
+	default:
+		return fmt.Errorf("Non-supported action mode: %v", actionMode)
+	}
 
 	assumedSession, err := AWSAssumeRole(t.AccountID, "ROLE_NAME", nil)
 	if err != nil {
