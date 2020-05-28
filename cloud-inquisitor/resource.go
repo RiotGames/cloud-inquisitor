@@ -1,7 +1,6 @@
 package cloudinquisitor
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -33,6 +32,8 @@ const (
 // collect information on the resource, audit and remediate it,
 // and report the end result
 type Resource interface {
+	NewFromEventBus(events.CloudWatchEvent) error
+	NewFromPassableResource(PassableResource) error
 	// Audit determines if the current state of the struct
 	// meets criteria for a given action
 	Audit() (Action, error)
@@ -80,20 +81,10 @@ type PassableResource struct {
 func (p PassableResource) GetResource() (Resource, error) {
 	switch p.Type {
 	case SERVICE_STUB:
-		structJson, err := json.Marshal(p.Resource)
-		if err != nil {
-			log.Error(err.Error())
-			return nil, errors.New("unable to marshal stub resoruce")
-		}
+		stub := &StubResource{}
+		err := stub.NewFromPassableResource(p)
+		return stub, err
 
-		var resource StubResource
-		err = json.Unmarshal(structJson, &resource)
-		if err != nil {
-			log.Error(err.Error())
-			return nil, errors.New("unable to unmarshal stub resoruce")
-		}
-
-		return &resource, nil
 	default:
 		return nil, errors.New("no matching resource for type " + p.Type)
 	}
@@ -104,24 +95,25 @@ func NewResource(event events.CloudWatchEvent) (Resource, error) {
 	switch event.Source {
 	case "aws.ec2":
 		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
-		resource = &StubResource{
-			State: 0,
-		}
+		resource = &StubResource{}
+		err := resource.NewFromEventBus(event)
+		return resource, err
+
 	case "aws.rds":
 		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
-		resource = &StubResource{
-			State: 0,
-		}
+		resource = &StubResource{}
+		err := resource.NewFromEventBus(event)
+		return resource, err
 	case "aws.s3":
 		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
-		resource = &StubResource{
-			State: 0,
-		}
+		resource = &StubResource{}
+		err := resource.NewFromEventBus(event)
+		return resource, err
 	default:
 		log.Warningf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
-		resource = &StubResource{
-			State: 0,
-		}
+		resource = &StubResource{}
+		err := resource.NewFromEventBus(event)
+		return resource, err
 	}
 	return resource, nil
 }
