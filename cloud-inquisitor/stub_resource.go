@@ -1,6 +1,10 @@
 package cloudinquisitor
 
 import (
+	"encoding/json"
+	"errors"
+
+	"github.com/aws/aws-lambda-go/events"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,6 +27,27 @@ func (t *StubResource) Audit() (Action, error) {
 	t.State += 1
 
 	return result, nil
+}
+
+func (t *StubResource) NewFromEventBus(event events.CloudWatchEvent) error {
+	t.State = 0
+	return nil
+}
+
+func (t *StubResource) NewFromPassableResource(resource PassableResource) error {
+	structJson, err := json.Marshal(resource.Resource)
+	if err != nil {
+		log.Error(err.Error())
+		return errors.New("unable to marshal stub resoruce")
+	}
+
+	err = json.Unmarshal(structJson, t)
+	if err != nil {
+		log.Error(err.Error())
+		return errors.New("unable to unmarshal stub resoruce")
+	}
+
+	return nil
 }
 
 func (t *StubResource) PublishState() error {
