@@ -1,14 +1,18 @@
 package cloudinquisitor
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"
+
+	openapi_aws_rds "github.com/RiotGames/cloud-inquisitor/cinq_resources/aws_rds_openapi"
 )
 
 // AWSRDSInstance - AWS RDS Instance
@@ -62,6 +66,35 @@ func (t *AWSRDSInstance) Audit() (Action, error) {
 	t.State++
 
 	return result, nil
+}
+
+// NewFromEventBus -
+func (t *AWSRDSInstance) NewFromEventBus(event events.CloudWatchEvent) error {
+	eventBytes, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	var RDSOpenAPI openapi_aws_rds.AwsEvent
+	err = json.Unmarshal(eventBytes, &RDSOpenAPI)
+	if err != nil {
+		return err
+	}
+
+	idBuf := strings.Split(RDSOpenAPI.Detail.SourceArn, ":")
+
+	t.AccountID = RDSOpenAPI.Account
+	t.Region = RDSOpenAPI.Region
+	t.ResourceArn = RDSOpenAPI.Detail.SourceArn
+	t.ResourceID = idBuf[len(idBuf)-1]
+	t.State = 0
+
+	return nil
+}
+
+// NewFromPassableResource -
+func (t *AWSRDSInstance) NewFromPassableResource(resource PassableResource) error {
+	return nil
 }
 
 // PublishState -
