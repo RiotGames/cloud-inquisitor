@@ -224,9 +224,7 @@ func (t *AWSRDSInstance) TakeAction(a Action) error {
 
 		// Create a final snapshot and delete RDS instance
 		switch t.InstanceStatus {
-		case "available":
-			fallthrough
-		case "stopped":
+		case "available", "stopped":
 			_, err := rdsClient.DeleteDBInstance(
 				&rds.DeleteDBInstanceInput{
 					DBInstanceIdentifier:      aws.String(t.ResourceID),
