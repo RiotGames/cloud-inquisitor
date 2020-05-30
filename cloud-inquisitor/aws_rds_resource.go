@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"
 
-	openapi_aws_rds "github.com/RiotGames/cloud-inquisitor/cinq_resources/aws_rds_openapi"
+	openapi_aws_rds "github.com/RiotGames/cloud-inquisitor/ext/CinqOpenAPIAWSRDS"
 )
 
 // AWSRDSInstance - AWS RDS Instance
