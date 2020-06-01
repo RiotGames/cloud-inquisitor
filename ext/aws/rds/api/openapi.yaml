@@ -1,0 +1,70 @@
+openapi: 3.0.0
+info:
+  title: RDSDBInstanceEvent
+  version: 1.0.0
+servers:
+- url: /
+paths: {}
+components:
+  schemas:
+    AWSEvent:
+      properties:
+        detail:
+          $ref: '#/components/schemas/RDSDBInstanceEvent'
+        detail-type:
+          type: string
+        resources:
+          items:
+            type: string
+          type: array
+        id:
+          type: string
+        source:
+          type: string
+        time:
+          format: date-time
+          type: string
+        region:
+          type: string
+        version:
+          type: string
+        account:
+          type: string
+      required:
+      - account
+      - detail
+      - detail-type
+      - id
+      - region
+      - resources
+      - source
+      - time
+      - version
+      type: object
+      x-amazon-events-detail-type: RDS DB Instance Event
+      x-amazon-events-source: aws.rds
+    RDSDBInstanceEvent:
+      properties:
+        SourceArn:
+          type: string
+        Message:
+          type: string
+        SourceType:
+          type: string
+        SourceIdentifier:
+          type: string
+        EventCategories:
+          items:
+            type: string
+          type: array
+        Date:
+          format: date-time
+          type: string
+      required:
+      - Date
+      - EventCategories
+      - Message
+      - SourceArn
+      - SourceIdentifier
+      - SourceType
+      type: object

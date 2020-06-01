@@ -680,3 +680,6 @@ state.tf
 # for this projects
 terraform_modules/step_function/lamba_zips
 terraform_modules/step_function/lamba_zips/**
+
+# IDE
+.vscode/
