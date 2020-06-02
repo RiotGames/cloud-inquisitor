@@ -3,6 +3,8 @@ package cloudinquisitor
 import (
 	"errors"
 	"testing"
+
+	"github.com/aws/aws-lambda-go/events"
 )
 
 type testResource struct {
@@ -60,6 +62,18 @@ func (t *testResource) GetMissingTags() []string {
 	}
 
 	return missingTags
+}
+
+func (t *testResource) GetType() Service {
+	return SERVICE_STUB
+}
+
+func (t *testResource) NewFromEventBus(_ events.CloudWatchEvent) error {
+	return nil
+}
+
+func (t *testResource) NewFromPassableResource(_ PassableResource) error {
+	return nil
 }
 
 func TestResourceInterface(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	openapis3 "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/aws_s3_openapi"
+	openapis3 "github.com/RiotGames/cloud-inquisitor/ext/aws/s3"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -32,7 +32,6 @@ const (
         }
     ]
 }`
-
 )
 
 type AWSS3Storage struct {
@@ -101,7 +100,7 @@ func (s *AWSS3Storage) Audit() (Action, error) {
 		return ACTION_FIXED_BY_USER, nil
 	}
 
-	switch t.State {
+	switch s.State {
 	case 0, 1, 2:
 		result = ACTION_NOTIFY
 	case 3:
@@ -110,7 +109,7 @@ func (s *AWSS3Storage) Audit() (Action, error) {
 		result = ACTION_REMOVE
 	}
 
-	t.State++
+	s.State++
 
 	return result, nil
 }
@@ -161,7 +160,7 @@ func (s *AWSS3Storage) SendNotification() error {
 }
 
 func (s *AWSS3Storage) TakeAction(action Action) error {
-	log.Printf("taking action %#v on resource: %#v\n", a, *t)
+	log.Printf("taking action %#v on resource: %#v\n", action, *s)
 
 	actionMode, err := GetConfig("action_mode")
 	if err != nil {
@@ -178,7 +177,7 @@ func (s *AWSS3Storage) TakeAction(action Action) error {
 		return fmt.Errorf("Non-supported action mode: %v", actionMode)
 	}
 
-	assumedSession, err := AWSAssumeRole(t.AccountID, "ROLE_NAME", nil)
+	assumedSession, err := AWSAssumeRole(s.AccountID, "ROLE_NAME", nil)
 	if err != nil {
 		return err
 	}
@@ -189,34 +188,66 @@ func (s *AWSS3Storage) TakeAction(action Action) error {
 	case ACTION_PREVENT:
 		// apply prevent policy
 		inputPutPolicy := &s3.PutBucketPolicyInput{
-			Bucket: aws.String(s.BucketName),
+			Bucket:                        aws.String(s.BucketName),
 			ConfirmRemoveSelfBucketAccess: aws.Bool(true),
-			Policy: aws.String(strings.ReplaceAll(s3PreventPolicy, "BUCKETNAME", s.BucketName))
+			Policy:                        aws.String(strings.ReplaceAll(s3PreventPolicy, "BUCKETNAME", s.BucketName)),
 		}
-		
+
 		outputPutPolicy, err := s3Client.PutBucketPolicy(inputPutPolicy)
 		if err != nil {
 			return err
 		}
-		
+
 		log.Printf("Output of PREVENT for bucket %s: %s\n", s.BucketName, outputPutPolicy.String())
 	case ACTION_REMOVE:
 		// delete bucket
-		inputListObjects  := &s3.ListObjectsV2Input{
+		inputListObjects := &s3.ListObjectsV2Input{
 			Bucket: aws.String(s.BucketName),
 		}
-		
+
+		var listErr error = nil
 		s3Client.ListObjectsV2Pages(inputListObjects, func(page *s3.ListObjectsV2Output, last bool) bool {
 			for _, object := range page.Contents {
-				log.Println("Deleting from Bucket %s Object %s\n", s.BucketName, *object.Key)
-				
+				log.Printf("Deleting from Bucket %s Object %s\n", s.BucketName, *object.Key)
+				inputDeleteObject := &s3.DeleteObjectInput{
+					Bucket: aws.String(s.BucketName),
+					Key:    object.Key,
+				}
+
+				outputDeleteObject, err := s3Client.DeleteObject(inputDeleteObject)
+				if err != nil {
+					listErr = err
+					// close out regardless
+					return false
+				}
+
+				log.Printf("Deleted from Bucket %s Object %s with output %s\n", s.BucketName, *object.Key, outputDeleteObject.String())
 			}
-			
+
 			return !last
 		})
+
+		if listErr != nil {
+			return listErr
+		}
+
+		log.Printf("Deleting Bucket %s\n", s.BucketName)
+		inputDeleteBucket := &s3.DeleteBucketInput{
+			Bucket: aws.String(s.BucketName),
+		}
+
+		outputDeleteBucket, err := s3Client.DeleteBucket(inputDeleteBucket)
+		if err != nil {
+			return err
+		}
+
+		log.Printf("Deleted Bucket %s with output %s\n", s.BucketName, outputDeleteBucket.String())
+
 	default:
-		return
+		return nil
 	}
+
+	return nil
 }
 
 func (s3 *AWSS3Storage) GetType() Service {
