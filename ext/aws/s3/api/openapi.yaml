@@ -1,0 +1,200 @@
+openapi: 3.0.0
+info:
+  title: AWSAPICallViaCloudTrail
+  version: 1.0.0
+servers:
+- url: /
+paths: {}
+components:
+  schemas:
+    AWSEvent:
+      properties:
+        detail:
+          $ref: '#/components/schemas/AWSAPICallViaCloudTrail'
+        detail-type:
+          type: string
+        resources:
+          items:
+            type: string
+          type: array
+        id:
+          type: string
+        source:
+          type: string
+        time:
+          format: date-time
+          type: string
+        region:
+          type: string
+        version:
+          type: string
+        account:
+          type: string
+      required:
+      - account
+      - detail
+      - detail-type
+      - id
+      - region
+      - resources
+      - source
+      - time
+      - version
+      type: object
+      x-amazon-events-detail-type: AWS API Call via CloudTrail
+      x-amazon-events-source: aws.s3
+    AWSAPICallViaCloudTrail:
+      properties:
+        requestParameters:
+          $ref: '#/components/schemas/RequestParameters'
+        userIdentity:
+          $ref: '#/components/schemas/UserIdentity'
+        additionalEventData:
+          $ref: '#/components/schemas/AdditionalEventData'
+        eventID:
+          type: string
+        awsRegion:
+          type: string
+        eventVersion:
+          type: string
+        responseElements:
+          nullable: true
+          type: object
+        sourceIPAddress:
+          type: string
+        eventSource:
+          type: string
+        errorMessage:
+          type: string
+        resources:
+          items:
+            type: object
+          type: array
+        errorCode:
+          type: string
+        userAgent:
+          type: string
+        readOnly:
+          type: boolean
+        eventType:
+          type: string
+        vpcEndpointId:
+          type: string
+        requestID:
+          type: string
+        eventTime:
+          format: date-time
+          type: string
+        eventName:
+          type: string
+        recipientAccountId:
+          type: string
+      required:
+      - additionalEventData
+      - awsRegion
+      - eventID
+      - eventName
+      - eventSource
+      - eventTime
+      - eventType
+      - eventVersion
+      - readOnly
+      - recipientAccountId
+      - requestID
+      - requestParameters
+      - resources
+      - responseElements
+      - sourceIPAddress
+      - userAgent
+      - userIdentity
+      - vpcEndpointId
+      type: object
+    RequestParameters:
+      properties:
+        bucketName:
+          type: string
+        legal-hold:
+          type: string
+        key:
+          type: string
+        retention:
+          type: string
+      required:
+      - bucketName
+      - key
+      type: object
+    UserIdentity:
+      properties:
+        sessionContext:
+          $ref: '#/components/schemas/SessionContext'
+        accessKeyId:
+          type: string
+        accountId:
+          type: string
+        principalId:
+          type: string
+        type:
+          type: string
+        arn:
+          type: string
+      required:
+      - accessKeyId
+      - accountId
+      - arn
+      - principalId
+      - sessionContext
+      - type
+      type: object
+    AdditionalEventData:
+      properties:
+        objectRetentionInfo:
+          $ref: '#/components/schemas/ObjectRetentionInfo'
+        x-amz-id-2:
+          type: string
+      required:
+      - x-amz-id-2
+      type: object
+    SessionContext:
+      properties:
+        attributes:
+          $ref: '#/components/schemas/Attributes'
+      required:
+      - attributes
+      type: object
+    ObjectRetentionInfo:
+      properties:
+        legalHoldInfo:
+          $ref: '#/components/schemas/LegalHoldInfo'
+        retentionInfo:
+          $ref: '#/components/schemas/RetentionInfo'
+      type: object
+    Attributes:
+      properties:
+        mfaAuthenticated:
+          type: string
+        creationDate:
+          format: date-time
+          type: string
+      required:
+      - creationDate
+      - mfaAuthenticated
+      type: object
+    LegalHoldInfo:
+      properties:
+        lastModifiedTime:
+          format: int64
+          type: integer
+        isUnderLegalHold:
+          type: boolean
+      type: object
+    RetentionInfo:
+      properties:
+        lastModifiedTime:
+          format: int64
+          type: integer
+        retainUntilTime:
+          format: int64
+          type: integer
+        retainUntilMode:
+          type: string
+      type: object

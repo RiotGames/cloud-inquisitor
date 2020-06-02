@@ -73,7 +73,7 @@ func (t *StubResource) SendNotification() error {
 }
 
 func (t *StubResource) TakeAction(a Action) error {
-	log.Printf("taking action %#v on resource: %#v\n", *t)
+	log.Printf("taking action %#v on resource: %#v\n", a, *t)
 	return nil
 }
 

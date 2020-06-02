@@ -84,7 +84,14 @@ func (p PassableResource) GetResource() (Resource, error) {
 		stub := &StubResource{}
 		err := stub.NewFromPassableResource(p)
 		return stub, err
-
+	case SERVICE_AWS_RDS:
+		rds := &AWSRDSInstance{}
+		err := rds.NewFromPassableResource(p)
+		return rds, err
+	case SERVICE_AWS_S3:
+		s3 := &AWSS3Storage{}
+		err := s3.NewFromPassableResource(p)
+		return s3, err
 	default:
 		return nil, errors.New("no matching resource for type " + p.Type)
 	}
@@ -101,12 +108,12 @@ func NewResource(event events.CloudWatchEvent) (Resource, error) {
 
 	case "aws.rds":
 		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
-		resource = &StubResource{}
+		resource = &AWSRDSInstance{}
 		err := resource.NewFromEventBus(event)
 		return resource, err
 	case "aws.s3":
 		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
-		resource = &StubResource{}
+		resource = &AWSS3Storage{}
 		err := resource.NewFromEventBus(event)
 		return resource, err
 	default:
