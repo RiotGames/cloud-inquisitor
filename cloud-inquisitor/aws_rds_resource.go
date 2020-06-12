@@ -246,3 +246,12 @@ func (t *AWSRDSInstance) TakeAction(a Action) error {
 func (t *AWSRDSInstance) GetType() Service {
 	return SERVICE_AWS_RDS
 }
+
+func (rds *AWSRDSInstance) GetMetadata() map[string]interface{} {
+	return map[string]interface{}{
+		"region":       rds.Region,
+		"account":      rds.AccountID,
+		"resourceName": rds.ResourceID,
+		"currentState": rds.State,
+	}
+}

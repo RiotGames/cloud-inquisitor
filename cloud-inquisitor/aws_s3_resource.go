@@ -253,3 +253,13 @@ func (s *AWSS3Storage) TakeAction(action Action) error {
 func (s3 *AWSS3Storage) GetType() Service {
 	return SERVICE_AWS_S3
 }
+
+func (s3 *AWSS3Storage) GetMetadata() map[string]interface{} {
+	return map[string]interface{}{
+		"account":      s3.AccountID,
+		"region":       s3.Region,
+		"bucketName":   s3.BucketName,
+		"currentState": s3.State,
+		"tags":         s3.Tags,
+	}
+}

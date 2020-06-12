@@ -61,6 +61,8 @@ type Resource interface {
 	TakeAction(Action) error
 	// GetType returns an ENUM of the supported services
 	GetType() Service
+	// GetMetadata returns a map of Resoruce metadata
+	GetMetaData() map[string]interface{}
 }
 
 // TaggableResource is an interface which introduces
@@ -76,6 +78,7 @@ type PassableResource struct {
 	Resource interface{}
 	Type     Service
 	Finished bool
+	Metadata map[string]interface{}
 }
 
 func (p PassableResource) GetResource() (Resource, error) {
