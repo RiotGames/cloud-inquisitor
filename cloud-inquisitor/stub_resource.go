@@ -80,3 +80,7 @@ func (t *StubResource) TakeAction(a Action) error {
 func (t *StubResource) GetType() Service {
 	return SERVICE_STUB
 }
+
+func (t *StubResource) GetMetadata() map[string]interface{} {
+	return map[string]interface{}{}
+}

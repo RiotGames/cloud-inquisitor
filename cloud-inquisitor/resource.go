@@ -62,7 +62,7 @@ type Resource interface {
 	// GetType returns an ENUM of the supported services
 	GetType() Service
 	// GetMetadata returns a map of Resoruce metadata
-	GetMetaData() map[string]interface{}
+	GetMetadata() map[string]interface{}
 }
 
 // TaggableResource is an interface which introduces

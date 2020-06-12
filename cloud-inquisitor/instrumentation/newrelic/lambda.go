@@ -1,18 +1,20 @@
 package newrelic
 
 import (
-	"github.com/newrelic/go-agent/_integrations/nrlambda"
+	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
+	"github.com/newrelic/go-agent/v3/integrations/nrlambda"
 	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/sirupsen/logrus"
 )
 
 func StartNewRelicLambda(handler interface{}) {
+	logger := NewLambdaLogger(log.LoggerOpts{Level: logrus.InfoLevel})
 	app, err := newrelic.NewApplication(
-		nrlambda.NewConfig(),
+		nrlambda.ConfigOption(),
 		newrelic.ConfigDistributedTracerEnabled(true),
 	)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Fatal("Unable to create New Relic application")
 	}
-	m.app = app
-	nrlambda.Start(hander, app)
+	nrlambda.Start(handler, app)
 }
