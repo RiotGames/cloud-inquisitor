@@ -6,5 +6,5 @@ import (
 
 type Instrumentor interface {
 	GetLogger(opts logger.LoggerOpts) *logger.Logger
-	StartLambda(handler interface{})
+	StartLambda(handler interface{}, lambdaName string)
 }

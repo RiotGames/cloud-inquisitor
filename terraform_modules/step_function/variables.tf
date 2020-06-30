@@ -75,7 +75,11 @@ output "step_function_lambda_paths" {
 }
 
 output "step_function_lambda_files" {
-    value = data.archive_file.lambda_files
+    value = data.archive_file.lambda_binary
+}
+
+output "step_function_lamba_configs" {
+	value = data.archive_file.lambda_config
 }
 
 output "step_function_lambdas" {

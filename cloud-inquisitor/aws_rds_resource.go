@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	openapi_aws_rds "github.com/RiotGames/cloud-inquisitor/ext/aws/rds"
 )
 
@@ -37,10 +38,7 @@ type AWSRDSInstance struct {
 func (t *AWSRDSInstance) Audit() (Action, error) {
 	var result Action
 
-	requiredTags, err := GetConfig("required_tags")
-	if err != nil {
-		return ACTION_ERROR, err
-	}
+	requiredTags := settings.GetString("auditing.required_tags")
 
 	compliant := true
 	for _, tag := range strings.Split(requiredTags, ",") {
@@ -160,10 +158,7 @@ func (t *AWSRDSInstance) SendNotification() error {
 func (t *AWSRDSInstance) TakeAction(a Action) error {
 	log.Printf("taking action %#v on resource: %#v\n", a, *t)
 
-	actionMode, err := GetConfig("action_mode")
-	if err != nil {
-		return err
-	}
+	actionMode := settings.GetString("actions.mode")
 
 	switch actionMode {
 	case "dryrun":
@@ -211,10 +206,7 @@ func (t *AWSRDSInstance) TakeAction(a Action) error {
 			return err
 		}
 
-		timeFormat, err := GetConfig("time_format")
-		if err != nil {
-			return err
-		}
+		timeFormat := settings.GetString("timestamp_format")
 
 		dbSnapshotIdentifier := fmt.Sprintf(
 			"cinq-snapshot-%s-%s",

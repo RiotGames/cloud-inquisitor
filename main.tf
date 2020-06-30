@@ -26,18 +26,22 @@ module "us-west-2" {
     step_function_lambda_paths = {
         "tag_auditor_init": {
             "file": abspath("./builds/resource_initializer"),
+            "config": abspath("./settings.json"),
             "handler": "resource_initializer"
         },
         "tag_auditor_notify": {
             "file": abspath("./builds/tag_auditor"),
+            "config": abspath("./settings.json"),
             "handler": "tag_auditor"
         },
         "tag_auditor_prevent": {
             "file": abspath("./builds/tag_auditor"),
+            "config": abspath("./settings.json"),
             "handler": "tag_auditor"
         },
         "tag_auditor_remove": {
             "file": abspath("./builds/tag_auditor"),
+            "config": abspath("./settings.json"),
             "handler": "tag_auditor"
         }
     }

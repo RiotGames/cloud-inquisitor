@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	openapis3 "github.com/RiotGames/cloud-inquisitor/ext/aws/s3"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
@@ -83,10 +84,7 @@ func (s *AWSS3Storage) NewFromPassableResource(resource PassableResource) error 
 func (s *AWSS3Storage) Audit() (Action, error) {
 	var result Action
 
-	requiredTags, err := GetConfig("required_tags")
-	if err != nil {
-		return ACTION_ERROR, err
-	}
+	requiredTags := settings.GetString("auditing.required_tags")
 
 	compliant := true
 	for _, tag := range strings.Split(requiredTags, ",") {
@@ -162,10 +160,7 @@ func (s *AWSS3Storage) SendNotification() error {
 func (s *AWSS3Storage) TakeAction(action Action) error {
 	log.Printf("taking action %#v on resource: %#v\n", action, *s)
 
-	actionMode, err := GetConfig("action_mode")
-	if err != nil {
-		return err
-	}
+	actionMode := settings.GetString("actions.mode")
 
 	switch actionMode {
 	case "dryrun":

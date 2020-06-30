@@ -8,7 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
+	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	"github.com/google/uuid"
 )
 
@@ -23,21 +24,29 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (cloudinq
 		return cloudinquisitor.PassableResource{}, err
 	}
 
-	opts := logger.LoggerOpts{
-		Level: logrus.InfoLevel,
+	opts := log.LoggerOpts{
+		Level: log.LogrusLevelConv(settings.GetString("log_level")),
 		Metadata: map[string]interface{}{
 			"workflow-uuid": workflowUUID,
 			"session-uuid":  sessionUUID,
+			"cloud-inquisitor-component": "resource-initializer"
 		},
 	}
 
-	logger := newrelic.NewLambdaLogger(opts)
-	txn := newrelic.GetTxnFromLambdaContext(ctx, logger)
+	hookOpts := newrelic.DefaultNewRelicHookOpts
+	hookOpts.License = settings.GetString("newrelic.license")
+	hookOpts.ApplicationName = settings.GetString("name")
 
-	resourceCtx := newrelic.NewContextFromTxn(txn, logger)
-	logger.WithContext(resourceCtx).Info("Create new resource")
+	hookLogger := log.NewLogger(opts)
+	hookLogger.L.AddHook(newrelic.NewNewRelicHook(hookOpts))
+
+	logger := newrelic.ApplicationLogger(opts, ctx)
 	resource, _ := cloudinquisitor.NewResource(event)
-	logger.WithContext(resourceCtx).WithFields(logrus.Fields(resource.GetMetadata())).Info("New resource created")
+	logger.WithFields(logrus.Fields(resource.GetMetadata())).Debug("New resource created")
+	txn := newrelic.GetTxnFromLambdaContext(ctx, hookLogger)
+	txnCtx := newrelic.NewContextFromTxn(txn, hookLogger)
+	hookLogger.WithContext(txnCtx).Debug("appended new context")
+	hookLogger.WithFields(logrus.Fields(resource.GetMetadata())).Debug("New resource created")
 	return cloudinquisitor.PassableResource{
 		Resource: resource,
 		Type:     resource.GetType(),
@@ -46,6 +55,5 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (cloudinq
 }
 
 func main() {
-	//lambda.Start(handlerRequest)
-	newrelic.StartNewRelicLambda(handlerRequest())
+	newrelic.StartNewRelicLambda(handlerRequest, settings.GetString("name"))
 }

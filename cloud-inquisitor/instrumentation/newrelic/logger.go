@@ -1,15 +1,30 @@
 package newrelic
 
 import (
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
+	"context"
 
+	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin"
+	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/sirupsen/logrus"
 )
 
-// following NR docs at https://docs.newrelic.com/docs/logs/enable-logs/logs-context-go/configure-logs-context-go
-func NewLambdaLogger(opts logger.LoggerOpts) *logger.Logger {
-	nrLogger := logger.NewLogger(opts)
-	nrLogger.SetFormatter(nrlogrusplugin.ContextFormatter{})
-	nrLogger.Info("New logger created for use with New Relic")
-	return nrLogger
+func LamdbaLogger(opts log.LoggerOpts) newrelic.ConfigOption {
+	logger := log.NewLogger(opts)
+	logger.L.SetFormatter(nrlogrusplugin.ContextFormatter{})
+	return newrelic.ConfigLogger(logger)
+}
+
+func ApplicationLogger(opts log.LoggerOpts, passedContext context.Context) *logrus.Entry {
+	nrLogger := log.NewLogger(opts)
+	nrLogger.L.SetFormatter(nrlogrusplugin.ContextFormatter{})
+	txn := GetTxnFromLambdaContext(passedContext, nrLogger)
+	if txn != nil {
+		ctx := NewContextFromTxn(txn, nrLogger)
+		return nrLogger.WithContext(ctx)
+	} else {
+		nrLogger.Warn("unable to parse new relic transaction", nil)
+		return nrLogger.WithFields(logrus.Fields{"new-relic-txn": false})
+	}
+
 }

@@ -683,3 +683,7 @@ terraform_modules/step_function/lamba_zips/**
 
 # IDE
 .vscode/
+
+# settings
+settings.json
+builds/**

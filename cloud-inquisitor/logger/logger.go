@@ -8,22 +8,22 @@ import (
 
 type Logger struct {
 	opts LoggerOpts
-	l    *logrus.Logger
+	L    *logrus.Logger
 }
 
 type LoggerOpts struct {
 	Level    logrus.Level
-	Metadata map[string]interface{}
+	Metadata logrus.Fields
 }
 
 func NewLogger(opts LoggerOpts) *Logger {
-	logger := &Logger{l: logrus.New(), opts: opts}
-	logger.l.SetLevel(opts.Level)
+	logger := &Logger{L: logrus.New(), opts: opts}
+	logger.L.SetLevel(opts.Level)
 	return logger
 }
 
 func (logger *Logger) SetFormatter(formatter logrus.Formatter) {
-	logger.l.SetFormatter(formatter)
+	logger.L.SetFormatter(formatter)
 }
 
 func (logger *Logger) WithFields(fields logrus.Fields) *logrus.Entry {
@@ -32,7 +32,7 @@ func (logger *Logger) WithFields(fields logrus.Fields) *logrus.Entry {
 		fields[uuidName] = uuid
 	}
 
-	return logger.l.WithFields(fields)
+	return logger.L.WithFields(fields)
 }
 
 func (logger *Logger) WithContext(ctx context.Context) *logrus.Entry {
@@ -45,14 +45,20 @@ func (logger *Logger) WithContext(ctx context.Context) *logrus.Entry {
 	return logger.WithFields(fields).WithContext(ctx)
 }
 
-func (logger *Logger) Debug(args ...interface{}) {
+func (logger *Logger) Debug(msg string, context map[string]interface{}) {
 	fields := logrus.Fields{}
 	for uuidName, uuid := range logger.opts.Metadata {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
-	entry.Debug(args...)
+	if context != nil {
+		for key, value := range context {
+			fields[key] = value
+		}
+	}
+
+	entry := logger.L.WithFields(fields)
+	entry.Debug(msg)
 }
 
 func (logger *Logger) Debugf(fmt string, args ...interface{}) {
@@ -61,18 +67,29 @@ func (logger *Logger) Debugf(fmt string, args ...interface{}) {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
+	entry := logger.L.WithFields(fields)
 	entry.Debugf(fmt, args...)
 }
 
-func (logger *Logger) Info(args ...interface{}) {
+func (logger *Logger) DebugEnabled() bool {
+	lvl := logger.L.GetLevel()
+	return lvl >= logrus.DebugLevel
+}
+
+func (logger *Logger) Info(msg string, context map[string]interface{}) {
 	fields := logrus.Fields{}
 	for uuidName, uuid := range logger.opts.Metadata {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
-	entry.Info(args...)
+	if context != nil {
+		for key, value := range context {
+			fields[key] = value
+		}
+	}
+
+	entry := logger.L.WithFields(fields)
+	entry.Info(msg)
 }
 func (logger *Logger) Infof(fmt string, args ...interface{}) {
 	fields := logrus.Fields{}
@@ -80,18 +97,24 @@ func (logger *Logger) Infof(fmt string, args ...interface{}) {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
+	entry := logger.L.WithFields(fields)
 	entry.Infof(fmt, args...)
 }
 
-func (logger *Logger) Warn(args ...interface{}) {
+func (logger *Logger) Warn(msg string, context map[string]interface{}) {
 	fields := logrus.Fields{}
 	for uuidName, uuid := range logger.opts.Metadata {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
-	entry.Warn(args...)
+	if context != nil {
+		for key, value := range context {
+			fields[key] = value
+		}
+	}
+
+	entry := logger.L.WithFields(fields)
+	entry.Warn(msg)
 }
 func (logger *Logger) Warnf(fmt string, args ...interface{}) {
 	fields := logrus.Fields{}
@@ -99,18 +122,24 @@ func (logger *Logger) Warnf(fmt string, args ...interface{}) {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
+	entry := logger.L.WithFields(fields)
 	entry.Warnf(fmt, args...)
 }
 
-func (logger *Logger) Error(args ...interface{}) {
+func (logger *Logger) Error(msg string, context map[string]interface{}) {
 	fields := logrus.Fields{}
 	for uuidName, uuid := range logger.opts.Metadata {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
-	entry.Error(args...)
+	if context != nil {
+		for key, value := range context {
+			fields[key] = value
+		}
+	}
+
+	entry := logger.L.WithFields(fields)
+	entry.Error(msg)
 }
 
 func (logger *Logger) Errorf(fmt string, args ...interface{}) {
@@ -119,18 +148,24 @@ func (logger *Logger) Errorf(fmt string, args ...interface{}) {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
+	entry := logger.L.WithFields(fields)
 	entry.Errorf(fmt, args...)
 }
 
-func (logger *Logger) Fatal(args ...interface{}) {
+func (logger *Logger) Fatal(msg string, context map[string]interface{}) {
 	fields := logrus.Fields{}
 	for uuidName, uuid := range logger.opts.Metadata {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
-	entry.Fatal(args...)
+	if context != nil {
+		for key, value := range context {
+			fields[key] = value
+		}
+	}
+
+	entry := logger.L.WithFields(fields)
+	entry.Fatal(msg)
 }
 
 func (logger *Logger) Fatalf(fmt string, args ...interface{}) {
@@ -139,6 +174,24 @@ func (logger *Logger) Fatalf(fmt string, args ...interface{}) {
 		fields[uuidName] = uuid
 	}
 
-	entry := logger.l.WithFields(fields)
+	entry := logger.L.WithFields(fields)
 	entry.Fatalf(fmt, args...)
+}
+
+// defaults to info level
+func LogrusLevelConv(level string) logrus.Level {
+	switch level {
+	case "debug", "Debug", "DEBUG":
+		return logrus.DebugLevel
+	case "info", "Info", "INFO":
+		return logrus.InfoLevel
+	case "warn", "warning", "Warn", "Warning", "WARN", "WARNING":
+		return logrus.WarnLevel
+	case "error", "Error", "ERROR":
+		return logrus.ErrorLevel
+	case "fatal", "Fatal", "FATAL":
+		return logrus.FatalLevel
+	default:
+		return logrus.InfoLevel
+	}
 }
