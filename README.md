@@ -225,32 +225,25 @@ module "us-west-2" {
     step_function_tag_auditor_remove_seconds = 40
     step_function_lambda_paths = {
         "tag_auditor_init": {
-        	"lambda": "resource_initializer",
-            "file": abspath("./builds/resource_initializer"),
-            "config": abspath("./settings.json"),
-            "handler": "resource_initializer"
+			"lambda": "resource_initializer"
         },
         "tag_auditor_notify": {
-        	"lambda": "tag_auditor",
-            "file": abspath("./builds/tag_auditor"),
-            "config": abspath("./settings.json"),
-            "handler": "tag_auditor"
+			"lambda": "tag_auditor"
         },
         "tag_auditor_prevent": {
-        	"lambda": "tag_auditor",
-            "file": abspath("./builds/tag_auditor"),
-            "config": abspath("./settings.json"),
-            "handler": "tag_auditor"
+			"lambda": "tag_auditor"
         },
         "tag_auditor_remove": {
-        	"lambda": "tag_auditor",
-            "file": abspath("./builds/tag_auditor"),
-            "config": abspath("./settings.json"),
-            "handler": "tag_auditor"
+			"lambda": "tag_auditor"
         }
     }
 
 }
+
+output "module" {
+    value = module.us-west-2
+}
+
 ```
 
 Most of the called module is exported as an output for debugging. If something is not being picked up as expected then the following can be appended to the file to see many of the resources created by the module.
@@ -275,3 +268,7 @@ terraform {
      }
  }
 ```
+
+## Terraform Deploy
+
+Once the files are 
