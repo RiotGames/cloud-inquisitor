@@ -14,8 +14,6 @@ However, we will still accept feature requests in the form of an issue but will 
 
 # Phase 1
 
-Re-implement tag auditing.
-
 Re-implement domain hijacking identification.
 
 ---
@@ -149,3 +147,131 @@ Current Step Functions include:
     step_function_tag_auditor_remove_seconds|seconds|604800 (7 days)
 
     A diagram including variable names can be found [here](./docs/tag_auditor.png)
+
+# Deployment
+
+In order to deploy Cloud Inquisitor a settings file, a main Terraform file, and a Terraform state file must be made/edited and added to the root of this project.
+
+## Settings File
+
+The settings file is a JSON file where all configurable elements of the project are defined. 
+
+The following table containers all of the the current supported fields in the settings file.
+
+_Settings_
+|variable|type|description|
+|--------|----|-----------|
+|log_level|string|sets the log level in application logs (debug, info, warn, error, fatal)|
+|stub_resource|string|enables or disables the use of stub resources for unrecognized events {"enabled" or "disabled"}|
+|name|string|sets the "application_name" field set in all log entried|
+|timestamp_format|string|golang timestamp format used when a human readable timestamps are provided|
+|auditing.required_tags|string array| a list of labels/tags that will be audited for by the tag auditor|
+|actions.mode|string|selector for whether or not Cloud Inquisitor will take actions against a resource or just log if it would have|
+|newrelic.license|string|New Relic license key if taking advantage of New Relic logging|
+
+Example settings file:
+```json
+{
+	"log_level": "debug",
+	"stub_resources": "disabled",
+	"name": "cloud-inquisitor",
+	"timestamp_format": "2006-01-02-15-4-5",
+	"auditing": {
+		"required_tags": [
+			"accounting",
+			"name",
+			"owner"
+		]
+	},
+	"actions": {
+		"mode": "dryrun"
+	},
+	"newrelic": {
+		"license": "NEW_RELIC_LICENSE_KEY"
+	}
+}
+```
+
+## Terraform Main File
+
+The Terraform main file is used to manage which modules should be deployed and in which regions.
+
+Example Terraform file:
+```hcl
+provider "aws" {
+    region     = "us-west-2"
+}
+
+module "us-west-2" {
+    source = "./terraform_modules/workflow"
+
+    name = "cinq_next_test"
+    environment = "dev"
+    region = "us-west-2"
+    version_str = "v0_0_0"
+
+
+    event_rules = { 
+        "ec2_tag_auditing": file("./event_rules/ec2_tags.json"),
+        "s3_tag_auditing": file("./event_rules/s3_tags.json"),
+        "rds_tag_auditing": file("./event_rules/rds_tags.json"),
+    }
+
+    step_function_selector = "tag_auditor"
+    step_function_tag_auditor_init_seconds = 10
+    step_function_tag_auditor_first_notify_seconds = 20
+    step_function_tag_auditor_second_notify_seconds = 20
+    step_function_tag_auditor_prevent_seconds = 30
+    step_function_tag_auditor_remove_seconds = 40
+    step_function_lambda_paths = {
+        "tag_auditor_init": {
+        	"lambda": "resource_initializer",
+            "file": abspath("./builds/resource_initializer"),
+            "config": abspath("./settings.json"),
+            "handler": "resource_initializer"
+        },
+        "tag_auditor_notify": {
+        	"lambda": "tag_auditor",
+            "file": abspath("./builds/tag_auditor"),
+            "config": abspath("./settings.json"),
+            "handler": "tag_auditor"
+        },
+        "tag_auditor_prevent": {
+        	"lambda": "tag_auditor",
+            "file": abspath("./builds/tag_auditor"),
+            "config": abspath("./settings.json"),
+            "handler": "tag_auditor"
+        },
+        "tag_auditor_remove": {
+        	"lambda": "tag_auditor",
+            "file": abspath("./builds/tag_auditor"),
+            "config": abspath("./settings.json"),
+            "handler": "tag_auditor"
+        }
+    }
+
+}
+```
+
+Most of the called module is exported as an output for debugging. If something is not being picked up as expected then the following can be appended to the file to see many of the resources created by the module.
+
+```hcl
+output "module" {
+    value = module.us-west-2
+}
+```
+
+## Terraform State File
+
+The Terraform State file only contains the Terraform Backend declaration which may look something like:
+
+```hcl
+terraform {
+     backend "s3" {
+         bucket = "S3_BUCKET_NAME"
+         key    = "STATE_KEY"
+         region = "AWS_REGION"
+         encrypt = "true"
+     }
+ }
+```
