@@ -26,6 +26,12 @@ func (logger *Logger) SetFormatter(formatter logrus.Formatter) {
 	logger.L.SetFormatter(formatter)
 }
 
+func (logger *Logger) AddMetadataField(key string, value interface{}) {
+	newOps := logger.opts
+	newOps.Metadata[key] = value
+	logger.opts = newOps
+}
+
 func (logger *Logger) WithFields(fields logrus.Fields) *logrus.Entry {
 	// add custom fields here
 	for uuidName, uuid := range logger.opts.Metadata {

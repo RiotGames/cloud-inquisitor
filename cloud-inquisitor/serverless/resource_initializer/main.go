@@ -5,6 +5,7 @@ import (
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/sirupsen/logrus"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
@@ -14,12 +15,20 @@ import (
 )
 
 func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (cloudinquisitor.PassableResource, error) {
-	workflowUUID, err := uuid.NewRandom()
+	var lambdaExecutionID string
+
+	awsContext, err := lambdacontext.FromContext(ctx)
 	if err != nil {
-		return cloudinquisitor.PassableResource{}, err
+		sessionUUID, uuidErr := uuid.NewRandom()
+		if uuidErr != nil {
+			return cloudinquisitor.PassableResource{}, err
+		}
+		lambdaExecutionID = sessionUUID.String()
 	}
 
-	sessionUUID, err := uuid.NewRandom()
+	lambdaExecutionID = awsContext.AwsRequestID
+
+	workflowUUID, err := uuid.NewRandom()
 	if err != nil {
 		return cloudinquisitor.PassableResource{}, err
 	}
@@ -27,9 +36,11 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (cloudinq
 	opts := log.LoggerOpts{
 		Level: log.LogrusLevelConv(settings.GetString("log_level")),
 		Metadata: map[string]interface{}{
-			"workflow-uuid": workflowUUID,
-			"session-uuid":  sessionUUID,
-			"cloud-inquisitor-component": "resource-initializer"
+			"cloud-inquisitor-workflow-uuid": workflowUUID.String(),
+			"cloud-inquisitor-step-uuid":     lambdaExecutionID,
+			"cloud-inquisitor-component":     "resource-initializer",
+			"aws-intial-event-id":            event.ID,
+			"aws-lambda-execution-id":        lambdaExecutionID,
 		},
 	}
 
@@ -47,10 +58,26 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (cloudinq
 	txnCtx := newrelic.NewContextFromTxn(txn, hookLogger)
 	hookLogger.WithContext(txnCtx).Debug("appended new context")
 	hookLogger.WithFields(logrus.Fields(resource.GetMetadata())).Debug("New resource created")
+
+	if settings.GetString("stub_resources") != "enabled" {
+		return cloudinquisitor.PassableResource{
+			Resource: resource,
+			Type:     resource.GetType(),
+			Finished: true,
+			Metadata: map[string]interface{}{
+				"cloud-inquisitor-workflow-uuid": workflowUUID,
+				"aws-intial-event-id":            event.ID,
+			},
+		}, nil
+	}
 	return cloudinquisitor.PassableResource{
 		Resource: resource,
 		Type:     resource.GetType(),
 		Finished: false,
+		Metadata: map[string]interface{}{
+			"cloud-inquisitor-workflow-uuid": workflowUUID,
+			"aws-intial-event-id":            event.ID,
+		},
 	}, nil
 }
 

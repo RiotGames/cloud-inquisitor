@@ -11,9 +11,11 @@ func init() {
 	viper.SetConfigName("settings")
 	// lambda layer mount point
 	viper.AddConfigPath("/opt")
+	// if config is zipped with binary
+	viper.AddConfigPath("./")
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("recieved error reading config: %s\n", err.Error())
-		paths := []string{"/opt/*"}
+		paths := []string{"/opt/*", "./*"}
 		for _, path := range paths {
 			files, err2 := filepath.Glob(path)
 			if err2 != nil {

@@ -25,21 +25,25 @@ module "us-west-2" {
     step_function_tag_auditor_remove_seconds = 40
     step_function_lambda_paths = {
         "tag_auditor_init": {
+        	"lambda": "resource_initializer",
             "file": abspath("./builds/resource_initializer"),
             "config": abspath("./settings.json"),
             "handler": "resource_initializer"
         },
         "tag_auditor_notify": {
+        	"lambda": "tag_auditor",
             "file": abspath("./builds/tag_auditor"),
             "config": abspath("./settings.json"),
             "handler": "tag_auditor"
         },
         "tag_auditor_prevent": {
+        	"lambda": "tag_auditor",
             "file": abspath("./builds/tag_auditor"),
             "config": abspath("./settings.json"),
             "handler": "tag_auditor"
         },
         "tag_auditor_remove": {
+        	"lambda": "tag_auditor",
             "file": abspath("./builds/tag_auditor"),
             "config": abspath("./settings.json"),
             "handler": "tag_auditor"
