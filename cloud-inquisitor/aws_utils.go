@@ -1,7 +1,11 @@
 package cloudinquisitor
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/google/uuid"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -36,4 +40,32 @@ func AWSAssumeRole(accountID string, role string, inputSession *session.Session)
 			Credentials: creds}),
 	)
 	return assumedSession, nil
+}
+
+func DefaultLambdaMetadata(componentName string, ctx context.Context) (map[string]interface{}, error) {
+	var lambdaExecutionID string
+
+	if awsContext, ok := lambdacontext.FromContext(ctx); ok {
+		lambdaExecutionID = awsContext.AwsRequestID
+	} else {
+		sessionUUID, uuidErr := uuid.NewRandom()
+		if uuidErr != nil {
+			return map[string]interface{}{}, uuidErr
+		}
+		lambdaExecutionID = sessionUUID.String()
+	}
+
+	workflowUUID, err := uuid.NewRandom()
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	metadata := map[string]interface{}{
+		"cloud-inquisitor-workflow-uuid": workflowUUID.String(),
+		"cloud-inquisitor-step-uuid":     lambdaExecutionID,
+		"cloud-inquisitor-component":     componentName,
+		"aws-lambda-execution-id":        lambdaExecutionID,
+	}
+
+	return metadata, nil
 }

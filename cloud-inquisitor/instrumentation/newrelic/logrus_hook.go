@@ -139,9 +139,9 @@ func (nrhf *NewRelicHookFormatter) Format(entry *logrus.Entry, opts NewRelicHook
 	for k, v := range entry.Data {
 		switch v := v.(type) {
 		case error:
-			logAttributes[removeWhiteSpace(k)] = v.Error()
+			logAttributes[removeWhiteSpaceAndTitleCase(k)] = v.Error()
 		default:
-			logAttributes[removeWhiteSpace(k)] = v
+			logAttributes[removeWhiteSpaceAndTitleCase(k)] = v
 		}
 	}
 
@@ -169,7 +169,7 @@ func (nrhf *NewRelicHookFormatter) Format(entry *logrus.Entry, opts NewRelicHook
 	return jsonBytes, err
 }
 
-func removeWhiteSpace(whitespacestring string) string {
+func removeWhiteSpaceAndTitleCase(whitespacestring string) string {
 	initialStrings := strings.Split(strings.TrimSpace(whitespacestring), " ")
 	finalStringComponents := make([]string, len(initialStrings))
 

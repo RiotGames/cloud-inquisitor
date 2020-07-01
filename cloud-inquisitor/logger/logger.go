@@ -14,6 +14,7 @@ type Logger struct {
 type LoggerOpts struct {
 	Level    logrus.Level
 	Metadata logrus.Fields
+	Context  context.Context
 }
 
 func NewLogger(opts LoggerOpts) *Logger {
@@ -38,6 +39,10 @@ func (logger *Logger) WithFields(fields logrus.Fields) *logrus.Entry {
 		fields[uuidName] = uuid
 	}
 
+	if logger.opts.Context != nil {
+		return logger.L.WithContext(logger.opts.Context).WithFields(fields)
+	}
+
 	return logger.L.WithFields(fields)
 }
 
@@ -48,7 +53,11 @@ func (logger *Logger) WithContext(ctx context.Context) *logrus.Entry {
 		fields[key] = value
 	}
 
-	return logger.WithFields(fields).WithContext(ctx)
+	if logger.opts.Context != nil {
+		return logger.L.WithContext(logger.opts.Context).WithFields(fields).WithContext(ctx)
+	}
+
+	return logger.L.WithFields(fields).WithContext(ctx)
 }
 
 func (logger *Logger) Debug(msg string, context map[string]interface{}) {

@@ -31,6 +31,11 @@ func init() {
 func Get(key string) interface{} {
 	return viper.Get(key)
 }
+
 func GetString(key string) string {
 	return viper.GetString(key)
+}
+
+func GetBool(key string) bool {
+	return viper.GetBool(key)
 }

@@ -26,15 +26,19 @@ module "us-west-2" {
     step_function_lambda_paths = {
         "tag_auditor_init": {
 			"lambda": "resource_initializer"
+			"handler": "resource_initializer"
         },
         "tag_auditor_notify": {
 			"lambda": "tag_auditor"
+			"handler": "tag_auditor"
         },
         "tag_auditor_prevent": {
 			"lambda": "tag_auditor"
+			"handler": "tag_auditor"
         },
         "tag_auditor_remove": {
 			"lambda": "tag_auditor"
+			"handler": "tag_auditor"
         }
     }
 

@@ -165,6 +165,7 @@ github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRW
 github.com/newrelic/go-agent v3.6.0+incompatible h1:FB+iAM0xe+oUHZG1fz0oSdnC6XKMAy8CULeIBOZ2Q2k=
 github.com/newrelic/go-agent v3.6.0+incompatible/go.mod h1:a8Fv1b/fYhFSReoTU6HDkTYIMZeSVNffmoS726Y0LzQ=
 github.com/newrelic/go-agent v3.7.0+incompatible h1:tH/g5xbCBhhEAaqUgdNEXVdK5Ah3YSXQWCoz6x61Vro=
+github.com/newrelic/go-agent v3.8.0+incompatible h1:IxJKEK7SihVTXTDIpjl2GW2x3kl47yyi7IEq/jpbgME=
 github.com/newrelic/go-agent/v3 v3.0.0 h1:YK9ddXLcMoWr/Bqj30T+cQo1wniFVR5SS/mVuVTGKS8=
 github.com/newrelic/go-agent/v3 v3.0.0/go.mod h1:H28zDNUC0U/b7kLoY4EFOhuth10Xu/9dchozUiOseQQ=
 github.com/newrelic/go-agent/v3 v3.4.0 h1:PZTDUw+8h0yRkpkkXKrHSlRsDk0uYJ4I3Dv2lrws/EU=
@@ -172,6 +173,7 @@ github.com/newrelic/go-agent/v3 v3.4.0/go.mod h1:H28zDNUC0U/b7kLoY4EFOhuth10Xu/9
 github.com/newrelic/go-agent/v3 v3.6.0 h1:s8ISeztq5Ww6SOC7mIoFMT8kzRZSULXp5oXBcdBiGTw=
 github.com/newrelic/go-agent/v3 v3.7.0 h1:cPpvzLDfQZ0p0/nAIOKiojoAgiHi9MiLlLloJ9sQR2M=
 github.com/newrelic/go-agent/v3 v3.7.0/go.mod h1:1A1dssWBwzB7UemzRU6ZVaGDsI+cEn5/bNxI0wiYlIc=
+github.com/newrelic/go-agent/v3 v3.8.0 h1:iiU5ZUh47LO4tJ8jPr2bKYsVDgIe6vn9mYAh53GfTMc=
 github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin v1.0.0 h1:7HndNzw1x1P+SFa6z4hAiqbNymK0iCffHAaJ/xWkvT8=
 github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin v1.0.0/go.mod h1:ic8h8WNjeMpw5Y7HrqgFBXr16GegArKQDRCUkf3C/Kc=
 github.com/newrelic/go-agent/v3/integrations/nrlambda v1.1.0 h1:EIklCcrNtE2gQtTELx0fgfuyvmOxpID1GRFsR3MBr9Y=

@@ -9,20 +9,23 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
+// StartNewRelicLambda is a wrapper around the New Relic provided Lambda integration
+//  It will add a custom logger and set it to the New Relic App logger
+//  This logger will also log certain metadata to include:
+//    - lambda-uuid: a uuid designted to the lamda instance (multiple executions can use same instance)
 func StartNewRelicLambda(handler interface{}, name string) {
-	var lambdaUUID interface{}
-	lambdaUUID, _ = uuid.NewRandom()
+	lambdaUUID, _ := uuid.NewRandom()
 	opts := log.LoggerOpts{
 		Level: log.LogrusLevelConv(settings.GetString("log_level")),
 		Metadata: map[string]interface{}{
-			"lambda-uuid": lambdaUUID,
+			"lambda-uuid": lambdaUUID.String(),
 		},
 	}
 	app, err := newrelic.NewApplication(
 		newrelic.ConfigAppName(name),
 		nrlambda.ConfigOption(),
 		//nrlogrus.ConfigStandardLogger(),
-		LamdbaLogger(opts),
+		LamdbaExecutionLogger(opts),
 	)
 	if err != nil {
 		panic(err.Error())
