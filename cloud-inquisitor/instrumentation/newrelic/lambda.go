@@ -18,7 +18,7 @@ func StartNewRelicLambda(handler interface{}, name string) {
 	opts := log.LoggerOpts{
 		Level: log.LogrusLevelConv(settings.GetString("log_level")),
 		Metadata: map[string]interface{}{
-			"lambda-uuid": lambdaUUID.String(),
+			"cloud-inquisitor-lambda-uuid": lambdaUUID.String(),
 		},
 	}
 	app, err := newrelic.NewApplication(

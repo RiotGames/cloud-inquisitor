@@ -3,14 +3,15 @@ package cloudinquisitor
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
+	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"
+	"github.com/sirupsen/logrus"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	openapi_aws_rds "github.com/RiotGames/cloud-inquisitor/ext/aws/rds"
@@ -35,7 +36,7 @@ type AWSRDSInstance struct {
 }
 
 // Audit : AWS RDS Instance Audit
-func (t *AWSRDSInstance) Audit() (Action, error) {
+func (t *AWSRDSInstance) Audit(logger *log.Logger) (Action, error) {
 	var result Action
 
 	requiredTags := settings.GetString("auditing.required_tags")
@@ -67,7 +68,7 @@ func (t *AWSRDSInstance) Audit() (Action, error) {
 }
 
 // NewFromEventBus -
-func (t *AWSRDSInstance) NewFromEventBus(event events.CloudWatchEvent) error {
+func (t *AWSRDSInstance) NewFromEventBus(event events.CloudWatchEvent, logger *log.Logger) error {
 	eventBytes, err := json.Marshal(event)
 	if err != nil {
 		return err
@@ -91,18 +92,20 @@ func (t *AWSRDSInstance) NewFromEventBus(event events.CloudWatchEvent) error {
 }
 
 // NewFromPassableResource -
-func (t *AWSRDSInstance) NewFromPassableResource(resource PassableResource) error {
+func (t *AWSRDSInstance) NewFromPassableResource(resource PassableResource, logger *log.Logger) error {
 	return nil
 }
 
 // PublishState -
-func (t *AWSRDSInstance) PublishState() error {
-	log.Printf("PublishState: %#v\n", *t)
+func (t *AWSRDSInstance) PublishState(logger *log.Logger) error {
+	logger.WithFields(logrus.Fields{
+		"cloud-inquisitor-resource": "aws-rds",
+	}).WithFields(t.GetMetadata()).Debugf("PublishState: %#v", *t)
 	return nil
 }
 
 // RefreshState -
-func (t *AWSRDSInstance) RefreshState() error {
+func (t *AWSRDSInstance) RefreshState(logger *log.Logger) error {
 	var AWSInputSession = session.Must(session.NewSession())
 	assumedSession, err := AWSAssumeRole(t.AccountID, "ROLE_NAME", AWSInputSession)
 
@@ -139,30 +142,33 @@ func (t *AWSRDSInstance) RefreshState() error {
 }
 
 // SendLogs -
-func (t *AWSRDSInstance) SendLogs() error {
+func (t *AWSRDSInstance) SendLogs(logger *log.Logger) error {
 	return nil
 }
 
 // SendMetrics -
-func (t *AWSRDSInstance) SendMetrics() error {
+func (t *AWSRDSInstance) SendMetrics(logger *log.Logger) error {
 	return nil
 }
 
 // SendNotification -
-func (t *AWSRDSInstance) SendNotification() error {
-	log.Printf("Notification send: %#v\n", *t)
+func (t *AWSRDSInstance) SendNotification(logger *log.Logger) error {
+	logger.WithFields(logrus.Fields{
+		"cloud-inquisitor-resource": "aws-rds",
+	}).WithFields(t.GetMetadata()).Debugf("Notification send: %#v", *t)
 	return nil
 }
 
 // TakeAction -
-func (t *AWSRDSInstance) TakeAction(a Action) error {
-	log.Printf("taking action %#v on resource: %#v\n", a, *t)
+func (t *AWSRDSInstance) TakeAction(a Action, logger *log.Logger) error {
+	logger.WithFields(logrus.Fields{
+		"cloud-inquisitor-resource": "aws-rds",
+	}).WithFields(t.GetMetadata()).Infof("taking action %#v on resource: %#v\n", a, *t)
 
 	actionMode := settings.GetString("actions.mode")
 
 	switch actionMode {
 	case "dryrun":
-		log.Printf("Dry-run mode specified")
 		return nil
 	case "normal":
 		break

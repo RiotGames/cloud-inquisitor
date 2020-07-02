@@ -28,7 +28,7 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (cloudinq
 	}
 	logger := instrument.GetInstrumentedLogger(opts, ctx)
 
-	resource, _ := cloudinquisitor.NewResource(event)
+	resource, _ := cloudinquisitor.NewResource(event, logger)
 	logger.WithFields(logrus.Fields(resource.GetMetadata())).Debug("New resource created")
 
 	if settings.GetString("stub_resources") != "enabled" {

@@ -3,9 +3,9 @@ package cloudinquisitor
 import (
 	"errors"
 
+	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/aws/aws-lambda-go/events"
-
-	log "github.com/sirupsen/logrus"
+	//"github.com/sirupsen/logrus"
 )
 
 type Action = string
@@ -32,33 +32,33 @@ const (
 // collect information on the resource, audit and remediate it,
 // and report the end result
 type Resource interface {
-	NewFromEventBus(events.CloudWatchEvent) error
-	NewFromPassableResource(PassableResource) error
+	NewFromEventBus(events.CloudWatchEvent, *log.Logger) error
+	NewFromPassableResource(PassableResource, *log.Logger) error
 	// Audit determines if the current state of the struct
 	// meets criteria for a given action
-	Audit() (Action, error)
+	Audit(*log.Logger) (Action, error)
 	// PublishState is provided to give an easy hook to
 	// send and store struct state in a backend data store
-	PublishState() error
+	PublishState(*log.Logger) error
 	// RefreshState is provided to give an easy hook to
 	// retrieve current resource information from the
 	// cloud provider of choice
-	RefreshState() error
+	RefreshState(*log.Logger) error
 	// SendLogs is provided to give an easy hook for bulk
 	// sending logs or other information to logging endpoints
 	// if this is not taken care of inline
-	SendLogs() error
+	SendLogs(*log.Logger) error
 	// SendMetrics is provided to give an easy hook for
 	// uploading application metrics to a metrics collector
 	// if this is not taken care of already by the implementation
-	SendMetrics() error
+	SendMetrics(*log.Logger) error
 	// SendNotification is provided to give an easy hook for
 	// implementing various methods for sending status updates
 	// via any medium
-	SendNotification() error
+	SendNotification(*log.Logger) error
 	// TakeAction is provided to give an easy hook for
 	// taking custom actions against resources based on
-	TakeAction(Action) error
+	TakeAction(Action, *log.Logger) error
 	// GetType returns an ENUM of the supported services
 	GetType() Service
 	// GetMetadata returns a map of Resoruce metadata
@@ -81,64 +81,64 @@ type PassableResource struct {
 	Metadata map[string]interface{}
 }
 
-func (p PassableResource) GetResource() (Resource, error) {
+func (p PassableResource) GetResource(logger *log.Logger) (Resource, error) {
 	switch p.Type {
 	case SERVICE_STUB:
 		stub := &StubResource{}
-		err := stub.NewFromPassableResource(p)
+		err := stub.NewFromPassableResource(p, logger)
 		return stub, err
 	case SERVICE_AWS_RDS:
 		rds := &AWSRDSInstance{}
-		err := rds.NewFromPassableResource(p)
+		err := rds.NewFromPassableResource(p, logger)
 		return rds, err
 	case SERVICE_AWS_S3:
 		s3 := &AWSS3Storage{}
-		err := s3.NewFromPassableResource(p)
+		err := s3.NewFromPassableResource(p, logger)
 		return s3, err
 	default:
 		return nil, errors.New("no matching resource for type " + p.Type)
 	}
 }
 
-func NewResource(event events.CloudWatchEvent) (Resource, error) {
+func NewResource(event events.CloudWatchEvent, logger *log.Logger) (Resource, error) {
 	var resource Resource = nil
 	switch event.Source {
 	case "aws.ec2":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		logger.Debugf("parsing aws.ec2 taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &StubResource{}
-		err := resource.NewFromEventBus(event)
+		err := resource.NewFromEventBus(event, logger)
 		return resource, err
 
 	case "aws.rds":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		logger.Debugf("parsing aws.rds taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &AWSRDSInstance{}
-		err := resource.NewFromEventBus(event)
+		err := resource.NewFromEventBus(event, logger)
 		return resource, err
 	case "aws.s3":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		logger.Debugf("parsing aws.s3 taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &AWSS3Storage{}
-		err := resource.NewFromEventBus(event)
+		err := resource.NewFromEventBus(event, logger)
 		return resource, err
 	default:
-		log.Warningf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		logger.Warnf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &StubResource{}
-		err := resource.NewFromEventBus(event)
+		err := resource.NewFromEventBus(event, logger)
 		return resource, err
 	}
 	return resource, nil
 }
 
-func NewTaggableResource(event events.CloudWatchEvent) (TaggableResource, error) {
+func NewTaggableResource(event events.CloudWatchEvent, logger *log.Logger) (TaggableResource, error) {
 	var resource TaggableResource = nil
 	switch event.Source {
 	case "aws.ec2":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		logger.Debugf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 	case "aws.rds":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		logger.Debugf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 	case "aws.s3":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		logger.Debugf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 	default:
-		log.Warningf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		logger.Debugf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 	}
 	return resource, nil
 }

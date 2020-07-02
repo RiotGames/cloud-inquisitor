@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
+
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/google/uuid"
 
@@ -61,11 +63,34 @@ func DefaultLambdaMetadata(componentName string, ctx context.Context) (map[strin
 	}
 
 	metadata := map[string]interface{}{
+		"application-name":               settings.GetString("name"),
 		"cloud-inquisitor-workflow-uuid": workflowUUID.String(),
 		"cloud-inquisitor-step-uuid":     lambdaExecutionID,
 		"cloud-inquisitor-component":     componentName,
 		"aws-lambda-execution-id":        lambdaExecutionID,
 	}
+
+	return metadata, nil
+}
+
+func LambdaMetadataFromPassableResource(componentName string, ctx context.Context, resource PassableResource) (map[string]interface{}, error) {
+	metadata := resource.Metadata
+
+	var lambdaExecutionID string
+
+	if awsContext, ok := lambdacontext.FromContext(ctx); ok {
+		lambdaExecutionID = awsContext.AwsRequestID
+	} else {
+		sessionUUID, uuidErr := uuid.NewRandom()
+		if uuidErr != nil {
+			return map[string]interface{}{}, uuidErr
+		}
+		lambdaExecutionID = sessionUUID.String()
+	}
+	metadata["application-name"] = settings.GetString("name")
+	metadata["cloud-inquisitor-step-uuid"] = lambdaExecutionID
+	metadata["aws-lambda-execution-id"] = lambdaExecutionID
+	metadata["cloud-inquisitor-component"] = componentName
 
 	return metadata, nil
 }
