@@ -159,15 +159,18 @@ The settings file is a JSON file where all configurable elements of the project 
 The following table containers all of the the current supported fields in the settings file.
 
 _Settings_
-|variable|type|description|
-|--------|----|-----------|
-|log_level|string|sets the log level in application logs (debug, info, warn, error, fatal)|
-|stub_resource|string|enables or disables the use of stub resources for unrecognized events {"enabled" or "disabled"}|
-|name|string|sets the "application_name" field set in all log entried|
-|timestamp_format|string|golang timestamp format used when a human readable timestamps are provided|
-|auditing.required_tags|string array| a list of labels/tags that will be audited for by the tag auditor|
-|actions.mode|string|selector for whether or not Cloud Inquisitor will take actions against a resource or just log if it would have|
-|newrelic.license|string|New Relic license key if taking advantage of New Relic logging|
+|variable|type|values|description|
+|--------|----|------|-----------|
+|log_level|string| debug, info, warn, error, fatal |sets the log level in application logs |
+|stub_resource|string| enabled, disabled | enables or disables the use of stub resources for unrecognized events |
+|name|string| any |sets the "application_name" field set in all log entried|
+|timestamp_format|string| any | golang timestamp format used when a human readable timestamps are provided|
+|auditing.required_tags|string array| _[tag,...]_ |a list of labels/tags that will be audited for by the tag auditor|
+|actions.mode|string| dryrun, normal | selector for whether or not Cloud Inquisitor will take actions against a resource or just log if it would have|
+|newrelic.license|string| any |New Relic license key if taking advantage of New Relic logging|
+|newrelic.logging.enables|bool|true, false| Enables the New Relic integrations for logrus|
+|newrelic.logging.provider|string|lambda, api| uses either the lambda loggin integration (requires the New Relic log ingestion lambda) or the direct API using a logrus hook|
+
 
 Example settings file:
 ```json
@@ -272,3 +275,89 @@ terraform {
 ## Terraform Deploy
 
 Once the files are 
+
+# Setting Up Monitoring/Metrics Integrations
+
+## New Relic
+
+For AWS/Lambda environments, there are a number of ways to integrate with New relic. For Cloud Inqusitor, the use of the New Relic Log Ingestions can be used for both logging and metrics gathering while the New Relic Logs API can also be used strictly for logging.
+
+### CloudWatch Integration
+
+The CloudWatch New Relic Integration can be [enabled following the New Relic guide](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/enable-new-relic-monitoring-aws-lambda).
+
+This command may look like :
+
+```bash
+newrelic-lambda integrations install --enable-logs --no-aws-permissions-check --aws-region <AWS_REGION> --nr-account-id <NR_ACCOUNT_ID> --nr-api-key <NR_API_KEY> --linked-account-name <NR _ACCOUNT_NAME>
+```
+
+As an important note, the option `--enable-logs` is needed to allow the Lambda to pickup, parse, and forward JSON formated logs.
+
+Once the integration is created and forwarding, Lambda Log Groups/Log streams have to be subscribed to. This step may have been done during the setup linked up above.
+
+For the Lambdas in which application logs should also be forwarded, the log subscription filter needs to be `""`.
+
+You can check this by running:
+
+```bash
+aws logs describe-subscription-filters --log-group-name <LOG_GROUP_NAME>
+```
+
+In which the filter can be seen in a response similar to:
+```json
+{
+    "subscriptionFilters": [
+        {
+            "filterName": "NewRelicLogStreaming",
+            "logGroupName": "<LOG_GROUP_NAME>",
+            "filterPattern": "",
+            "destinationArn": "<NEW_RELIC_LAMBDA_ARN>",
+            "distribution": "ByLogStream",
+            "creationTime": <TIMESTAMP>
+        }
+    ]
+}
+```
+
+If the filter is set, this can be easily unset/reset by using the New Relic CLI with:
+
+```bash
+newrelic-lambda subscriptions uninstall -f <LAMBDA_NAME> --no-aws-permissions-check
+newrelic-lambda subscriptions install -f <LAMBDA_NAME>  --no-aws-permissions-check --filter-pattern ""
+```
+
+This will reset the the subscription filter in a way the New Relic CLI will still manage (if you need to remove in the future) and include all of the JSON logs.
+
+In order to ensure this logging integration is enabled in Cloud Inqusitor, your `settings.json` file will need the following stanza:
+
+```json
+{
+    ...
+    "newrelic": {
+		"logging": {
+			"enabled": true,
+			"provider": "lambda"
+		}
+	}
+}
+```
+
+### New Relic Logging API (logs only)
+
+If you are not able to/dont want to enabled the New Relic/CloudWatch logs integration, Cloud Inquisitor also supports logging directly to the New Relic Logs API. This is accomplished by enabling a custom logrus hook included in Cloud Inquisitor.
+
+This can be enabled by including this stanza:
+
+```json
+{
+    ...
+    "newrelic": {
+		"license": "<NEW_RELIC_LICENSE>",
+		"logging": {
+			"enabled": true,
+			"provider": "api"
+		}
+	}
+}
+```
