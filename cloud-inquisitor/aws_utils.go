@@ -44,7 +44,7 @@ func AWSAssumeRole(accountID string, role string, inputSession *session.Session)
 	return assumedSession, nil
 }
 
-func DefaultLambdaMetadata(componentName string, ctx context.Context) (map[string]interface{}, error) {
+func DefaultLambdaMetadata(ctx context.Context) (map[string]interface{}, error) {
 	var lambdaExecutionID string
 
 	if awsContext, ok := lambdacontext.FromContext(ctx); ok {
@@ -66,14 +66,13 @@ func DefaultLambdaMetadata(componentName string, ctx context.Context) (map[strin
 		"application-name":               settings.GetString("name"),
 		"cloud-inquisitor-workflow-uuid": workflowUUID.String(),
 		"cloud-inquisitor-step-uuid":     lambdaExecutionID,
-		"cloud-inquisitor-component":     componentName,
 		"aws-lambda-execution-id":        lambdaExecutionID,
 	}
 
 	return metadata, nil
 }
 
-func LambdaMetadataFromPassableResource(componentName string, ctx context.Context, resource PassableResource) (map[string]interface{}, error) {
+func LambdaMetadataFromPassableResource(ctx context.Context, resource PassableResource) (map[string]interface{}, error) {
 	metadata := resource.Metadata
 
 	var lambdaExecutionID string
@@ -90,7 +89,6 @@ func LambdaMetadataFromPassableResource(componentName string, ctx context.Contex
 	metadata["application-name"] = settings.GetString("name")
 	metadata["cloud-inquisitor-step-uuid"] = lambdaExecutionID
 	metadata["aws-lambda-execution-id"] = lambdaExecutionID
-	metadata["cloud-inquisitor-component"] = componentName
 
 	return metadata, nil
 }

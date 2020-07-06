@@ -33,6 +33,10 @@ func (logger *Logger) AddMetadataField(key string, value interface{}) {
 	logger.opts = newOps
 }
 
+func (logger *Logger) GetMetadata() map[string]interface{} {
+	return logger.opts.Metadata
+}
+
 func (logger *Logger) WithFields(fields logrus.Fields) *logrus.Entry {
 	// add custom fields here
 	for uuidName, uuid := range logger.opts.Metadata {

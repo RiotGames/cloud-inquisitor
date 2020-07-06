@@ -1,11 +1,13 @@
 package cloudinquisitor
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	openapis3 "github.com/RiotGames/cloud-inquisitor/ext/aws/s3"
@@ -41,19 +43,43 @@ type AWSS3Storage struct {
 	AccountID  string
 	Region     string
 	BucketName string
+	logger     *log.Logger
 
 	Tags map[string]string
 }
 
-func (s *AWSS3Storage) NewFromEventBus(event events.CloudWatchEvent, logger *log.Logger) error {
-	eventBytes, err := json.Marshal(event)
+func (s *AWSS3Storage) NewFromEventBus(event events.CloudWatchEvent, ctx context.Context, passsedInMetadata map[string]interface{}) error {
+	defaultMetadata, err := DefaultLambdaMetadata(ctx)
 	if err != nil {
 		return err
 	}
 
+	mergedMetaData := map[string]interface{}{}
+	for k, v := range passsedInMetadata {
+		mergedMetaData[k] = v
+	}
+	for k, v := range defaultMetadata {
+		mergedMetaData[k] = v
+	}
+
+	opts := log.LoggerOpts{
+		Level:    log.LogrusLevelConv(settings.GetString("log_level")),
+		Metadata: mergedMetaData,
+	}
+	s.logger = instrument.GetInstrumentedLogger(opts, ctx)
+
+	s.logger.WithFields(mergedMetaData).Debug("marshalling new event")
+	eventBytes, err := json.Marshal(event)
+	if err != nil {
+		s.logger.Error("error marshalling: "+err.Error(), nil)
+		return err
+	}
+
+	s.logger.Debug("unmarshalling event to openapi s3 event", nil)
 	var s3OpenAPI openapis3.AwsEvent
 	err = json.Unmarshal(eventBytes, &s3OpenAPI)
 	if err != nil {
+		s.logger.Error("error unmarshalling: "+err.Error(), nil)
 		return err
 	}
 
@@ -62,14 +88,35 @@ func (s *AWSS3Storage) NewFromEventBus(event events.CloudWatchEvent, logger *log
 	s.Region = s3OpenAPI.Region
 	s.BucketName = s3OpenAPI.Detail.RequestParameters.BucketName
 
-	err = s.RefreshState(logger)
+	err = s.RefreshState()
+	if err == nil {
+		s.logger.WithFields(s.GetMetadata()).Info("new resource created")
+	}
 	return err
 }
 
-func (s *AWSS3Storage) NewFromPassableResource(resource PassableResource, logger *log.Logger) error {
+func (s *AWSS3Storage) NewFromPassableResource(resource PassableResource, ctx context.Context, passsedInMetadata map[string]interface{}) error {
+	lamdbaMetadata, err := LambdaMetadataFromPassableResource(ctx, resource)
+	if err != nil {
+		return err
+
+	}
+
+	mergedMetaData := map[string]interface{}{}
+	for k, v := range passsedInMetadata {
+		mergedMetaData[k] = v
+	}
+	for k, v := range lamdbaMetadata {
+		mergedMetaData[k] = v
+	}
+	opts := log.LoggerOpts{
+		Level:    log.LogrusLevelConv(settings.GetString("log_level")),
+		Metadata: mergedMetaData,
+	}
+	s.logger = instrument.GetInstrumentedLogger(opts, ctx)
 	structJson, err := json.Marshal(resource.Resource)
 	if err != nil {
-		logger.WithFields(logrus.Fields{
+		s.logger.WithFields(logrus.Fields{
 			"cloud-inquisitor-resource": "aws-s3",
 			"cloud-inquisitor-error":    "json marshal error",
 		}).Error(err.Error(), nil)
@@ -78,7 +125,7 @@ func (s *AWSS3Storage) NewFromPassableResource(resource PassableResource, logger
 
 	err = json.Unmarshal(structJson, s)
 	if err != nil {
-		logger.WithFields(logrus.Fields{
+		s.logger.WithFields(logrus.Fields{
 			"cloud-inquisitor-resource": "aws-s3",
 			"cloud-inquisitor-error":    "json unmarshal error",
 		}).Error(err.Error(), nil)
@@ -88,7 +135,7 @@ func (s *AWSS3Storage) NewFromPassableResource(resource PassableResource, logger
 	return nil
 }
 
-func (s *AWSS3Storage) Audit(logger *log.Logger) (Action, error) {
+func (s *AWSS3Storage) Audit() (Action, error) {
 	var result Action
 
 	requiredTags := settings.GetString("auditing.required_tags")
@@ -119,14 +166,14 @@ func (s *AWSS3Storage) Audit(logger *log.Logger) (Action, error) {
 	return result, nil
 }
 
-func (s *AWSS3Storage) PublishState(logger *log.Logger) error {
-	logger.WithFields(logrus.Fields{
+func (s *AWSS3Storage) PublishState() error {
+	s.logger.WithFields(logrus.Fields{
 		"cloud-inquisitor-resource": "aws-s3",
 	}).Debugf("PublishState: %#v", *s)
 	return nil
 }
 
-func (s *AWSS3Storage) RefreshState(logger *log.Logger) error {
+func (s *AWSS3Storage) RefreshState() error {
 	var AWSInputSession = session.Must(session.NewSession())
 	assumedSession, err := AWSAssumeRole(s.AccountID, "ROLE_NAME", AWSInputSession)
 	if err != nil {
@@ -151,28 +198,28 @@ func (s *AWSS3Storage) RefreshState(logger *log.Logger) error {
 	return nil
 }
 
-func (s *AWSS3Storage) SendLogs(logger *log.Logger) error {
-	logger.WithFields(logrus.Fields{
+func (s *AWSS3Storage) SendLogs() error {
+	s.logger.WithFields(logrus.Fields{
 		"cloud-inquisitor-resource": "aws-s3",
 	}).Debugf("SendLogs: %#v", *s)
 	return nil
 }
 
-func (s *AWSS3Storage) SendMetrics(logger *log.Logger) error {
-	logger.WithFields(logrus.Fields{
+func (s *AWSS3Storage) SendMetrics() error {
+	s.logger.WithFields(logrus.Fields{
 		"cloud-inquisitor-resource": "aws-s3",
 	}).Debugf("SendMetrics: %#v", *s)
 	return nil
 }
 
-func (s *AWSS3Storage) SendNotification(logger *log.Logger) error {
-	logger.WithFields(logrus.Fields{"cloud-inquisitor-resource": "aws-s3"}).Debugf("SendNotifcation: %#v", *s)
+func (s *AWSS3Storage) SendNotification() error {
+	s.logger.WithFields(logrus.Fields{"cloud-inquisitor-resource": "aws-s3"}).Debugf("SendNotifcation: %#v", *s)
 	return nil
 }
 
-func (s *AWSS3Storage) TakeAction(action Action, logger *log.Logger) error {
+func (s *AWSS3Storage) TakeAction(action Action) error {
 	actionMode := settings.GetString("actions.mode")
-	logger.WithFields(logrus.Fields{
+	s.logger.WithFields(logrus.Fields{
 		"cloud-inquisitor-resource":    "aws-s3",
 		"cloud-inquisitor-action":      action,
 		"cloud-inquisitor-action-mode": actionMode,
@@ -184,7 +231,7 @@ func (s *AWSS3Storage) TakeAction(action Action, logger *log.Logger) error {
 	case "normal":
 		break
 	default:
-		logger.WithFields(logrus.Fields{
+		s.logger.WithFields(logrus.Fields{
 			"cloud-inquisitor-resource":    "aws-s3",
 			"cloud-inquisitor-action":      action,
 			"cloud-inquisitor-action-mode": actionMode,
@@ -213,7 +260,7 @@ func (s *AWSS3Storage) TakeAction(action Action, logger *log.Logger) error {
 			return err
 		}
 
-		logger.WithFields(logrus.Fields{
+		s.logger.WithFields(logrus.Fields{
 			"cloud-inquisitor-resource":    "aws-s3",
 			"cloud-inquisitor-action":      action,
 			"cloud-inquisitor-action-mode": actionMode}).WithFields(s.GetMetadata()).Debugf("output of PREVENT for bucket %s: %s", s.BucketName, outputPutPolicy.String())
@@ -238,7 +285,7 @@ func (s *AWSS3Storage) TakeAction(action Action, logger *log.Logger) error {
 					return false
 				}
 
-				logger.WithFields(logrus.Fields{
+				s.logger.WithFields(logrus.Fields{
 					"cloud-inquisitor-resource":    "aws-s3",
 					"cloud-inquisitor-action":      action,
 					"cloud-inquisitor-action-mode": actionMode}).WithFields(s.GetMetadata()).Infof("deleted from Bucket %s Object %s with output %s", s.BucketName, *object.Key, outputDeleteObject.String())
@@ -251,7 +298,7 @@ func (s *AWSS3Storage) TakeAction(action Action, logger *log.Logger) error {
 			return listErr
 		}
 
-		logger.WithFields(logrus.Fields{
+		s.logger.WithFields(logrus.Fields{
 			"cloud-inquisitor-resource":    "aws-s3",
 			"cloud-inquisitor-action":      action,
 			"cloud-inquisitor-action-mode": actionMode}).WithFields(s.GetMetadata()).Infof("deleting Bucket %s", s.BucketName)
@@ -264,7 +311,7 @@ func (s *AWSS3Storage) TakeAction(action Action, logger *log.Logger) error {
 			return err
 		}
 
-		logger.WithFields(logrus.Fields{
+		s.logger.WithFields(logrus.Fields{
 			"cloud-inquisitor-resource":    "aws-s3",
 			"cloud-inquisitor-action":      action,
 			"cloud-inquisitor-action-mode": actionMode,
@@ -289,4 +336,8 @@ func (s3 *AWSS3Storage) GetMetadata() map[string]interface{} {
 		"currentState": s3.State,
 		"tags":         s3.Tags,
 	}
+}
+
+func (s3 *AWSS3Storage) GetLogger() *log.Logger {
+	return s3.logger
 }
