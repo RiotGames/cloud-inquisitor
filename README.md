@@ -161,15 +161,15 @@ The following table containers all of the the current supported fields in the se
 _Settings_
 |variable|type|values|description|
 |--------|----|------|-----------|
-|log_level|string| debug, info, warn, error, fatal |sets the log level in application logs |
-|stub_resource|string| enabled, disabled | enables or disables the use of stub resources for unrecognized events |
+|log_level|string| `debug`, `info`, `warn`, `error`, `fatal` |sets the log level in application logs |
+|stub_resource|string| `enabled`, `disabled` | enables or disables the use of stub resources for unrecognized events |
 |name|string| any |sets the "application_name" field set in all log entried|
 |timestamp_format|string| any | golang timestamp format used when a human readable timestamps are provided|
 |auditing.required_tags|string array| _[tag,...]_ |a list of labels/tags that will be audited for by the tag auditor|
-|actions.mode|string| dryrun, normal | selector for whether or not Cloud Inquisitor will take actions against a resource or just log if it would have|
+|actions.mode|string| `dryrun`, `normal` | selector for whether or not Cloud Inquisitor will take actions against a resource or just log if it would have|
 |newrelic.license|string| any |New Relic license key if taking advantage of New Relic logging|
-|newrelic.logging.enables|bool|true, false| Enables the New Relic integrations for logrus|
-|newrelic.logging.provider|string|lambda, api| uses either the lambda loggin integration (requires the New Relic log ingestion lambda) or the direct API using a logrus hook|
+|newrelic.logging.enables|bool|`true`, `false`| Enables the New Relic integrations for logrus|
+|newrelic.logging.provider|string|`lambda`, `api`| uses either the lambda loggin integration (requires the New Relic log ingestion lambda) or the direct API using a logrus hook|
 
 
 Example settings file:
