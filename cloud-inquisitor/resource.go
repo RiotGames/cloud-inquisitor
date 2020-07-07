@@ -106,26 +106,25 @@ func NewResource(event events.CloudWatchEvent, ctx context.Context, metadata map
 	var resource Resource = nil
 	switch event.Source {
 	case "aws.ec2":
-		//logger.Debugf("parsing aws.ec2 taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &StubResource{}
 		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
 
 	case "aws.rds":
-		//.Debugf("parsing aws.rds taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &AWSRDSInstance{}
 		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
+
 	case "aws.s3":
-		//logger.Debugf("parsing aws.s3 taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &AWSS3Storage{}
 		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
+
 	default:
-		//logger.Warnf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &StubResource{}
 		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
+
 	}
 	return resource, nil
 }
@@ -134,13 +133,13 @@ func NewTaggableResource(event events.CloudWatchEvent, ctx context.Context, meta
 	var resource TaggableResource = nil
 	switch event.Source {
 	case "aws.ec2":
-		//logger.Debugf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		// noop
 	case "aws.rds":
-		//logger.Debugf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		// noop
 	case "aws.s3":
-		//.Debugf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		// noop
 	default:
-		//logger.Debugf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		// noop
 	}
 	return resource, nil
 }
