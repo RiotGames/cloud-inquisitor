@@ -3,6 +3,7 @@ package cloudinquisitor
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 
@@ -91,4 +92,26 @@ func LambdaMetadataFromPassableResource(ctx context.Context, resource PassableRe
 	metadata["aws-lambda-execution-id"] = lambdaExecutionID
 
 	return metadata, nil
+
+// KeysInMap compares the values in keyList against the Map Keys
+// in a case insensitive way
+func KeysInMap(m map[string]string, keyList []string) bool {
+	lowerKeys := make([]string, len(keyList))
+	for idx, key := range keyList {
+		lowerKeys[idx] = strings.ToLower(key)
+	}
+
+	lowerMap := map[string]bool{}
+	for key, _ := range m {
+		lowerMap[strings.ToLower(key)] = true
+	}
+
+	for _, key := range lowerKeys {
+		if _, ok := lowerMap[key]; !ok {
+			fmt.Printf("key %v not in map %#v\n", key, lowerMap)
+			return false
+		}
+	}
+
+	return true
 }
