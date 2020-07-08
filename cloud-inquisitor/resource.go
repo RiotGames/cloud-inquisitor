@@ -1,11 +1,12 @@
 package cloudinquisitor
 
 import (
+	"context"
 	"errors"
 
+	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/aws/aws-lambda-go/events"
-
-	log "github.com/sirupsen/logrus"
+	//"github.com/sirupsen/logrus"
 )
 
 type Action = string
@@ -32,8 +33,8 @@ const (
 // collect information on the resource, audit and remediate it,
 // and report the end result
 type Resource interface {
-	NewFromEventBus(events.CloudWatchEvent) error
-	NewFromPassableResource(PassableResource) error
+	NewFromEventBus(events.CloudWatchEvent, context.Context, map[string]interface{}) error
+	NewFromPassableResource(PassableResource, context.Context, map[string]interface{}) error
 	// Audit determines if the current state of the struct
 	// meets criteria for a given action
 	Audit() (Action, error)
@@ -61,6 +62,9 @@ type Resource interface {
 	TakeAction(Action) error
 	// GetType returns an ENUM of the supported services
 	GetType() Service
+	// GetMetadata returns a map of Resoruce metadata
+	GetMetadata() map[string]interface{}
+	GetLogger() *log.Logger
 }
 
 // TaggableResource is an interface which introduces
@@ -76,66 +80,66 @@ type PassableResource struct {
 	Resource interface{}
 	Type     Service
 	Finished bool
+	Metadata map[string]interface{}
 }
 
-func (p PassableResource) GetResource() (Resource, error) {
+func (p PassableResource) GetResource(ctx context.Context, metadata map[string]interface{}) (Resource, error) {
 	switch p.Type {
 	case SERVICE_STUB:
 		stub := &StubResource{}
-		err := stub.NewFromPassableResource(p)
+		err := stub.NewFromPassableResource(p, ctx, metadata)
 		return stub, err
 	case SERVICE_AWS_RDS:
 		rds := &AWSRDSInstance{}
-		err := rds.NewFromPassableResource(p)
+		err := rds.NewFromPassableResource(p, ctx, metadata)
 		return rds, err
 	case SERVICE_AWS_S3:
 		s3 := &AWSS3Storage{}
-		err := s3.NewFromPassableResource(p)
+		err := s3.NewFromPassableResource(p, ctx, metadata)
 		return s3, err
 	default:
 		return nil, errors.New("no matching resource for type " + p.Type)
 	}
 }
 
-func NewResource(event events.CloudWatchEvent) (Resource, error) {
+func NewResource(event events.CloudWatchEvent, ctx context.Context, metadata map[string]interface{}) (Resource, error) {
 	var resource Resource = nil
 	switch event.Source {
 	case "aws.ec2":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &StubResource{}
-		err := resource.NewFromEventBus(event)
+		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
 
 	case "aws.rds":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &AWSRDSInstance{}
-		err := resource.NewFromEventBus(event)
+		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
+
 	case "aws.s3":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &AWSS3Storage{}
-		err := resource.NewFromEventBus(event)
+		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
+
 	default:
-		log.Warningf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
 		resource = &StubResource{}
-		err := resource.NewFromEventBus(event)
+		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
+
 	}
 	return resource, nil
 }
 
-func NewTaggableResource(event events.CloudWatchEvent) (TaggableResource, error) {
+func NewTaggableResource(event events.CloudWatchEvent, ctx context.Context, metadata map[string]interface{}) (TaggableResource, error) {
 	var resource TaggableResource = nil
 	switch event.Source {
 	case "aws.ec2":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		// noop
 	case "aws.rds":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		// noop
 	case "aws.s3":
-		log.Printf("parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		// noop
 	default:
-		log.Warningf("error parsing taggable resources: {%v, %v, %v, %v}\n", event.Resources, event.Region, event.Source, event.AccountID)
+		// noop
 	}
 	return resource, nil
 }
