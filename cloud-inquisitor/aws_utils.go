@@ -2,6 +2,7 @@ package cloudinquisitor
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -36,4 +37,27 @@ func AWSAssumeRole(accountID string, role string, inputSession *session.Session)
 			Credentials: creds}),
 	)
 	return assumedSession, nil
+}
+
+// KeysInMap compares the values in keyList against the Map Keys
+// in a case insensitive way
+func KeysInMap(m map[string]string, keyList []string) bool {
+	lowerKeys := make([]string, len(keyList))
+	for idx, key := range keyList {
+		lowerKeys[idx] = strings.ToLower(key)
+	}
+
+	lowerMap := map[string]bool{}
+	for key, _ := range m {
+		lowerMap[strings.ToLower(key)] = true
+	}
+
+	for _, key := range lowerKeys {
+		if _, ok := lowerMap[key]; !ok {
+			fmt.Printf("key %v not in map %#v\n", key, lowerMap)
+			return false
+		}
+	}
+
+	return true
 }
