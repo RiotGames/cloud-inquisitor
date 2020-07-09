@@ -1,8 +1,14 @@
 package cloudinquisitor
 
 import (
+	"context"
 	"fmt"
 	"strings"
+
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
+
+	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/google/uuid"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -38,6 +44,54 @@ func AWSAssumeRole(accountID string, role string, inputSession *session.Session)
 	)
 	return assumedSession, nil
 }
+
+func DefaultLambdaMetadata(ctx context.Context) (map[string]interface{}, error) {
+	var lambdaExecutionID string
+
+	if awsContext, ok := lambdacontext.FromContext(ctx); ok {
+		lambdaExecutionID = awsContext.AwsRequestID
+	} else {
+		sessionUUID, uuidErr := uuid.NewRandom()
+		if uuidErr != nil {
+			return map[string]interface{}{}, uuidErr
+		}
+		lambdaExecutionID = sessionUUID.String()
+	}
+
+	workflowUUID, err := uuid.NewRandom()
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	metadata := map[string]interface{}{
+		"application-name":               settings.GetString("name"),
+		"cloud-inquisitor-workflow-uuid": workflowUUID.String(),
+		"cloud-inquisitor-step-uuid":     lambdaExecutionID,
+		"aws-lambda-execution-id":        lambdaExecutionID,
+	}
+
+	return metadata, nil
+}
+
+func LambdaMetadataFromPassableResource(ctx context.Context, resource PassableResource) (map[string]interface{}, error) {
+	metadata := resource.Metadata
+
+	var lambdaExecutionID string
+
+	if awsContext, ok := lambdacontext.FromContext(ctx); ok {
+		lambdaExecutionID = awsContext.AwsRequestID
+	} else {
+		sessionUUID, uuidErr := uuid.NewRandom()
+		if uuidErr != nil {
+			return map[string]interface{}{}, uuidErr
+		}
+		lambdaExecutionID = sessionUUID.String()
+	}
+	metadata["application-name"] = settings.GetString("name")
+	metadata["cloud-inquisitor-step-uuid"] = lambdaExecutionID
+	metadata["aws-lambda-execution-id"] = lambdaExecutionID
+
+	return metadata, nil
 
 // KeysInMap compares the values in keyList against the Map Keys
 // in a case insensitive way

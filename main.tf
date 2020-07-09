@@ -77,20 +77,20 @@ module "dns-hijack-us-east-1" {
     step_function_tag_auditor_remove_seconds = 40
     step_function_lambda_paths = {
         "tag_auditor_init": {
-            "file": abspath("./builds/resource_initializer"),
-            "handler": "resource_initializer"
+			"lambda": "resource_initializer"
+			"handler": "resource_initializer"
         },
         "tag_auditor_notify": {
-            "file": abspath("./builds/tag_auditor"),
-            "handler": "tag_auditor"
+			"lambda": "tag_auditor"
+			"handler": "tag_auditor"
         },
         "tag_auditor_prevent": {
-            "file": abspath("./builds/tag_auditor"),
-            "handler": "tag_auditor"
+			"lambda": "tag_auditor"
+			"handler": "tag_auditor"
         },
         "tag_auditor_remove": {
-            "file": abspath("./builds/tag_auditor"),
-            "handler": "tag_auditor"
+			"lambda": "tag_auditor"
+			"handler": "tag_auditor"
         }
     }
 

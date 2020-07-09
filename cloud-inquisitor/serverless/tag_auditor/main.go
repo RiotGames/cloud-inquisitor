@@ -4,55 +4,55 @@ import (
 	"context"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
-	"github.com/aws/aws-lambda-go/lambda"
-
-	log "github.com/sirupsen/logrus"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
 
 func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResource) (cloudinquisitor.PassableResource, error) {
-	log.Printf("resource: %#v\n", resource)
-	parsedResource, err := resource.GetResource()
+
+	parsedResource, err := resource.GetResource(ctx, map[string]interface{}{
+		"cloud-inquisitor-component": "tag-auditor",
+	})
 	if err != nil {
-		log.Warn(err.Error())
 		return resource, nil
 	}
 
 	err = parsedResource.RefreshState()
+	if err != nil {
+		return resource, nil
+	}
 
 	action, err := parsedResource.Audit()
 	if err != nil {
-		log.Warn(err.Error())
 		return cloudinquisitor.PassableResource{
 			Resource: parsedResource,
 			Type:     parsedResource.GetType(),
+			Metadata: parsedResource.GetLogger().GetMetadata(),
 			Finished: true,
 		}, nil
 	}
 
 	if err := parsedResource.TakeAction(action); err != nil {
-		log.Warn(err.Error())
 		return cloudinquisitor.PassableResource{
 			Resource: parsedResource,
 			Type:     parsedResource.GetType(),
+			Metadata: parsedResource.GetLogger().GetMetadata(),
 			Finished: true,
 		}, nil
 	}
 
-	if err := parsedResource.PublishState(); err != nil {
-		log.Warn(err.Error())
-	}
+	parsedResource.PublishState()
 
-	if err := parsedResource.SendMetrics(); err != nil {
-		log.Warn(err.Error())
-	}
+	parsedResource.SendMetrics()
 
 	return cloudinquisitor.PassableResource{
 		Resource: parsedResource,
 		Type:     parsedResource.GetType(),
+		Metadata: parsedResource.GetLogger().GetMetadata(),
 		Finished: false,
 	}, nil
 }
 
 func main() {
-	lambda.Start(handlerRequest)
+	newrelic.StartNewRelicLambda(handlerRequest, settings.GetString("name"))
 }
