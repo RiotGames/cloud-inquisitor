@@ -2,6 +2,7 @@ package cloudinquisitor
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
@@ -22,10 +23,11 @@ const (
 )
 
 const (
-	SERVICE_STUB    Service = "STUB"
-	SERVICE_AWS_EC2 Service = "AWS_EC2"
-	SERVICE_AWS_RDS Service = "AWS_RDS"
-	SERVICE_AWS_S3  Service = "AWS_S3"
+	SERVICE_STUB             Service = "STUB"
+	SERVICE_AWS_EC2          Service = "AWS_EC2"
+	SERVICE_AWS_RDS          Service = "AWS_RDS"
+	SERVICE_AWS_S3           Service = "AWS_S3"
+	SERVICE_AWS_ROUTE53_ZONE Service = "AWS_ROUTE53_ZONE"
 )
 
 // Resource is an interaface that vaugely describes a
@@ -142,4 +144,36 @@ func NewTaggableResource(event events.CloudWatchEvent, ctx context.Context, meta
 		// noop
 	}
 	return resource, nil
+}
+
+type HijackableResource interface {
+	NewFromEventBus(events.CloudWatchEvent, context.Context, map[string]interface{}) error
+	NewFromPassableHijackableResource(PassableHijackableResource, context.Context, map[string]interface{}) error
+	RefreshState() error
+	PublishState() error
+	GetType() Service
+	GetMetadata() map[string]interface{}
+	GetLogger() *log.Logger
+}
+
+func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, metadata map[string]interface{}) error {
+	var resource HijackableResource
+	switch event.Source {
+	case "aws.route53":
+		detailMap := map[string]interface{}{}
+		err := json.Unmarshal(event.Detail, &detailMap)
+		if err != nil {
+			return err
+		}
+		if eventName, ok := detailMap["eventName"]; ok {
+			switch eventName {
+			case "CreateHostedZone":
+				&resource.NewFromEventBus(event, ctx, metadata)
+			default:
+				return erros.New("unknown route53 eventName")
+			}
+		} else {
+			return errors.New("unable to parse evetName from map")
+		}
+	}
 }

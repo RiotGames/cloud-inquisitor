@@ -6,21 +6,20 @@ import (
 	"fmt"
 	"strings"
 
+	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	log "github.com/sirupsen/logrus"
 )
 
 type AWSRoute53Zone struct {
-	State     int
 	AccountID string
 	ZoneName  string
+	EventName string
+	Type      Service
 
-	logger
-
-	Tags     map[string]string
-	Metadata map[string]interface{}
+	logger *log.Logger
 }
 
 type AWSRoute53ZoneEventBusDetail struct {
@@ -37,190 +36,97 @@ type AWSRoute53ZoneEventBusDetail struct {
 	EventId string `json:"eventID"`
 }
 
-func (r *AWSRoute53Zone) NewFromEventBus(event events.CloudWatchEvent) error {
-	err = json.Unmarshal(event.Detail)
+func (r *AWSRoute53Zone) NewFromEventBus(event events.CloudWatchEvent, ctx context.Context, passsedInMetadata map[string]interface{}) error {
+	defaultMetadata, err := DefaultLambdaMetadata(ctx)
+	if err != nil {
+		return err
+	}
+
+	mergedMetaData := map[string]interface{}{}
+	for k, v := range passsedInMetadata {
+		mergedMetaData[k] = v
+	}
+	for k, v := range defaultMetadata {
+		mergedMetaData[k] = v
+	}
+
+	opts := log.LoggerOpts{
+		Level:    log.LogrusLevelConv(settings.GetString("log_level")),
+		Metadata: mergedMetaData,
+	}
+	r.logger = instrument.GetInstrumentedLogger(opts, ctx)
+
+	var route53Details AWSRoute53ZoneEventBusDetail
+	err = json.Unmarshal(event.Detail, &route53Details)
+	if err != nil {
+		r.logger.Error(err.Error(), nil)
+		return err
+	}
+
+	r.AccountID = event.AccountID
+	r.ZoneName = route53Details.RequestParameters.Name
+	r.Type = SERVICE_AWS_ROUTE53_ZONE
+	r.EventName = route53Details.EventName
 }
 
-func (s *AWSS3Storage) NewFromPassableResource(resource PassableResource) error {
+func (r *AWSRoute53Zone) NewFromPassableHijackableResource(resource PassableResource, ctx context.Context, passsedInMetadata map[string]interface{}) errror {
+	lamdbaMetadata, err := LambdaMetadataFromPassableResource(ctx, resource)
+	if err != nil {
+		return err
+	}
+
+	mergedMetaData := map[string]interface{}{}
+	for k, v := range passsedInMetadata {
+		mergedMetaData[k] = v
+	}
+	for k, v := range lamdbaMetadata {
+		mergedMetaData[k] = v
+	}
+	opts := log.LoggerOpts{
+		Level:    log.LogrusLevelConv(settings.GetString("log_level")),
+		Metadata: mergedMetaData,
+	}
+	r.logger = instrument.GetInstrumentedLogger(opts, ctx)
 	structJson, err := json.Marshal(resource.Resource)
 	if err != nil {
-		log.Error(err.Error())
-		return errors.New("unable to marshal stub resoruce")
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-zone",
+			"cloud-inquisitor-error":    "json marshal error",
+		}).Error(err.Error(), nil)
+		return errors.New("unable to marshal aws-route53-zone resource")
 	}
 
-	err = json.Unmarshal(structJson, s)
+	err = json.Unmarshal(structJson, r)
 	if err != nil {
-		log.Error(err.Error())
-		return errors.New("unable to unmarshal stub resoruce")
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-zone",
+			"cloud-inquisitor-error":    "json unmarshal error",
+		}).Error(err.Error(), nil)
+		return errors.New("unable to unmarshal aws-route53-zone resource")
 	}
 
 	return nil
 }
 
-func (s *AWSS3Storage) Audit() (Action, error) {
-	var result Action
-
-	requiredTags, err := GetConfig("required_tags")
-	if err != nil {
-		return ACTION_ERROR, err
-	}
-
-	compliant := KeysInMap(s.Tags, strings.Split(requiredTags, ","))
-
-	if compliant {
-		return ACTION_FIXED_BY_USER, nil
-	}
-
-	switch s.State {
-	case 0, 1, 2:
-		result = ACTION_NOTIFY
-	case 3:
-		result = ACTION_PREVENT
-	case 4:
-		result = ACTION_REMOVE
-	}
-
-	s.State++
-
-	return result, nil
+func (r *AWSRoute53Zone) RefreshState() error {
+	return nil
 }
-
-func (s *AWSS3Storage) PublishState() error {
-	log.Printf("PublishState: %#v\n", *s)
+func (r *AWSRoute53Zone) PublishState() error {
 	return nil
 }
 
-func (s *AWSS3Storage) RefreshState() error {
-	var AWSInputSession = session.Must(session.NewSession())
-	assumedSession, err := AWSAssumeRole(s.AccountID, "ROLE_NAME", AWSInputSession)
-	if err != nil {
-		return err
-	}
-
-	s3Client := s3.New(assumedSession)
-
-	taggingInput := &s3.GetBucketTaggingInput{
-		Bucket: aws.String(s.BucketName),
-	}
-
-	tagsResult, err := s3Client.GetBucketTagging(taggingInput)
-	if err != nil {
-		return nil
-	}
-
-	s.Tags = map[string]string{}
-	for _, tag := range tagsResult.TagSet {
-		s.Tags[*tag.Key] = *tag.Value
-	}
-	return nil
+func (r *AWSRoute53Zone) GetType() Service {
+	return SERVICE_AWS_ROUTE53_ZONE
 }
 
-func (s *AWSS3Storage) SendLogs() error {
-	log.Printf("SendLogs: %#v\n", *s)
-	return nil
-}
-
-func (s *AWSS3Storage) SendMetrics() error {
-	log.Printf("SendMetrics: %#v\n", *s)
-	return nil
-}
-
-func (s *AWSS3Storage) SendNotification() error {
-	log.Printf("SendNotifcation: %#v\n", *s)
-	return nil
-}
-
-func (s *AWSS3Storage) TakeAction(action Action) error {
-	log.Printf("taking action %#v on resource: %#v\n", action, *s)
-
-	actionMode, err := GetConfig("action_mode")
-	if err != nil {
-		return err
+func (r *AWSRoute53Zone) GetMetadata() map[string]interface{} {
+	return map[string]interface{}{
+		"account":      r.AccountID,
+		"zone":         r.ZoneName,
+		"event":        r.EventName,
+		"service-type": r.Type,
 	}
-
-	switch actionMode {
-	case "dryrun":
-		log.Printf("Dry-run mode specified")
-		return nil
-	case "normal":
-		break
-	default:
-		return fmt.Errorf("Non-supported action mode: %v", actionMode)
-	}
-
-	assumedSession, err := AWSAssumeRole(s.AccountID, "ROLE_NAME", nil)
-	if err != nil {
-		return err
-	}
-
-	s3Client := s3.New(assumedSession)
-
-	switch action {
-	case ACTION_PREVENT:
-		// apply prevent policy
-		inputPutPolicy := &s3.PutBucketPolicyInput{
-			Bucket:                        aws.String(s.BucketName),
-			ConfirmRemoveSelfBucketAccess: aws.Bool(true),
-			Policy:                        aws.String(strings.ReplaceAll(s3PreventPolicy, "BUCKETNAME", s.BucketName)),
-		}
-
-		outputPutPolicy, err := s3Client.PutBucketPolicy(inputPutPolicy)
-		if err != nil {
-			return err
-		}
-
-		log.Printf("Output of PREVENT for bucket %s: %s\n", s.BucketName, outputPutPolicy.String())
-	case ACTION_REMOVE:
-		// delete bucket
-		inputListObjects := &s3.ListObjectsV2Input{
-			Bucket: aws.String(s.BucketName),
-		}
-
-		var listErr error = nil
-		s3Client.ListObjectsV2Pages(inputListObjects, func(page *s3.ListObjectsV2Output, last bool) bool {
-			for _, object := range page.Contents {
-				log.Printf("Deleting from Bucket %s Object %s\n", s.BucketName, *object.Key)
-				inputDeleteObject := &s3.DeleteObjectInput{
-					Bucket: aws.String(s.BucketName),
-					Key:    object.Key,
-				}
-
-				outputDeleteObject, err := s3Client.DeleteObject(inputDeleteObject)
-				if err != nil {
-					listErr = err
-					// close out regardless
-					return false
-				}
-
-				log.Printf("Deleted from Bucket %s Object %s with output %s\n", s.BucketName, *object.Key, outputDeleteObject.String())
-			}
-
-			return !last
-		})
-
-		if listErr != nil {
-			return listErr
-		}
-
-		log.Printf("Deleting Bucket %s\n", s.BucketName)
-		inputDeleteBucket := &s3.DeleteBucketInput{
-			Bucket: aws.String(s.BucketName),
-		}
-
-		outputDeleteBucket, err := s3Client.DeleteBucket(inputDeleteBucket)
-		if err != nil {
-			return err
-		}
-
-		log.Printf("Deleted Bucket %s with output %s\n", s.BucketName, outputDeleteBucket.String())
-
-	default:
-		return nil
-	}
-
-	return nil
 }
-
-func (s3 *AWSS3Storage) GetType() Service {
-	return SERVICE_AWS_S3
+func (r *AWSRoute53Zone) GetLogger() *log.Logger {
+	return r.logger
 }
