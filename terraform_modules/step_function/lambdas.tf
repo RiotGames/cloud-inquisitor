@@ -10,7 +10,7 @@ resource "aws_lambda_function" "step_function_lambdas" {
 	filename         = abspath(join("", ["./builds/",each.value["lambda"],".zip"]))
 	function_name    = "${var.environment}_${var.name}_${each.key}_lambda_${var.region}_${var.version_str}"
 	handler          = each.value["handler"]
-	role             = aws_iam_role.lambda_role.arn
+	role             = var.project_role
 	source_code_hash = filebase64sha256(abspath(join("", ["./builds/",each.value["lambda"],".zip"]))) 
 	runtime          = "go1.x"
 	timeout          = 900

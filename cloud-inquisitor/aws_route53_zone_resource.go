@@ -1,16 +1,16 @@
 package cloudinquisitor
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"strings"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/sirupsen/logrus"
 )
 
 type AWSRoute53Zone struct {
@@ -67,9 +67,11 @@ func (r *AWSRoute53Zone) NewFromEventBus(event events.CloudWatchEvent, ctx conte
 	r.ZoneName = route53Details.RequestParameters.Name
 	r.Type = SERVICE_AWS_ROUTE53_ZONE
 	r.EventName = route53Details.EventName
+
+	return nil
 }
 
-func (r *AWSRoute53Zone) NewFromPassableHijackableResource(resource PassableResource, ctx context.Context, passsedInMetadata map[string]interface{}) errror {
+func (r *AWSRoute53Zone) NewFromPassableResource(resource PassableResource, ctx context.Context, passsedInMetadata map[string]interface{}) error {
 	lamdbaMetadata, err := LambdaMetadataFromPassableResource(ctx, resource)
 	if err != nil {
 		return err
@@ -112,11 +114,51 @@ func (r *AWSRoute53Zone) RefreshState() error {
 	return nil
 }
 func (r *AWSRoute53Zone) PublishState() error {
+	r.logger.WithFields(r.GetMetadata()).Debug("starting graph connection")
+	gClient, err := graph.NewGraph()
+	if err != nil {
+		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	r.logger.WithFields(r.GetMetadata()).WithFields(map[string]interface{}{
+		"subject":   r.ZoneName,
+		"predicate": "is-owned-by",
+		"object":    r.AccountID,
+	}).Debug("adding quad to graph")
+	gClient.AddQuad(r.ZoneName, "is-owned-by", r.AccountID)
+
+	r.logger.WithFields(r.GetMetadata()).WithFields(map[string]interface{}{
+		"subject":   r.ZoneName,
+		"predicate": "is-service-type",
+		"object":    r.GetType(),
+	}).Debug("adding quad to graph")
+	gClient.AddQuad(r.ZoneName, "is-service-type", r.GetType())
 	return nil
 }
 
 func (r *AWSRoute53Zone) GetType() Service {
 	return SERVICE_AWS_ROUTE53_ZONE
+}
+
+func (r *AWSRoute53Zone) Audit() (Action, error) {
+	return ACTION_NONE, nil
+}
+
+func (r *AWSRoute53Zone) SendLogs() error {
+	return nil
+}
+
+func (r *AWSRoute53Zone) SendMetrics() error {
+	return nil
+}
+
+func (r *AWSRoute53Zone) SendNotification() error {
+	return nil
+}
+
+func (r *AWSRoute53Zone) TakeAction(a Action) error {
+	return nil
 }
 
 func (r *AWSRoute53Zone) GetMetadata() map[string]interface{} {

@@ -46,7 +46,7 @@ func (r *AWSRDSInstance) Audit() (Action, error) {
 
 	requiredTags := settings.GetString("auditing.required_tags")
 
-	compliant := KeysInMap(s.Tags, strings.Split(requiredTags, ","))
+	compliant := KeysInMap(r.Tags, strings.Split(requiredTags, ","))
 
 	if compliant {
 		return ACTION_FIXED_BY_USER, nil

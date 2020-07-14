@@ -99,6 +99,10 @@ func (p PassableResource) GetResource(ctx context.Context, metadata map[string]i
 		s3 := &AWSS3Storage{}
 		err := s3.NewFromPassableResource(p, ctx, metadata)
 		return s3, err
+	case SERVICE_AWS_ROUTE53_ZONE:
+		r53 := &AWSRoute53Zone{}
+		err := r53.NewFromPassableResource(p, ctx, metadata)
+		return r53, err
 	default:
 		return nil, errors.New("no matching resource for type " + p.Type)
 	}
@@ -122,6 +126,27 @@ func NewResource(event events.CloudWatchEvent, ctx context.Context, metadata map
 		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
 
+	case "aws.route53":
+		detailMap := map[string]interface{}{}
+		err := json.Unmarshal(event.Detail, &detailMap)
+		if err != nil {
+			return resource, err
+		}
+		if eventName, ok := detailMap["eventName"]; ok {
+			switch eventName {
+			case "CreateHostedZone":
+				resource = &AWSRoute53Zone{}
+				resourceErr := resource.NewFromEventBus(event, ctx, metadata)
+				return resource, resourceErr
+			default:
+				resource = &StubResource{}
+				return resource, errors.New("unknown route53 eventName")
+			}
+		} else {
+			resource = &StubResource{}
+			return resource, errors.New("unable to parse evetName from map")
+		}
+
 	default:
 		resource = &StubResource{}
 		err := resource.NewFromEventBus(event, ctx, metadata)
@@ -144,36 +169,4 @@ func NewTaggableResource(event events.CloudWatchEvent, ctx context.Context, meta
 		// noop
 	}
 	return resource, nil
-}
-
-type HijackableResource interface {
-	NewFromEventBus(events.CloudWatchEvent, context.Context, map[string]interface{}) error
-	NewFromPassableHijackableResource(PassableHijackableResource, context.Context, map[string]interface{}) error
-	RefreshState() error
-	PublishState() error
-	GetType() Service
-	GetMetadata() map[string]interface{}
-	GetLogger() *log.Logger
-}
-
-func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, metadata map[string]interface{}) error {
-	var resource HijackableResource
-	switch event.Source {
-	case "aws.route53":
-		detailMap := map[string]interface{}{}
-		err := json.Unmarshal(event.Detail, &detailMap)
-		if err != nil {
-			return err
-		}
-		if eventName, ok := detailMap["eventName"]; ok {
-			switch eventName {
-			case "CreateHostedZone":
-				&resource.NewFromEventBus(event, ctx, metadata)
-			default:
-				return erros.New("unknown route53 eventName")
-			}
-		} else {
-			return errors.New("unable to parse evetName from map")
-		}
-	}
 }

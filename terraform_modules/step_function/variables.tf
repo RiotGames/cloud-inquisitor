@@ -18,6 +18,10 @@ variable "environment" {
     description = "environment to run step function in (prod, staging, dev, etc.)"
 }
 
+variable "project_role" {
+    type = string
+}
+
 variable "step_function_selector" {
     type = string
     description = "declaration of the state machine"

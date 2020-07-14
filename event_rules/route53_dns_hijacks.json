@@ -12,7 +12,7 @@
         "eventName": [
             "CreateHostedZone",
             "DeleteHostedZone",
-            "ChangeResourceRecordsSets"
+            "ChangeResourceRecordSets"
         ]
     }
 }

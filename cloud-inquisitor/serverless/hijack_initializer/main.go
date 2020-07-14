@@ -12,7 +12,7 @@ import (
 )
 
 func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (cloudinquisitor.PassableResource, error) {
-	resource, _ := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
+	resource, _ := cloudinquisitor.NewResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,
 		"cloud-inquisitor-component": "hijack-initializer",
 	})

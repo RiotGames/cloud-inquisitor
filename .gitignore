@@ -686,4 +686,5 @@ terraform_modules/step_function/lamba_zips/**
 
 # settings
 settings.json
+main.tf
 builds/**

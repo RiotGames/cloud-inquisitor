@@ -67,3 +67,7 @@ output "cayley_console_id" {
     value = local.cayley_instances
 }
 
+output "connection_string"  {
+    value = "${aws_db_instance.datastore.username}:${random_password.password.result}@tcp(${aws_db_instance.datastore.address})/${var.datastore_database_name}"
+}
+

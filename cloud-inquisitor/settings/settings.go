@@ -28,6 +28,10 @@ func init() {
 	}
 }
 
+func IsSet(key string) bool {
+	return viper.IsSet(key)
+}
+
 func Get(key string) interface{} {
 	return viper.Get(key)
 }

@@ -2,7 +2,7 @@ locals {
     step_functions = tomap({
         "hello_world" = file("${path.module}/step_function_definitions/hello_world.json")
         "tag_auditor" = data.template_file.tag_auditor.rendered,
-        "dns_hijack"  = data.template_file.dhn_hijack.rendered
+        "dns_hijack"  = data.template_file.dns_hijack.rendered
     })
 }
 
@@ -30,7 +30,8 @@ data "template_file" "tag_auditor" {
 data "template_file" "dns_hijack" {
   template = "${file("${path.module}/step_function_definitions/domain_hijack.tpl")}"
   vars = merge({
-    "dns_hijack_init": ""
+    "init": "",
+    "graph_updater": ""
   },
   local.lambda_arns)
 }

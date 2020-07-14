@@ -18,6 +18,10 @@ variable "environment" {
     description = "environment to deploy into (prod, staging, dev, etc.)"
 }
 
+variable "project_role" {
+    type = string
+}
+
 variable "event_rules" {
     type = map(string)
     description = "list of event objects"

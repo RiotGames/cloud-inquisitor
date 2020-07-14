@@ -92,6 +92,7 @@ func LambdaMetadataFromPassableResource(ctx context.Context, resource PassableRe
 	metadata["aws-lambda-execution-id"] = lambdaExecutionID
 
 	return metadata, nil
+}
 
 // KeysInMap compares the values in keyList against the Map Keys
 // in a case insensitive way

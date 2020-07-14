@@ -5,6 +5,7 @@ module "step_function" {
     version_str            = var.version_str
     environment            = var.environment
     region                 = var.region
+    project_role           = var.project_role
     step_function_selector = var.step_function_selector
     step_function_lambda_paths  = var.step_function_lambda_paths
 
