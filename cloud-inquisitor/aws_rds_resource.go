@@ -310,3 +310,19 @@ func (rds *AWSRDSInstance) GetMetadata() map[string]interface{} {
 func (r *AWSRDSInstance) GetLogger() *log.Logger {
 	return r.logger
 }
+
+func (r *AWSRDSInstance) GetTags() map[string]string {
+	return r.Tags
+}
+
+func (r *AWSRDSInstance) GetMissingTags() []string {
+	requiredTags := settings.GetString("auditing.required_tags")
+	missingTags := []string{}
+	for _, tag := range strings.Split(requiredTags, ",") {
+		if _, ok := r.Tags[tag]; !ok {
+			missingTags = append(missingTags, tag)
+		}
+	}
+
+	return missingTags
+}

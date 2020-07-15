@@ -23,11 +23,13 @@ const (
 )
 
 const (
-	SERVICE_STUB             Service = "STUB"
-	SERVICE_AWS_EC2          Service = "AWS_EC2"
-	SERVICE_AWS_RDS          Service = "AWS_RDS"
-	SERVICE_AWS_S3           Service = "AWS_S3"
-	SERVICE_AWS_ROUTE53_ZONE Service = "AWS_ROUTE53_ZONE"
+	SERVICE_STUB                   Service = "STUB"
+	SERVICE_AWS_EC2                Service = "AWS_EC2"
+	SERVICE_AWS_RDS                Service = "AWS_RDS"
+	SERVICE_AWS_S3                 Service = "AWS_S3"
+	SERVICE_AWS_ROUTE53_ZONE       Service = "AWS_ROUTE53_ZONE"
+	SERVICE_AWS_ROUTE53_RECORD     Service = "AWS_ROUTE53_RECORD"
+	SERVICE_AWS_ROUTE53_RECORD_SET Service = "AWS_ROUTE53_RECORD_SET"
 )
 
 // Resource is an interaface that vaugely describes a
@@ -35,33 +37,14 @@ const (
 // collect information on the resource, audit and remediate it,
 // and report the end result
 type Resource interface {
-	NewFromEventBus(events.CloudWatchEvent, context.Context, map[string]interface{}) error
-	NewFromPassableResource(PassableResource, context.Context, map[string]interface{}) error
-	// Audit determines if the current state of the struct
-	// meets criteria for a given action
-	Audit() (Action, error)
-	// PublishState is provided to give an easy hook to
-	// send and store struct state in a backend data store
-	PublishState() error
 	// RefreshState is provided to give an easy hook to
 	// retrieve current resource information from the
 	// cloud provider of choice
 	RefreshState() error
-	// SendLogs is provided to give an easy hook for bulk
-	// sending logs or other information to logging endpoints
-	// if this is not taken care of inline
-	SendLogs() error
-	// SendMetrics is provided to give an easy hook for
-	// uploading application metrics to a metrics collector
-	// if this is not taken care of already by the implementation
-	SendMetrics() error
 	// SendNotification is provided to give an easy hook for
 	// implementing various methods for sending status updates
 	// via any medium
 	SendNotification() error
-	// TakeAction is provided to give an easy hook for
-	// taking custom actions against resources based on
-	TakeAction(Action) error
 	// GetType returns an ENUM of the supported services
 	GetType() Service
 	// GetMetadata returns a map of Resoruce metadata
@@ -74,8 +57,25 @@ type Resource interface {
 // Specifically for Auditing resource which can have a tag
 type TaggableResource interface {
 	Resource
+	NewFromEventBus(events.CloudWatchEvent, context.Context, map[string]interface{}) error
+	NewFromPassableResource(PassableResource, context.Context, map[string]interface{}) error
+	// TakeAction is provided to give an easy hook for
+	// taking custom actions against resources based on
+	TakeAction(Action) error
+	// Audit determines if the current state of the struct
+	// meets criteria for a given action
+	Audit() (Action, error)
 	GetTags() map[string]string
 	GetMissingTags() []string
+}
+
+type HijackableResource interface {
+	Resource
+	NewFromEventBus(events.CloudWatchEvent, context.Context, map[string]interface{}) error
+	NewFromPassableResource(PassableResource, context.Context, map[string]interface{}) error
+	// PublishState is provided to give an easy hook to
+	// send and store struct state in a backend data store
+	PublishState() error
 }
 
 type PassableResource struct {
@@ -85,7 +85,7 @@ type PassableResource struct {
 	Metadata map[string]interface{}
 }
 
-func (p PassableResource) GetResource(ctx context.Context, metadata map[string]interface{}) (Resource, error) {
+func (p PassableResource) GetTaggableResource(ctx context.Context, metadata map[string]interface{}) (TaggableResource, error) {
 	switch p.Type {
 	case SERVICE_STUB:
 		stub := &StubResource{}
@@ -99,6 +99,17 @@ func (p PassableResource) GetResource(ctx context.Context, metadata map[string]i
 		s3 := &AWSS3Storage{}
 		err := s3.NewFromPassableResource(p, ctx, metadata)
 		return s3, err
+	default:
+		return nil, errors.New("no matching resource for type " + p.Type)
+	}
+}
+
+func (p PassableResource) GetHijackableResource(ctx context.Context, metadata map[string]interface{}) (HijackableResource, error) {
+	switch p.Type {
+	case SERVICE_STUB:
+		stub := &StubResource{}
+		err := stub.NewFromPassableResource(p, ctx, metadata)
+		return stub, err
 	case SERVICE_AWS_ROUTE53_ZONE:
 		r53 := &AWSRoute53Zone{}
 		err := r53.NewFromPassableResource(p, ctx, metadata)
@@ -108,8 +119,8 @@ func (p PassableResource) GetResource(ctx context.Context, metadata map[string]i
 	}
 }
 
-func NewResource(event events.CloudWatchEvent, ctx context.Context, metadata map[string]interface{}) (Resource, error) {
-	var resource Resource = nil
+func NewTaggableResource(event events.CloudWatchEvent, ctx context.Context, metadata map[string]interface{}) (TaggableResource, error) {
+	var resource TaggableResource = nil
 	switch event.Source {
 	case "aws.ec2":
 		resource = &StubResource{}
@@ -126,6 +137,18 @@ func NewResource(event events.CloudWatchEvent, ctx context.Context, metadata map
 		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
 
+	default:
+		resource = &StubResource{}
+		err := resource.NewFromEventBus(event, ctx, metadata)
+		return resource, err
+
+	}
+	return resource, nil
+}
+
+func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, metadata map[string]interface{}) (HijackableResource, error) {
+	var resource HijackableResource = nil
+	switch event.Source {
 	case "aws.route53":
 		detailMap := map[string]interface{}{}
 		err := json.Unmarshal(event.Detail, &detailMap)
@@ -136,6 +159,10 @@ func NewResource(event events.CloudWatchEvent, ctx context.Context, metadata map
 			switch eventName {
 			case "CreateHostedZone":
 				resource = &AWSRoute53Zone{}
+				resourceErr := resource.NewFromEventBus(event, ctx, metadata)
+				return resource, resourceErr
+			case "ChangeResourceRecordSets":
+				resource = &AWSRoute53RecordSet{}
 				resourceErr := resource.NewFromEventBus(event, ctx, metadata)
 				return resource, resourceErr
 			default:
@@ -152,21 +179,6 @@ func NewResource(event events.CloudWatchEvent, ctx context.Context, metadata map
 		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
 
-	}
-	return resource, nil
-}
-
-func NewTaggableResource(event events.CloudWatchEvent, ctx context.Context, metadata map[string]interface{}) (TaggableResource, error) {
-	var resource TaggableResource = nil
-	switch event.Source {
-	case "aws.ec2":
-		// noop
-	case "aws.rds":
-		// noop
-	case "aws.s3":
-		// noop
-	default:
-		// noop
 	}
 	return resource, nil
 }

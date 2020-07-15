@@ -20,6 +20,10 @@
                         {
                             "Variable": "$.Resource.EventName",
                             "StringEquals": "CreateHostedZone"
+                        },
+                        {
+                            "Variable": "$.Resource.EventName",
+                            "StringEquals": "ChangeResourceRecordSets"
                         }
                     ],
                     "Next": "Update DNS Hijack Resource Graph"

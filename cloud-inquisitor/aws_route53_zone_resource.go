@@ -16,6 +16,7 @@ import (
 type AWSRoute53Zone struct {
 	AccountID string
 	ZoneName  string
+	ZoneID    string
 	EventName string
 	Type      Service
 
@@ -36,14 +37,14 @@ type AWSRoute53ZoneEventBusDetail struct {
 	EventId string `json:"eventID"`
 }
 
-func (r *AWSRoute53Zone) NewFromEventBus(event events.CloudWatchEvent, ctx context.Context, passsedInMetadata map[string]interface{}) error {
+func (r *AWSRoute53Zone) NewFromEventBus(event events.CloudWatchEvent, ctx context.Context, passedInMetadata map[string]interface{}) error {
 	defaultMetadata, err := DefaultLambdaMetadata(ctx)
 	if err != nil {
 		return err
 	}
 
 	mergedMetaData := map[string]interface{}{}
-	for k, v := range passsedInMetadata {
+	for k, v := range passedInMetadata {
 		mergedMetaData[k] = v
 	}
 	for k, v := range defaultMetadata {
@@ -71,14 +72,14 @@ func (r *AWSRoute53Zone) NewFromEventBus(event events.CloudWatchEvent, ctx conte
 	return nil
 }
 
-func (r *AWSRoute53Zone) NewFromPassableResource(resource PassableResource, ctx context.Context, passsedInMetadata map[string]interface{}) error {
+func (r *AWSRoute53Zone) NewFromPassableResource(resource PassableResource, ctx context.Context, passedInMetadata map[string]interface{}) error {
 	lamdbaMetadata, err := LambdaMetadataFromPassableResource(ctx, resource)
 	if err != nil {
 		return err
 	}
 
 	mergedMetaData := map[string]interface{}{}
-	for k, v := range passsedInMetadata {
+	for k, v := range passedInMetadata {
 		mergedMetaData[k] = v
 	}
 	for k, v := range lamdbaMetadata {
@@ -111,6 +112,7 @@ func (r *AWSRoute53Zone) NewFromPassableResource(resource PassableResource, ctx 
 }
 
 func (r *AWSRoute53Zone) RefreshState() error {
+	// need to grab zone id
 	return nil
 }
 func (r *AWSRoute53Zone) PublishState() error {
@@ -141,32 +143,16 @@ func (r *AWSRoute53Zone) GetType() Service {
 	return SERVICE_AWS_ROUTE53_ZONE
 }
 
-func (r *AWSRoute53Zone) Audit() (Action, error) {
-	return ACTION_NONE, nil
-}
-
-func (r *AWSRoute53Zone) SendLogs() error {
-	return nil
-}
-
-func (r *AWSRoute53Zone) SendMetrics() error {
-	return nil
-}
-
 func (r *AWSRoute53Zone) SendNotification() error {
-	return nil
-}
-
-func (r *AWSRoute53Zone) TakeAction(a Action) error {
 	return nil
 }
 
 func (r *AWSRoute53Zone) GetMetadata() map[string]interface{} {
 	return map[string]interface{}{
-		"account":      r.AccountID,
-		"zone":         r.ZoneName,
-		"event":        r.EventName,
-		"service-type": r.Type,
+		"account":     r.AccountID,
+		"zone":        r.ZoneName,
+		"event":       r.EventName,
+		"serviceType": r.Type,
 	}
 }
 func (r *AWSRoute53Zone) GetLogger() *log.Logger {
