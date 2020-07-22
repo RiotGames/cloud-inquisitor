@@ -16,7 +16,7 @@ provider_file:
 $(AVAILABLE_REGIONS): provider_file
 	echo "provider \"aws\" {\n  alias  = \"$@\"\n  region = \"$@\"\n}\n\n" >> regions.tf
 
-build: clean $(AUDITORS)
+build: clean generate $(AUDITORS)
 
 build_dir:
 	mkdir -p builds
@@ -29,3 +29,6 @@ $(AUDITORS): build_dir
 
 build_cli:
 	go build -o ./cinqctl cmd/*.go
+
+generate:
+	cd cloud-inquisitor/graph && go run github.com/99designs/gqlgen generate

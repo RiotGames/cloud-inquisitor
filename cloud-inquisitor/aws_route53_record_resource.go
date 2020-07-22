@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strconv"
 	"time"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
@@ -445,42 +445,55 @@ func (r *AWSRoute53Record) GetLogger() *log.Logger {
 }
 
 func (r *AWSRoute53Record) createRecordEntries() error {
-	r.logger.WithFields(r.GetMetadata()).Debug("starting graph connection")
-	gClient, err := graph.NewGraph()
+	db, err := graph.NewDBConnection()
+	defer db.Close()
 	if err != nil {
 		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
 		return err
 	}
 
-	// accounts data
-	gClient.AddQuad(r.AccountID, "is-account", "true")
-	gClient.AddQuad(r.AccountID, "owns", r.RecordName)
-
-	// zone data
-	gClient.AddQuad(r.ZoneID, "contains", r.RecordName)
-	gClient.AddQuad(r.RecordName, "contained-in", r.ZoneID)
-
-	//record data
-	gClient.AddQuad(r.RecordName, "owned-by", r.AccountID)
-	gClient.AddQuad(r.AccountID, "owns", r.RecordName)
-
-	gClient.AddQuad(r.RecordName, "service-type", r.GetType())
-	gClient.AddQuad(r.RecordName, "record-type", r.RecordType)
-
-	for _, value := range r.RecordValues {
-		gClient.AddQuad(r.RecordName, "value", value)
-		gClient.AddQuad(value, "is-value-of", r.RecordName)
+	values := make([]*model.Value, len(r.RecordValues))
+	for vidx, val := range r.RecordValues {
+		values[vidx] = &model.Value{
+			ValueID: val,
+		}
 	}
-
-	gClient.AddQuad(r.RecordName, "is-alias", strconv.FormatBool(r.Aliased))
 
 	if r.Aliased {
-		gClient.AddQuad(r.RecordName, "value", r.Alias.RecordName)
-		gClient.AddQuad(r.Alias.RecordName, "is-value-of", r.RecordName)
-		gClient.AddQuad(r.Alias.ZoneId, "contains", r.Alias.RecordName)
-		gClient.AddQuad(r.Alias.RecordName, "contained-by", r.Alias.ZoneId)
+		values = append(values, &model.Value{
+			ValueID: r.Alias.RecordName,
+		})
 	}
 
-	r.logger.WithFields(r.GetMetadata()).Debug("adding quad to graph")
+	record := &model.Record{
+		RecordID:   r.RecordName,
+		RecordType: r.RecordType,
+		Alias:      r.Aliased,
+		Values:     values,
+	}
+
+	zone := &model.Zone{
+		ZoneID: r.ZoneID,
+		Records: []*model.Record{
+			record,
+		},
+	}
+
+	account := &model.Account{
+		AccountID: r.AccountID,
+		Zones: []*model.Zone{
+			zone,
+		},
+		Records: []*model.Record{
+			record,
+		},
+	}
+
+	err = db.Save(&account).Error
+	if err != nil {
+		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
+		return err
+	}
+
 	return nil
 }

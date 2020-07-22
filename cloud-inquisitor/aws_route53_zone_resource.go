@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
@@ -210,7 +211,46 @@ func (r *AWSRoute53Zone) RefreshState() error {
 	return nil
 }
 func (r *AWSRoute53Zone) PublishState() error {
-	r.logger.WithFields(r.GetMetadata()).Debug("starting graph connection")
+	db, err := graph.NewDBConnection()
+	defer db.Close()
+	if err != nil {
+		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	// see if zone exists; if diff update
+	zone := model.Zone{
+		ZoneID: r.ZoneID,
+	}
+
+	err = db.FirstOrCreate(&zone).Error
+	if err != nil {
+		return err
+	}
+
+	zone.Name = r.ZoneName
+	zone.ServiceType = r.GetType()
+	err = db.Model(&zone).Updates(&zone).Error
+	if err != nil {
+		return err
+	}
+
+	// see if account exists
+	account := model.Account{AccountID: r.AccountID}
+	err = db.FirstOrCreate(&account).Error
+	if err != nil {
+		return err
+	}
+
+	//save relation
+	account.Zones = append(account.Zones, &zone)
+
+	err = db.Model(&account).Updates(&account).Error
+	if err != nil {
+		return err
+	}
+	r.logger.WithFields(r.GetMetadata()).Debug("adding account/zone to graph")
+	/*r.logger.WithFields(r.GetMetadata()).Debug("starting graph connection")
 	gClient, err := graph.NewGraph()
 	if err != nil {
 		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
@@ -224,6 +264,7 @@ func (r *AWSRoute53Zone) PublishState() error {
 	gClient.AddQuad(r.ZoneID, "name", r.ZoneName)
 
 	r.logger.WithFields(r.GetMetadata()).Debug("adding quads to graph")
+	*/
 	return nil
 }
 

@@ -1,0 +1,37 @@
+type Account {
+	accountID: ID!
+	zones: [Zone!]!
+	records: [Record!]!
+}
+
+type Zone {
+	zoneID: ID!
+	name: String!
+	serviceType: String!
+	records: [Record!]!
+}
+
+type Record {
+	RecordID: ID!
+	recordType: String!
+	values: [Value!]!
+	alias: Boolean!
+}
+
+type Value {
+	valueID: ID!
+}
+
+type Query {
+	accounts: [Account!]!
+	account(id: ID!): Account!
+	
+	zones: [Zone!]!
+	zone(id: ID!): Zone!
+	
+	records: [Record!]!
+	record(id: ID!): Record!
+	
+	values: [Value!]!
+	value(id: ID!): Value!
+}
