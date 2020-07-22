@@ -13,9 +13,10 @@ func init() {
 	viper.AddConfigPath("/opt")
 	// if config is zipped with binary
 	viper.AddConfigPath("./")
+	viper.AddConfigPath("$HOME/.cinq/")
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("recieved error reading config: %s\n", err.Error())
-		paths := []string{"/opt/*", "./*"}
+		paths := []string{"/opt/*", "./*", "$HOME/.cinq/*"}
 		for _, path := range paths {
 			files, err2 := filepath.Glob(path)
 			if err2 != nil {

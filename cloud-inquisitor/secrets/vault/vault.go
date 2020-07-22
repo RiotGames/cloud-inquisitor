@@ -2,6 +2,9 @@ package vault
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	"go.riotgames.com/OpSec/rVault"
@@ -31,6 +34,44 @@ func newVaultClient() (*rVault.Client, error) {
 					return nil, err
 				}
 
+				return client, nil
+			case "token":
+				config := rVault.DefaultConfig()
+				client, err := rVault.NewClient(config)
+				if err != nil {
+					return nil, err
+				}
+
+				var token string
+				if os.Getenv("VAULT_TOKEN") != "" {
+					token = os.Getenv("VAULT_TOKEN")
+				}
+
+				var fileToken string
+				if homeDir, homeErr := os.UserHomeDir(); homeErr == nil {
+					if tokenVal, valErr := ioutil.ReadFile(homeDir + "/.vault-token"); valErr == nil {
+						fileToken = string(tokenVal)
+					} else {
+						fmt.Println(valErr.Error())
+					}
+				} else {
+					fmt.Println(homeErr.Error())
+				}
+
+				if fileToken != "" {
+					token = fileToken
+				}
+
+				if token == "" {
+					return nil, errors.New("unable to find token in env var VAULT_TOKEN or in file ~/.vault-token")
+				}
+
+				opts := rVault.TokenOptions{
+					Token: token,
+				}
+				if _, loginErr := client.Auth.Token.Login(opts); loginErr != nil {
+					return nil, loginErr
+				}
 				return client, nil
 			default:
 				return nil, errors.New("unsupported vault auth type")

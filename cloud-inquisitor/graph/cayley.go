@@ -1,13 +1,17 @@
 package graph
 
 import (
+	"context"
 	"errors"
+	"io"
+	"time"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/secrets/vault"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	"github.com/cayleygraph/cayley"
 	"github.com/cayleygraph/cayley/graph"
 	_ "github.com/cayleygraph/cayley/graph/sql/mysql"
+	"github.com/cayleygraph/cayley/query/graphql"
 	"github.com/cayleygraph/quad"
 )
 
@@ -50,4 +54,14 @@ func NewGraph() (*Graph, error) {
 
 func (g *Graph) AddQuad(subject, predicate, object string) error {
 	return g.client.AddQuad(quad.Make(quad.IRI(subject), quad.IRI(predicate), quad.IRI(object), nil))
+}
+
+func ParseGraphqlQuery(r io.Reader) (*graphql.Query, error) {
+	return graphql.Parse(r)
+}
+
+func (g *Graph) ExecuteGraphqlQuery(q *graphql.Query) (map[string]interface{}, error) {
+	ctx := context.Background()
+	ctx, _ = context.WithTimeout(ctx, 10*time.Second)
+	return q.Execute(ctx, g.client)
 }

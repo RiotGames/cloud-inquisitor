@@ -26,3 +26,6 @@ $(AUDITORS): build_dir
 	GOARCH=amd64 GOOS=linux go build -o ./builds/$@/$@ cloud-inquisitor/serverless/$@/*.go
 	cp  $(SETTINGS_FILE) ./builds/$@/settings.json
 	cd ./builds/$@ && zip ../$@.zip ./*
+
+build_cli:
+	go build -o ./cinqctl cmd/*.go
