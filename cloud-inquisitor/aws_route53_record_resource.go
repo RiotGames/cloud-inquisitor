@@ -4,11 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
+	"time"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,11 +26,18 @@ type AWSRoute53Record struct {
 	RecordType   string
 	RecordName   string
 	RecordValues []string
-	logger       *log.Logger
+	Aliased      bool
+	Alias        struct {
+		ZoneId     string
+		RecordName string
+	}
+	logger *log.Logger
 }
 
 type AWSRoute53RecordSet struct {
 	RecordSet []AWSRoute53Record
+	AccountID string
+	ChangeId  string
 	logger    *log.Logger
 }
 
@@ -44,11 +57,22 @@ type AWSRoute53RecordSetEventBusDetail struct {
 					ResourceRecords []struct {
 						Value string `json:"value"`
 					} `json:"resourceRecords"`
+					AliasTarget struct {
+						HostedZoneId string `json:"hostedZoneId"`
+						DNSName      string `json:"dNSName"`
+					} `json:"aliasTarget"`
 				} `json:"resourceRecordSet"`
 			} `json:"changes"`
 		} `json:"changeBatch"`
 	} `json:"requestParameters"`
-	EventId string `json:"eventID"`
+	EventId          string `json:"eventID"`
+	ResponseElements struct {
+		ChangeInfo struct {
+			ID         string `json:"id"`
+			Status     string `json:"status"`
+			submitedAt string `json:"submittedAt"`
+		} `json:"changeInfo"`
+	} `json:"responseElements"`
 }
 
 func (r *AWSRoute53RecordSet) NewFromEventBus(event events.CloudWatchEvent, ctx context.Context, passedInMetadata map[string]interface{}) error {
@@ -80,6 +104,10 @@ func (r *AWSRoute53RecordSet) NewFromEventBus(event events.CloudWatchEvent, ctx 
 
 	records := []AWSRoute53Record{}
 	for _, change := range route53Details.RequestParameters.ChangeBatch.Changes {
+		values := []string{}
+		for _, val := range change.ResourceRecordSet.ResourceRecords {
+			values = append(values, val.Value)
+		}
 		record := AWSRoute53Record{
 			AccountID:    event.AccountID,
 			ZoneID:       route53Details.RequestParameters.HostedZoneId,
@@ -87,15 +115,46 @@ func (r *AWSRoute53RecordSet) NewFromEventBus(event events.CloudWatchEvent, ctx 
 			Action:       change.Action,
 			RecordType:   change.ResourceRecordSet.Type,
 			RecordName:   change.ResourceRecordSet.Name,
-			RecordValues: []string{},
+			RecordValues: values,
+			Aliased:      false,
 			logger:       r.logger,
+		}
+
+		if change.ResourceRecordSet.AliasTarget.DNSName != "" {
+			record.Aliased = true
+			record.Alias.RecordName = change.ResourceRecordSet.AliasTarget.DNSName
+			record.Alias.ZoneId = change.ResourceRecordSet.AliasTarget.HostedZoneId
 		}
 
 		records = append(records, record)
 
 	}
 
+	r.AccountID = event.AccountID
 	r.RecordSet = records
+	r.ChangeId = route53Details.ResponseElements.ChangeInfo.ID
+
+	for {
+		pending, err := r.isPending()
+		if !pending {
+			break
+		}
+
+		if err != nil {
+			r.logger.WithFields(logrus.Fields{
+				"cloud-inquisitor-resource": "aws-route53-record-set",
+				"cloud-inquisitor-error":    "pending error",
+			}).Error(err.Error())
+			return err
+		}
+		r.logger.WithFields(r.GetMetadata()).WithFields(
+			logrus.Fields{
+				"cloud-inquisitor-resource": "aws-route53-record-set",
+			}).Debug("resource is still pending")
+
+		time.Sleep(10 * time.Second)
+	}
+
 	return nil
 }
 
@@ -122,7 +181,7 @@ func (r *AWSRoute53RecordSet) NewFromPassableResource(resource PassableResource,
 		r.logger.WithFields(logrus.Fields{
 			"cloud-inquisitor-resource": "aws-route53-record-set",
 			"cloud-inquisitor-error":    "json marshal error",
-		}).Error(err.Error(), nil)
+		}).WithFields(r.GetMetadata()).Error(err.Error(), nil)
 		return errors.New("unable to marshal aws-route53-record-set resource")
 	}
 
@@ -131,7 +190,7 @@ func (r *AWSRoute53RecordSet) NewFromPassableResource(resource PassableResource,
 		r.logger.WithFields(logrus.Fields{
 			"cloud-inquisitor-resource": "aws-route53-record-set",
 			"cloud-inquisitor-error":    "json unmarshal error",
-		}).Error(err.Error(), nil)
+		}).WithFields(r.GetMetadata()).Error(err.Error(), nil)
 		return errors.New("unable to unmarshal aws-route53-record-set resource")
 	}
 
@@ -139,6 +198,21 @@ func (r *AWSRoute53RecordSet) NewFromPassableResource(resource PassableResource,
 }
 
 func (r *AWSRoute53RecordSet) PublishState() error {
+	r.logger.WithFields(r.GetMetadata()).Debug("resource record set has no publish; calling records in set")
+	for idx, record := range r.RecordSet {
+		err := record.PublishState()
+		if err != nil {
+			r.logger.WithFields(r.GetMetadata()).WithFields(map[string]interface{}{
+				"cloud-inquisitor-resource": "aws-route53-record-set",
+				"cloud-inquisitor-error":    "error publishing records",
+				"record-index":              idx,
+				"record-name":               record.RecordName,
+				"record-values":             record.RecordValues,
+				"record-type":               record.RecordType,
+			}).Error(err.Error())
+			return err
+		}
+	}
 	return nil
 }
 
@@ -168,6 +242,48 @@ func (r *AWSRoute53RecordSet) GetLogger() *log.Logger {
 	return r.logger
 }
 
+func (r *AWSRoute53RecordSet) isPending() (bool, error) {
+	// need to grab zone id
+	if !settings.IsSet("assume_role") {
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-record-set",
+			"cloud-inquisitor-error":    "missing settings value",
+		}).WithFields(r.GetMetadata()).Error(errors.New("settings value assume_role not set"))
+		return true, errors.New("settings value assume_role not set")
+	}
+	accountSession, err := AWSAssumeRole(r.AccountID, settings.GetString("assume_role"), session.New())
+	if err != nil {
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-record-set",
+			"cloud-inquisitor-error":    "assume role error",
+		}).WithFields(r.GetMetadata()).Error(err.Error())
+		return true, err
+	}
+
+	route53Svc := route53.New(accountSession)
+	pendingInput := &route53.GetChangeInput{
+		Id: aws.String(r.ChangeId),
+	}
+
+	pendingOutput, err := route53Svc.GetChange(pendingInput)
+	if err != nil {
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-record-set",
+			"cloud-inquisitor-error":    "route53 error get change",
+		}).WithFields(r.GetMetadata()).Error(err.Error())
+		return true, err
+	}
+
+	switch *pendingOutput.ChangeInfo.Status {
+	case "PENDING":
+		return true, nil
+	case "INSYNC":
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func (r *AWSRoute53Record) NewFromEventBus(_ events.CloudWatchEvent, _ context.Context, _ map[string]interface{}) error {
 	// this is a stub since the event for record creation is wrapped in Route53 Record Set event
 	return nil
@@ -180,12 +296,13 @@ func (r *AWSRoute53Record) NewFromPassableResource(resource PassableResource, ct
 	}
 
 	mergedMetaData := map[string]interface{}{}
-	for k, v := range passedInMetadata {
-		mergedMetaData[k] = v
-	}
 	for k, v := range lamdbaMetadata {
 		mergedMetaData[k] = v
 	}
+	for k, v := range passedInMetadata {
+		mergedMetaData[k] = v
+	}
+
 	opts := log.LoggerOpts{
 		Level:    log.LogrusLevelConv(settings.GetString("log_level")),
 		Metadata: mergedMetaData,
@@ -213,10 +330,93 @@ func (r *AWSRoute53Record) NewFromPassableResource(resource PassableResource, ct
 }
 
 func (r *AWSRoute53Record) PublishState() error {
+	switch r.Action {
+	case "CREATE":
+		err := r.createRecordEntries()
+		if err != nil {
+			r.logger.WithFields(logrus.Fields{
+				"cloud-inquisitor-resource": "aws-route53-zone",
+				"cloud-inquisitor-error":    err.Error(),
+			}).WithFields(r.GetMetadata()).Error(err.Error())
+		}
+		return err
+	case "DELETE":
+	case "UPSERT":
+		err := r.createRecordEntries()
+		if err != nil {
+			r.logger.WithFields(logrus.Fields{
+				"cloud-inquisitor-resource": "aws-route53-zone",
+				"cloud-inquisitor-error":    err.Error(),
+			}).WithFields(r.GetMetadata()).Error(err.Error())
+		}
+		return err
+	default:
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-zone",
+			"cloud-inquisitor-error":    "unknown route53 record action",
+			"route53-record-action":     r.Action,
+		}).WithFields(r.GetMetadata()).Error("unknown route53 record action")
+		return errors.New("unknown route53 record action")
+	}
 	return nil
 }
 
 func (r *AWSRoute53Record) RefreshState() error {
+	// need to grab zone id
+	if !settings.IsSet("assume_role") {
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-record",
+			"cloud-inquisitor-error":    "missing settings value",
+		}).WithFields(r.GetMetadata()).Error(errors.New("settings value assume_role not set"))
+		return errors.New("settings value assume_role not set")
+	}
+	accountSession, err := AWSAssumeRole(r.AccountID, settings.GetString("assume_role"), session.New())
+	if err != nil {
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-record",
+			"cloud-inquisitor-error":    "assume role error",
+		}).WithFields(r.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	route53Svc := route53.New(accountSession)
+	var matchingRecordSet *route53.ResourceRecordSet = nil
+	err = route53Svc.ListResourceRecordSetsPages(
+		&route53.ListResourceRecordSetsInput{
+			HostedZoneId: aws.String(r.ZoneID),
+		},
+		func(output *route53.ListResourceRecordSetsOutput, last bool) bool {
+			for _, recordSet := range output.ResourceRecordSets {
+				r.logger.WithFields(r.GetMetadata()).WithFields(map[string]interface{}{
+					"aws-route53-call": "ListResourceRecordSets",
+				}).Debugf("record set: %#v", *recordSet)
+
+				if *recordSet.Name == r.RecordName {
+					matchingRecordSet = recordSet
+					return false // immediately exits loop and func/API call
+				}
+			}
+
+			return !last
+		},
+	)
+
+	if err != nil {
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-zone",
+			"cloud-inquisitor-error":    "list resource records",
+		}).WithFields(r.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	if matchingRecordSet == nil {
+		r.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-route53-zone",
+			"cloud-inquisitor-error":    "no matching resource record set",
+		}).WithFields(r.GetMetadata()).Error("no matching resource record set")
+		return errors.New("no matching resource record set")
+	}
+
 	return nil
 }
 
@@ -242,4 +442,45 @@ func (r *AWSRoute53Record) GetMetadata() map[string]interface{} {
 
 func (r *AWSRoute53Record) GetLogger() *log.Logger {
 	return r.logger
+}
+
+func (r *AWSRoute53Record) createRecordEntries() error {
+	r.logger.WithFields(r.GetMetadata()).Debug("starting graph connection")
+	gClient, err := graph.NewGraph()
+	if err != nil {
+		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	// accounts data
+	gClient.AddQuad(r.AccountID, "is-account", "true")
+	gClient.AddQuad(r.AccountID, "owns", r.RecordName)
+
+	// zone data
+	gClient.AddQuad(r.ZoneID, "contains", r.RecordName)
+	gClient.AddQuad(r.RecordName, "contained-in", r.ZoneID)
+
+	//record data
+	gClient.AddQuad(r.RecordName, "owned-by", r.AccountID)
+	gClient.AddQuad(r.AccountID, "owns", r.RecordName)
+
+	gClient.AddQuad(r.RecordName, "service-type", r.GetType())
+	gClient.AddQuad(r.RecordName, "record-type", r.RecordType)
+
+	for _, value := range r.RecordValues {
+		gClient.AddQuad(r.RecordName, "value", value)
+		gClient.AddQuad(value, "is-value-of", r.RecordName)
+	}
+
+	gClient.AddQuad(r.RecordName, "is-alias", strconv.FormatBool(r.Aliased))
+
+	if r.Aliased {
+		gClient.AddQuad(r.RecordName, "value", r.Alias.RecordName)
+		gClient.AddQuad(r.Alias.RecordName, "is-value-of", r.RecordName)
+		gClient.AddQuad(r.Alias.ZoneId, "contains", r.Alias.RecordName)
+		gClient.AddQuad(r.Alias.RecordName, "contained-by", r.Alias.ZoneId)
+	}
+
+	r.logger.WithFields(r.GetMetadata()).Debug("adding quad to graph")
+	return nil
 }

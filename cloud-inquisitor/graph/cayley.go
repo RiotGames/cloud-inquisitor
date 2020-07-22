@@ -33,6 +33,10 @@ func NewGraph() (*Graph, error) {
 			return nil, errors.New("unknown datastore/graph configuration type")
 		}
 
+		if connectionString == "" {
+			return nil, errors.New("datastore/graph connection is empty")
+		}
+
 		if !intialized {
 			graph.InitQuadStore(settings.GetString("cayley.database_type"), connectionString, nil)
 		}
@@ -44,6 +48,6 @@ func NewGraph() (*Graph, error) {
 	}
 }
 
-func (g *Graph) AddQuad(subject, predicate, object interface{}) error {
-	return g.client.AddQuad(quad.Make(subject, predicate, object, nil))
+func (g *Graph) AddQuad(subject, predicate, object string) error {
+	return g.client.AddQuad(quad.Make(quad.IRI(subject), quad.IRI(predicate), quad.IRI(object), nil))
 }

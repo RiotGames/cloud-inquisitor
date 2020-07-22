@@ -10,7 +10,7 @@ import (
 
 func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResource) (cloudinquisitor.PassableResource, error) {
 
-	parsedResource, err := resource.GetResource(ctx, map[string]interface{}{
+	parsedResource, err := resource.GetTaggableResource(ctx, map[string]interface{}{
 		"cloud-inquisitor-component": "tag-auditor",
 	})
 	if err != nil {
@@ -40,10 +40,6 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 			Finished: true,
 		}, nil
 	}
-
-	parsedResource.PublishState()
-
-	parsedResource.SendMetrics()
 
 	return cloudinquisitor.PassableResource{
 		Resource: parsedResource,

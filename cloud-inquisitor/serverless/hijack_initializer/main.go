@@ -12,31 +12,49 @@ import (
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
 
-func handlerRequest(ctx context.Context, event events.CloudWatchEvent) ([]cloudinquisitor.PassableResource, error) {
+type passableResourcesStruct struct {
+	Resources []cloudinquisitor.PassableResource `json:"resources"`
+}
+
+func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passableResourcesStruct, error) {
 	resource, _ := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,
 		"cloud-inquisitor-component": "hijack-initializer",
 	})
 
 	if resource.GetType() == cloudinquisitor.SERVICE_STUB && settings.GetString("stub_resources") != "enabled" {
-		return []cloudinquisitor.PassableResource{
+		return passableResourcesStruct{[]cloudinquisitor.PassableResource{
 			cloudinquisitor.PassableResource{
 				Resource: resource,
 				Type:     resource.GetType(),
 				Finished: true,
-				Metadata: resource.GetMetadata(),
+				Metadata: resource.GetLogger().GetMetadata(),
 			},
-		}, nil
+		}}, nil
 	}
 
 	passableResources := []cloudinquisitor.PassableResource{}
 	switch resource.GetType() {
 	case cloudinquisitor.SERVICE_AWS_ROUTE53_RECORD_SET:
+		for _, record := range resource.(*cloudinquisitor.AWSRoute53RecordSet).RecordSet {
+			passableResources = append(passableResources, cloudinquisitor.PassableResource{
+				Resource: record,
+				Type:     record.GetType(),
+				Finished: false,
+				Metadata: record.GetLogger().GetMetadata(),
+			})
+		}
 	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE:
+		passableResources = append(passableResources, cloudinquisitor.PassableResource{
+			Resource: resource,
+			Type:     resource.GetType(),
+			Finished: false,
+			Metadata: resource.GetLogger().GetMetadata(),
+		})
 	default:
-		return passableResources, errors.New("unknown resource type ".resource.GetType())
+		return passableResourcesStruct{passableResources}, errors.New("unknown resource type " + resource.GetType())
 	}
-	return passableResources, nil
+	return passableResourcesStruct{passableResources}, nil
 }
 
 func main() {

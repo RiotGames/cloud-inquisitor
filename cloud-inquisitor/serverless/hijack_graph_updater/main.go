@@ -10,7 +10,7 @@ import (
 
 func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResource) (cloudinquisitor.PassableResource, error) {
 
-	parsedResource, err := resource.GetResource(ctx, map[string]interface{}{
+	parsedResource, err := resource.GetHijackableResource(ctx, map[string]interface{}{
 		"cloud-inquisitor-component": "hijack-graph-updater",
 	})
 	if err != nil {
@@ -22,13 +22,16 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 		return resource, err
 	}
 
-	parsedResource.PublishState()
+	err = parsedResource.PublishState()
+	if err != nil {
+		return resource, err
+	}
 
 	return cloudinquisitor.PassableResource{
 		Resource: parsedResource,
 		Type:     parsedResource.GetType(),
 		Metadata: parsedResource.GetLogger().GetMetadata(),
-		Finished: false,
+		Finished: true,
 	}, nil
 }
 

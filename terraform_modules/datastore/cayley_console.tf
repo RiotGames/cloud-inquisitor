@@ -37,7 +37,7 @@ docker run --rm -d -p 8080:64210 -v /opt/cayley:/data cayleygraph/cayley -c /dat
 resource "aws_instance" "cayley_console" {
     count = var.cayley_console
     ami = var.cayley_ami
-    instance_type = "t2.micro"
+    instance_type = "t3.medium"
     user_data_base64 = base64encode(local.cayley_userdata)
     subnet_id = var.cayley_subnet
     vpc_security_group_ids = [

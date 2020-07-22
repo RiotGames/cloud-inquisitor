@@ -9,7 +9,7 @@ resource "aws_db_instance" "datastore" {
   engine               = "mysql"
   engine_version       = "8.0"
   auto_minor_version_upgrade = true
-  instance_class       = "db.t2.micro"
+  instance_class       = "db.t3.small"
   identifier = "${var.environment}-${replace(var.name, "_", "-")}-datastore-${var.region}-${replace(var.version_str, "_","-")}"
   name                 = var.datastore_database_name
   username             = "cloudinquisitor"

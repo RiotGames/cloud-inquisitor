@@ -62,6 +62,18 @@ variable "tag_auditor_remove_seconds" {
     default = 604800 //7 days
 }
 
+variable "workflow_vpc" {
+    type = string
+}
+
+variable "workflow_egress_cidrs" {
+    type = list(string)
+}
+
+variable "workflow_subnets" {
+    type = list(string)
+}
+
 output "step_function_map" {
     value = local.step_functions
 }

@@ -114,6 +114,10 @@ func (p PassableResource) GetHijackableResource(ctx context.Context, metadata ma
 		r53 := &AWSRoute53Zone{}
 		err := r53.NewFromPassableResource(p, ctx, metadata)
 		return r53, err
+	case SERVICE_AWS_ROUTE53_RECORD:
+		r53 := &AWSRoute53Record{}
+		err := r53.NewFromPassableResource(p, ctx, metadata)
+		return r53, err
 	default:
 		return nil, errors.New("no matching resource for type " + p.Type)
 	}

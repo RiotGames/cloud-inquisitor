@@ -10,36 +10,84 @@
         "Init": {
             "Type": "Task",
             "Resource": "${init}",
-            "Next": "Track or Analyze For Hijack"
+            "Next": "Evauluate Each Resource"
         },
-        "Track or Analyze For Hijack": {
-            "Type": "Choice",
-            "Choices": [
-                {
-                    "Or": [
-                        {
-                            "Variable": "$.Resource.EventName",
-                            "StringEquals": "CreateHostedZone"
-                        },
-                        {
-                            "Variable": "$.Resource.EventName",
-                            "StringEquals": "ChangeResourceRecordSets"
-                        }
-                    ],
-                    "Next": "Update DNS Hijack Resource Graph"
-                },
-                {
-                    "Not": {
-                        "Variable": "$.Resource.EventName",
-                        "StringEquals": ""
+        "Evauluate Each Resource": {
+            "Type": "Map",
+            "InputPath": "$",
+            "ItemsPath": "$.resources",
+            "MaxConcurrency": 1,
+            "Iterator": {
+                "StartAt": "Track or Analyze For Hijack",
+                "States": {
+                    "Track or Analyze For Hijack": {
+                        "Type": "Choice",
+                        "Choices": [
+                            {
+                                "Or": [
+                                    {
+                                        "Variable": "$.Resource.EventName",
+                                        "StringEquals": "CreateHostedZone"
+                                    },
+                                    {
+                                        "And": [
+                                            {
+                                                "Variable": "$.Resource.EventName",
+                                                "StringEquals": "ChangeResourceRecordSets"
+                                            }, 
+                                            {
+                                                "Variable": "$.Resource.Action",
+                                                "StringEquals": "CREATE"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "Next": "Update DNS Hijack Resource Graph"
+                            },
+                            {
+                                "And": [
+                                    {
+                                        "Variable": "$.Resource.EventName",
+                                        "StringEquals": "ChangeResourceRecordSets"
+                                    }, 
+                                    {
+                                        "Variable": "$.Resource.Action",
+                                        "StringEquals": "UPSERT"
+                                    }
+                                ],
+                                "Next": "Track and Analyze for Hijack"
+                            }
+                        ],
+                        "Default": "End of iterator"
                     },
-                    "Next": "Resource Has Been Remediated"
+                    "Update DNS Hijack Resource Graph": {
+                        "Type": "Task",
+                        "Resource": "${graph_updater}",
+                        "End": true
+                    },
+                    "Track and Analyze for Hijack": {
+                        "Type": "Parallel",
+                        "End": true,
+                        "Branches": [
+                            {
+                                "StartAt": "Update DNS Hijack Resource Graph - Parallel",
+                                "States": {
+                                    "Update DNS Hijack Resource Graph - Parallel": {
+                                        "Type": "Task",
+                                        "Resource": "${graph_updater}",
+                                        "End": true
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    "End of iterator" : {
+                        "Type": "Pass",
+                        "End": true
+                    }
                 }
-            ]
-        },
-        "Update DNS Hijack Resource Graph": {
-            "Type": "Task",
-            "Resource": "${graph_updater}",
+            },
+            "ResultPath": "$.resources_completed",
             "Next": "Resource Has Been Remediated"
         },
         %{ endif }
@@ -48,3 +96,4 @@
         }
     }
 }
+

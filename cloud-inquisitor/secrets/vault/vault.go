@@ -19,7 +19,7 @@ func newVaultClient() (*rVault.Client, error) {
 				config := rVault.DefaultConfig()
 				config.Address = settings.GetString("vault.address")
 
-				client, err := rVault.NewClient(rVault.DefaultConfig())
+				client, err := rVault.NewClient(config)
 				if err != nil {
 					return nil, err
 				}
@@ -59,10 +59,20 @@ func GetString(path, key string) (string, error) {
 		return "", err
 	}
 
-	secret, ok := secrets.Data[key].(string)
+	data, ok := secrets.Data["data"].(map[string]interface{})
 	if !ok {
-		return "", nil
+		return "", errors.New("vault data entry empty")
+	} else {
+		if secret, secretOk := data[key]; !secretOk {
+			return "", errors.New("not a valid secret key")
+		} else {
+			if secretString, typeOk := secret.(string); !typeOk {
+				return "", errors.New("retrieved value has invalid type")
+			} else {
+				return secretString, nil
+			}
+		}
 	}
 
-	return secret, nil
+	return "", nil
 }
