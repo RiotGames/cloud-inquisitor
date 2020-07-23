@@ -35,7 +35,10 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Account() AccountResolver
 	Query() QueryResolver
+	Record() RecordResolver
+	Zone() ZoneResolver
 }
 
 type DirectiveRoot struct {
@@ -53,6 +56,8 @@ type ComplexityRoot struct {
 		Accounts func(childComplexity int) int
 		Record   func(childComplexity int, id string) int
 		Records  func(childComplexity int) int
+		Value    func(childComplexity int, id string) int
+		Values   func(childComplexity int) int
 		Zone     func(childComplexity int, id string) int
 		Zones    func(childComplexity int) int
 	}
@@ -76,6 +81,10 @@ type ComplexityRoot struct {
 	}
 }
 
+type AccountResolver interface {
+	Zones(ctx context.Context, obj *model.Account) ([]*model.Zone, error)
+	Records(ctx context.Context, obj *model.Account) ([]*model.Record, error)
+}
 type QueryResolver interface {
 	Accounts(ctx context.Context) ([]*model.Account, error)
 	Account(ctx context.Context, id string) (*model.Account, error)
@@ -83,6 +92,14 @@ type QueryResolver interface {
 	Zone(ctx context.Context, id string) (*model.Zone, error)
 	Records(ctx context.Context) ([]*model.Record, error)
 	Record(ctx context.Context, id string) (*model.Record, error)
+	Values(ctx context.Context) ([]*model.Value, error)
+	Value(ctx context.Context, id string) (*model.Value, error)
+}
+type RecordResolver interface {
+	Values(ctx context.Context, obj *model.Record) ([]*model.Value, error)
+}
+type ZoneResolver interface {
+	Records(ctx context.Context, obj *model.Zone) ([]*model.Record, error)
 }
 
 type executableSchema struct {
@@ -158,6 +175,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Records(childComplexity), true
+
+	case "Query.value":
+		if e.complexity.Query.Value == nil {
+			break
+		}
+
+		args, err := ec.field_Query_value_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Value(childComplexity, args["id"].(string)), true
+
+	case "Query.values":
+		if e.complexity.Query.Values == nil {
+			break
+		}
+
+		return e.complexity.Query.Values(childComplexity), true
 
 	case "Query.zone":
 		if e.complexity.Query.Zone == nil {
@@ -324,6 +360,9 @@ type Query {
 	
 	records: [Record!]!
 	record(id: ID!): Record!
+	
+	values: [Value!]!
+	value(id: ID!): Value!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -361,6 +400,20 @@ func (ec *executionContext) field_Query_account_args(ctx context.Context, rawArg
 }
 
 func (ec *executionContext) field_Query_record_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_value_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -469,13 +522,13 @@ func (ec *executionContext) _Account_zones(ctx context.Context, field graphql.Co
 		Object:   "Account",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Zones, nil
+		return ec.resolvers.Account().Zones(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -503,13 +556,13 @@ func (ec *executionContext) _Account_records(ctx context.Context, field graphql.
 		Object:   "Account",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Records, nil
+		return ec.resolvers.Account().Records(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -751,6 +804,81 @@ func (ec *executionContext) _Query_record(ctx context.Context, field graphql.Col
 	return ec.marshalNRecord2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐRecord(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_values(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Values(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Value)
+	fc.Result = res
+	return ec.marshalNValue2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValueᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_value(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_value_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Value(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Value)
+	fc.Result = res
+	return ec.marshalNValue2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValue(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -899,13 +1027,13 @@ func (ec *executionContext) _Record_values(ctx context.Context, field graphql.Co
 		Object:   "Record",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Values, nil
+		return ec.resolvers.Record().Values(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1103,13 +1231,13 @@ func (ec *executionContext) _Zone_records(ctx context.Context, field graphql.Col
 		Object:   "Zone",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Records, nil
+		return ec.resolvers.Zone().Records(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2203,18 +2331,36 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 		case "accountID":
 			out.Values[i] = ec._Account_accountID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "zones":
-			out.Values[i] = ec._Account_zones(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Account_zones(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "records":
-			out.Values[i] = ec._Account_records(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Account_records(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2325,6 +2471,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "values":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_values(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "value":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_value(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -2354,22 +2528,31 @@ func (ec *executionContext) _Record(ctx context.Context, sel ast.SelectionSet, o
 		case "RecordID":
 			out.Values[i] = ec._Record_RecordID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "recordType":
 			out.Values[i] = ec._Record_recordType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "values":
-			out.Values[i] = ec._Record_values(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Record_values(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "alias":
 			out.Values[i] = ec._Record_alias(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -2423,23 +2606,32 @@ func (ec *executionContext) _Zone(ctx context.Context, sel ast.SelectionSet, obj
 		case "zoneID":
 			out.Values[i] = ec._Zone_zoneID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Zone_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "serviceType":
 			out.Values[i] = ec._Zone_serviceType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "records":
-			out.Values[i] = ec._Zone_records(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Zone_records(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

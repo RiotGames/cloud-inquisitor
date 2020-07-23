@@ -452,48 +452,57 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 		return err
 	}
 
-	values := make([]*model.Value, len(r.RecordValues))
-	for vidx, val := range r.RecordValues {
-		values[vidx] = &model.Value{
-			ValueID: val,
-		}
-	}
-
-	if r.Aliased {
-		values = append(values, &model.Value{
-			ValueID: r.Alias.RecordName,
-		})
-	}
-
-	record := &model.Record{
-		RecordID:   r.RecordName,
-		RecordType: r.RecordType,
-		Alias:      r.Aliased,
-		Values:     values,
-	}
-
-	zone := &model.Zone{
-		ZoneID: r.ZoneID,
-		Records: []*model.Record{
-			record,
-		},
-	}
-
-	account := &model.Account{
-		AccountID: r.AccountID,
-		Zones: []*model.Zone{
-			zone,
-		},
-		Records: []*model.Record{
-			record,
-		},
-	}
-
-	err = db.Save(&account).Error
+	// get account
+	account := model.Account{AccountID: r.AccountID}
+	err = db.Preload("ZoneRelation").Preload("RecordRelation").Where(&account).FirstOrCreate(&account).Error
 	if err != nil {
-		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
 		return err
 	}
 
+	zone := model.Zone{ZoneID: r.ZoneID}
+	err = db.Preload("RecordRelation").Where(&zone).FirstOrCreate(&zone).Error
+	if err != nil {
+		return err
+	}
+
+	// get record
+	record := model.Record{RecordID: r.RecordName}
+	err = db.Preload("ValueRelation").Where(&record).FirstOrCreate(&record).Error
+	if record.RecordType != r.RecordType || record.Alias != r.Aliased {
+		record.RecordType = r.RecordType
+		record.Alias = r.Aliased
+		err = db.Model(&record).Updates(&record).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	// add record relation to account and zone
+	err = db.Model(&zone).Association("RecordRelation").Append([]model.Record{record}).Error
+	if err != nil {
+		return err
+	}
+
+	err = db.Model(&account).Association("RecordRelation").Append([]model.Record{record}).Error
+	if err != nil {
+		return err
+	}
+
+	for _, rawValue := range r.RecordValues {
+		r.logger.Debugf("looking for value: %v", rawValue)
+		// get each value
+		value := model.Value{ValueID: rawValue}
+		err = db.Where(&value).FirstOrCreate(&value).Error
+		if err != nil {
+			return err
+		}
+		r.logger.Debugf("appening value %#v to record %#v", value, record.ID)
+		err = db.Model(&record).Association("ValueRelation").Append(value).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	r.logger.WithFields(r.GetMetadata()).Debug("adding account/zone to graph")
 	return nil
 }

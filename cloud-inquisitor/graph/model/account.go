@@ -6,7 +6,15 @@ import (
 
 type Account struct {
 	gorm.Model
-	AccountID string    `json:"accountID"`
-	Zones     []*Zone   `json:"zones"`
-	Records   []*Record `json:"records"`
+	AccountID      string `json:"accountID"`
+	ZoneRelation   []Zone
+	RecordRelation []Record
+}
+
+func (a *Account) ZoneIDs() []string {
+	return []string{}
+}
+
+func (a *Account) RecordIDs() []string {
+	return []string{}
 }

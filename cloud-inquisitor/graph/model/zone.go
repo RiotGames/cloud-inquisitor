@@ -6,9 +6,13 @@ import (
 
 type Zone struct {
 	gorm.Model
-	ZoneID      string `json:"zoneID"`
-	AccountID   uint
-	Name        string    `json:"name"`
-	ServiceType string    `json:"serviceType"`
-	Records     []*Record `json:"records"`
+	ZoneID         string   `json:"zoneID"`
+	Name           string   `json:"name"`
+	ServiceType    string   `json:"serviceType"`
+	RecordRelation []Record `gorm:"many2many:zone_records;"`
+	AccountID      uint
+}
+
+func (z *Zone) RecordIDs() []string {
+	return []string{}
 }

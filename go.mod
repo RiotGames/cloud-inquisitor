@@ -6,22 +6,22 @@ require (
 	github.com/99designs/gqlgen v0.11.3
 	github.com/aws/aws-lambda-go v1.17.0
 	github.com/aws/aws-sdk-go v1.32.11
-	github.com/cayleygraph/cayley v0.7.7
-	github.com/cayleygraph/quad v1.1.0
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/uuid v1.1.1
+	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/jinzhu/gorm v1.9.15
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
-	github.com/newrelic/go-agent v3.6.0+incompatible
 	github.com/newrelic/go-agent/v3 v3.7.0
 	github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin v1.0.0
 	github.com/newrelic/go-agent/v3/integrations/nrlambda v1.1.0
-	github.com/newrelic/go-agent/v3/integrations/nrlogrus v1.0.0
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.3.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
+	github.com/spf13/cobra v0.0.5
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.0
 	github.com/vektah/gqlparser/v2 v2.0.1
 	go.riotgames.com/OpSec/rVault v0.0.0-20200421220554-187316ff942d

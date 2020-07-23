@@ -218,53 +218,34 @@ func (r *AWSRoute53Zone) PublishState() error {
 		return err
 	}
 
-	// see if zone exists; if diff update
-	zone := model.Zone{
-		ZoneID: r.ZoneID,
-	}
-
-	err = db.FirstOrCreate(&zone).Error
-	if err != nil {
-		return err
-	}
-
-	zone.Name = r.ZoneName
-	zone.ServiceType = r.GetType()
-	err = db.Model(&zone).Updates(&zone).Error
-	if err != nil {
-		return err
-	}
-
-	// see if account exists
+	// get account
 	account := model.Account{AccountID: r.AccountID}
-	err = db.FirstOrCreate(&account).Error
+	err = db.Preload("ZoneRelation").Preload("RecordRelation").Where(&account).FirstOrCreate(&account).Error
 	if err != nil {
 		return err
 	}
 
-	//save relation
-	account.Zones = append(account.Zones, &zone)
+	zone := model.Zone{ZoneID: r.ZoneID}
+	err = db.Preload("RecordRelation").Where(&zone).FirstOrCreate(&zone).Error
+	if err != nil {
+		return err
+	}
 
-	err = db.Model(&account).Updates(&account).Error
+	if zone.Name != r.ZoneName || zone.ServiceType != r.GetType() {
+		zone.Name = r.ZoneName
+		zone.ServiceType = r.GetType()
+		err = db.Model(&zone).Updates(&zone).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	// add zone to account
+	err = db.Model(&account).Association("ZoneRelation").Append([]model.Zone{zone}).Error
 	if err != nil {
 		return err
 	}
 	r.logger.WithFields(r.GetMetadata()).Debug("adding account/zone to graph")
-	/*r.logger.WithFields(r.GetMetadata()).Debug("starting graph connection")
-	gClient, err := graph.NewGraph()
-	if err != nil {
-		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
-		return err
-	}
-
-	gClient.AddQuad(r.AccountID, "is-account", "true")
-	gClient.AddQuad(r.AccountID, "owns", r.ZoneID)
-	gClient.AddQuad(r.ZoneID, "owned-by", r.AccountID)
-	gClient.AddQuad(r.ZoneID, "service-type", r.GetType())
-	gClient.AddQuad(r.ZoneID, "name", r.ZoneName)
-
-	r.logger.WithFields(r.GetMetadata()).Debug("adding quads to graph")
-	*/
 	return nil
 }
 
