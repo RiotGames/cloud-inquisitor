@@ -334,7 +334,7 @@ var sources = []*ast.Source{
 }
 
 type Zone {
-	zoneID: ID!
+	zoneID: ID! 
 	name: String!
 	serviceType: String!
 	records: [Record!]!

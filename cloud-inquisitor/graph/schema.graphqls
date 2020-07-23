@@ -5,7 +5,7 @@ type Account {
 }
 
 type Zone {
-	zoneID: ID!
+	zoneID: ID! 
 	name: String!
 	serviceType: String!
 	records: [Record!]!
