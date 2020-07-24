@@ -148,7 +148,7 @@ Current Step Functions include:
 
     A diagram including variable names can be found [here](./docs/tag_auditor.png)
 
-  - _ AWS DNS Hijack Auditor ("dns_hijack")_
+  - _AWS DNS Hijack Auditor ("dns_hijack")_
 
     The DNS Hijack auditor is a mutlti-stage workflow that creates a graph of all risky resources as they are created and updated. As resources, both DNS and resources that can be a record alias, are deleted; they are used to query the graph and determine if they would result in a possible hijack/takeover.
 
@@ -164,7 +164,7 @@ Current Step Functions include:
 
     _Module Variables_
     |variable|type|description|
-    |________|____|___________|
+    |--------|----|-----------|
     |providers|map(provider)|Allows this workflow to be deployed in the Route53 region (US East 1) independed of the overall Terraform provider configuration|
     | project_role | arn string| ARN of the role to use in the Step Functions/Lambdas|
     |workflow_vpc| string | AWS VPC id to run the Lambdas in|
