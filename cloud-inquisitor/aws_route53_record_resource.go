@@ -503,6 +503,21 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 		}
 	}
 
+	if r.Aliased {
+		r.logger.Debugf("looking for value: %v", r.Alias.RecordName)
+		// get each value
+		value := model.Value{ValueID: r.Alias.RecordName}
+		err = db.Where(&value).FirstOrCreate(&value).Error
+		if err != nil {
+			return err
+		}
+		r.logger.Debugf("appening value %#v to record %#v", value, record.ID)
+		err = db.Model(&record).Association("ValueRelation").Append(value).Error
+		if err != nil {
+			return err
+		}
+	}
+
 	r.logger.WithFields(r.GetMetadata()).Debug("adding account/zone to graph")
 	return nil
 }
