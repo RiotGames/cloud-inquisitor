@@ -40,6 +40,20 @@ func (r *accountResolver) Zones(ctx context.Context, obj *model.Account) ([]*mod
 	return zones, nil
 }
 
+func (r *accountResolver) Zone(ctx context.Context, obj *model.Account, id string) (*model.Zone, error) {
+	log.Infof("account %v getting zone %v\n", obj.AccountID, id)
+	zone := model.Zone{ZoneID: id}
+	err := r.DB.Model(obj).Related(&zone, "ZoneRelation").Error
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	log.Debugf("for account %v found zone %v\n", obj.AccountID, zone)
+
+	return &zone, nil
+}
+
 func (r *accountResolver) Records(ctx context.Context, obj *model.Account) ([]*model.Record, error) {
 	log.Infof("account <%v> getting records\n", obj.AccountID)
 	log.Debugf("%#v\n", *obj)
@@ -222,20 +236,12 @@ func (r *recordResolver) Values(ctx context.Context, obj *model.Record) ([]*mode
 func (r *zoneResolver) Records(ctx context.Context, obj *model.Zone) ([]*model.Record, error) {
 	log.Infof("zone <%v> getting records\n", obj.ZoneID)
 	log.Debugf("%#v\n", *obj)
-	db, err := NewDBConnection()
-	if err != nil {
-		return []*model.Record{}, err
-	}
 
-	zone := model.Zone{ZoneID: obj.ZoneID}
-	err = db.Where(&zone).First(&zone).Error
+	records := []*model.Record{}
+	err := r.DB.Model(obj).Related(&records, "RecordRelation").Error
 	if err != nil {
-		return []*model.Record{}, err
-	}
-	var records []*model.Record
-	err = db.Model(&zone).Association("RecordRelation").Find(&records).Error
-	if err != nil {
-		return []*model.Record{}, err
+		log.Error(err.Error())
+		return []*model.Record{}, nil
 	}
 
 	if log.GetLevel() == log.DebugLevel {
@@ -245,6 +251,19 @@ func (r *zoneResolver) Records(ctx context.Context, obj *model.Zone) ([]*model.R
 	}
 
 	return records, nil
+}
+
+func (r *zoneResolver) Record(ctx context.Context, obj *model.Zone, id string) (*model.Record, error) {
+	log.Infof("for xzone %v getting record %v\n", obj.ZoneID, id)
+	record := model.Record{RecordID: id}
+	err := r.DB.Model(obj).Related(&record, "RecordRelation").Error
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("for zone %v got record %#v\n", obj.ZoneID, record)
+
+	return &record, nil
 }
 
 // Account returns generated.AccountResolver implementation.

@@ -88,7 +88,11 @@ func (r *AWSRoute53Zone) NewFromEventBus(event events.CloudWatchEvent, ctx conte
 
 	r.AccountID = event.AccountID
 	r.ZoneName = route53Details.ResponseElements.HostedZone.Name
-	r.ZoneID = route53Details.ResponseElements.HostedZone.ID
+	if strings.HasPrefix(route53Details.ResponseElements.HostedZone.ID, "/hostedzone/") {
+		r.ZoneID = strings.ReplaceAll(route53Details.ResponseElements.HostedZone.ID, "/hostedzone/", "")
+	} else {
+		r.ZoneID = route53Details.ResponseElements.HostedZone.ID
+	}
 	r.Type = SERVICE_AWS_ROUTE53_ZONE
 	r.EventName = route53Details.EventName
 	r.ChangeId = route53Details.ResponseElements.ChangeInfo.ID
@@ -205,7 +209,11 @@ func (r *AWSRoute53Zone) RefreshState() error {
 		return errors.New("no matching zone found")
 	}
 
-	r.ZoneID = *matchingZone.Id
+	if strings.HasPrefix(*matchingZone.Id, "/hostedzone/") {
+		r.ZoneID = strings.ReplaceAll(*matchingZone.Id, "/hostedzone/", "")
+	} else {
+		r.ZoneID = *matchingZone.Id
+	}
 	r.ZoneName = *matchingZone.Name
 
 	return nil

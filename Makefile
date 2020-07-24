@@ -27,7 +27,7 @@ $(AUDITORS): build_dir
 	cp  $(SETTINGS_FILE) ./builds/$@/settings.json
 	cd ./builds/$@ && zip ../$@.zip ./*
 
-build_cli:
+build_cli: generate
 	go build -o ./cinqctl cmd/*.go
 
 generate:

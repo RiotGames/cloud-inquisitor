@@ -123,7 +123,7 @@ Current Step Functions include:
 
     The Hello World Step Function is a two stage state machine that prints out "hello" and "world". This is an easy to use function for ensuring event triggers are working properly.
 
-  - _AWS Resource Tag Auditor (""tag_auditor")_
+  - _AWS Resource Tag Auditor ("tag_auditor")_
 
     The AWS Resource Tag Auditor is a multi-stage state machine that notifies, prevents, and removes resources that do not have the mandated key-pair values.
 
@@ -148,6 +148,30 @@ Current Step Functions include:
 
     A diagram including variable names can be found [here](./docs/tag_auditor.png)
 
+  - _ AWS DNS Hijack Auditor ("dns_hijack")_
+
+    The DNS Hijack auditor is a mutlti-stage workflow that creates a graph of all risky resources as they are created and updated. As resources, both DNS and resources that can be a record alias, are deleted; they are used to query the graph and determine if they would result in a possible hijack/takeover.
+
+    Currently supported resources and actions are:
+       - Route53 Zones (Create/Update)
+       - Route53 RecordSets (Create/Update)
+
+    _Step Function Lambdas_
+    | lambda variable name | 
+    |---|
+    |init|
+    |graph_updater|
+
+    _Module Variables_
+    |variable|type|description|
+    |________|____|___________|
+    |providers|map(provider)|Allows this workflow to be deployed in the Route53 region (US East 1) independed of the overall Terraform provider configuration|
+    | project_role | arn string| ARN of the role to use in the Step Functions/Lambdas|
+    |workflow_vpc| string | AWS VPC id to run the Lambdas in|
+    |workflow_subnets| list(string) | List of subnets to run Lambdas from|
+    |workflow_egress_cidrs| list(string) | List of CIDRs to allow the Lambdas to communicate with. This is used for communicating with the data store|
+
+
 # Deployment
 
 In order to deploy Cloud Inquisitor a settings file, a main Terraform file, and a Terraform state file must be made/edited and added to the root of this project.
@@ -165,11 +189,19 @@ _Settings_
 |stub_resource|string| `enabled`, `disabled` | enables or disables the use of stub resources for unrecognized events |
 |name|string| any |sets the "application_name" field set in all log entried|
 |timestamp_format|string| any | golang timestamp format used when a human readable timestamps are provided|
+|assume_role|string|AWS IAM ARN| Role name to be used via assume role accounts. |
 |auditing.required_tags|string array| _[tag,...]_ |a list of labels/tags that will be audited for by the tag auditor|
 |actions.mode|string| `dryrun`, `normal` | selector for whether or not Cloud Inquisitor will take actions against a resource or just log if it would have|
 |newrelic.license|string| any |New Relic license key if taking advantage of New Relic logging|
 |newrelic.logging.enables|bool|`true`, `false`| Enables the New Relic integrations for logrus|
 |newrelic.logging.provider|string|`lambda`, `api`| uses either the lambda loggin integration (requires the New Relic log ingestion lambda) or the direct API using a logrus hook|
+|mysql.connection_string.type|string|`vault`, `string`| Selector for how to get mysql connection string|
+|mysql.connection_string.value|string|any| Either the raw connection string or the secret path if using `vault`|
+|vault.address|string|any|Overrides VAULT_ADDR in the vault client|
+|vault.auth_mount|string|any| The Vault authentication mount point if not the default value|
+|vault.secret_mount|string|any|The Vault secret engine path if not the default value|
+|vault.role|string|any| Optional setting in the case that IAM authentication is used. Provide string is used as the Vault role the IAM role is bound to|
+|vault.auth_type|string|`token`,`iam`| Type of auth to use against Vault. If a token is provided either via VAULT_TOKEN or in the `~/vault-token` file; this can be used when selecting `token`. For `iam`; uses the resource provided role and attempts to authenticate to the bound Vault role `vault.role`|
 
 
 Example settings file:
@@ -178,7 +210,8 @@ Example settings file:
 	"log_level": "debug",
 	"stub_resources": "disabled",
 	"name": "cloud-inquisitor",
-	"timestamp_format": "2006-01-02-15-4-5",
+    "timestamp_format": "2006-01-02-15-4-5",
+    "assume_role": "ROLE_ARN",
 	"auditing": {
 		"required_tags": [
 			"accounting",
@@ -190,7 +223,24 @@ Example settings file:
 		"mode": "dryrun"
 	},
 	"newrelic": {
-		"license": "NEW_RELIC_LICENSE_KEY"
+        "license": "NEW_RELIC_LICENSE_KEY",
+        "logging": {
+			"enabled": true,
+			"provider": "lambda"
+		}
+    },
+    "mysql": {
+		"connection_string": {
+			"type": "vault",
+			"value": "vault/path/to/secret"
+		}
+    },
+    "vault": {
+		"address": "https://vault.address.example.com",
+		"auth_mount": "auth",
+		"secret_mount": "secrets/engine",
+		"role": "vault_role",
+		"auth_type": "iam"
 	}
 }
 ```
@@ -271,6 +321,63 @@ terraform {
      }
  }
 ```
+## Helpful Modules
+### Datastore ("datastore")
+
+A datastore module is included to quick spin up an AWS RDS instance and provide the connection string to any resource that needs it.
+
+Example usage:
+
+```hcl
+module "datastore" {
+    source = "./terraform_modules/datastore"
+
+    providers = {
+        aws = aws.us-west-2
+    }
+    
+    name = "cloud_inquisitor_datastore"
+    environment = "dev"
+    region = "us-west-2"
+    version_str = "v0_0_0"
+    skip_final_snapshot = true
+
+    datastore_vpc = "vpc-id"
+    datastore_connection_cidr = [
+        "0.0.0.0/0"
+    ]
+
+    datastore_subnets = [
+        "subnet-1",
+        "subnet-2",
+        "subnet-3"
+    ]
+    datastore_tags = {
+        "Name": "cloud-inqusitor-datastore",
+        "owner": "your@email.com",
+        "accounting": "$(whoami)"
+    }
+}
+```
+
+## Project Role ("project_role")
+
+The Project Role module creates an IAM role with all of the necessary permissions to access resources used by CloudInquisitor. Although there are lots of default permissions; the list only include the actions taken via the CloudInquisitor code and could be futher scoped/customized if only parts of the stack are used.
+
+This module also creates a secondary role with identical permissions but also includes a trust relation that allows for the primary role to assume role into the secondary. If you are a multi-account organization, this role can be added to all accounts to allow Cloud Inquisitor access.
+
+Example usage:
+```hcl
+module "project_role" {
+    source = "./terraform_modules/project_role"
+
+    name = "cinq-next"
+    environment = "dev"
+}
+```
+
+### Vault
+
 
 ## Terraform Deploy
 

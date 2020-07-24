@@ -48,6 +48,7 @@ type ComplexityRoot struct {
 	Account struct {
 		AccountID func(childComplexity int) int
 		Records   func(childComplexity int) int
+		Zone      func(childComplexity int, id string) int
 		Zones     func(childComplexity int) int
 	}
 
@@ -75,6 +76,7 @@ type ComplexityRoot struct {
 
 	Zone struct {
 		Name        func(childComplexity int) int
+		Record      func(childComplexity int, id string) int
 		Records     func(childComplexity int) int
 		ServiceType func(childComplexity int) int
 		ZoneID      func(childComplexity int) int
@@ -83,6 +85,7 @@ type ComplexityRoot struct {
 
 type AccountResolver interface {
 	Zones(ctx context.Context, obj *model.Account) ([]*model.Zone, error)
+	Zone(ctx context.Context, obj *model.Account, id string) (*model.Zone, error)
 	Records(ctx context.Context, obj *model.Account) ([]*model.Record, error)
 }
 type QueryResolver interface {
@@ -100,6 +103,7 @@ type RecordResolver interface {
 }
 type ZoneResolver interface {
 	Records(ctx context.Context, obj *model.Zone) ([]*model.Record, error)
+	Record(ctx context.Context, obj *model.Zone, id string) (*model.Record, error)
 }
 
 type executableSchema struct {
@@ -130,6 +134,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Account.Records(childComplexity), true
+
+	case "Account.zone":
+		if e.complexity.Account.Zone == nil {
+			break
+		}
+
+		args, err := ec.field_Account_zone_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Account.Zone(childComplexity, args["id"].(string)), true
 
 	case "Account.zones":
 		if e.complexity.Account.Zones == nil {
@@ -256,6 +272,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Zone.Name(childComplexity), true
 
+	case "Zone.record":
+		if e.complexity.Zone.Record == nil {
+			break
+		}
+
+		args, err := ec.field_Zone_record_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Zone.Record(childComplexity, args["id"].(string)), true
+
 	case "Zone.records":
 		if e.complexity.Zone.Records == nil {
 			break
@@ -330,6 +358,7 @@ var sources = []*ast.Source{
 	&ast.Source{Name: "schema.graphqls", Input: `type Account {
 	accountID: ID!
 	zones: [Zone!]!
+	zone(id: ID!): Zone!
 	records: [Record!]!
 }
 
@@ -338,6 +367,7 @@ type Zone {
 	name: String!
 	serviceType: String!
 	records: [Record!]!
+	record(id: ID!): Record!
 }
 
 type Record {
@@ -370,6 +400,20 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Account_zone_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -428,6 +472,20 @@ func (ec *executionContext) field_Query_value_args(ctx context.Context, rawArgs 
 }
 
 func (ec *executionContext) field_Query_zone_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Zone_record_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -543,6 +601,47 @@ func (ec *executionContext) _Account_zones(ctx context.Context, field graphql.Co
 	res := resTmp.([]*model.Zone)
 	fc.Result = res
 	return ec.marshalNZone2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐZoneᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Account_zone(ctx context.Context, field graphql.CollectedField, obj *model.Account) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Account",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Account_zone_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Account().Zone(rctx, obj, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Zone)
+	fc.Result = res
+	return ec.marshalNZone2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐZone(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Account_records(ctx context.Context, field graphql.CollectedField, obj *model.Account) (ret graphql.Marshaler) {
@@ -1252,6 +1351,47 @@ func (ec *executionContext) _Zone_records(ctx context.Context, field graphql.Col
 	res := resTmp.([]*model.Record)
 	fc.Result = res
 	return ec.marshalNRecord2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐRecordᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Zone_record(ctx context.Context, field graphql.CollectedField, obj *model.Zone) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Zone",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Zone_record_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Zone().Record(rctx, obj, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Record)
+	fc.Result = res
+	return ec.marshalNRecord2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐRecord(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2347,6 +2487,20 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 				}
 				return res
 			})
+		case "zone":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Account_zone(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "records":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -2627,6 +2781,20 @@ func (ec *executionContext) _Zone(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Zone_records(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "record":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Zone_record(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

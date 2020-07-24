@@ -1,6 +1,7 @@
 type Account {
 	accountID: ID!
 	zones: [Zone!]!
+	zone(id: ID!): Zone!
 	records: [Record!]!
 }
 
@@ -9,10 +10,11 @@ type Zone {
 	name: String!
 	serviceType: String!
 	records: [Record!]!
+	record(id: ID!): Record!
 }
 
 type Record {
-	RecordID: ID!
+	recordID: ID!
 	recordType: String!
 	values: [Value!]!
 	alias: Boolean!

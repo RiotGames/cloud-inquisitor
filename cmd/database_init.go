@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	"github.com/spf13/cobra"
 )
 
