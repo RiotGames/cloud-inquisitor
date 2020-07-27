@@ -468,3 +468,338 @@ This can be enabled by including this stanza:
 	}
 }
 ```
+
+## Getting Started (Development)
+### Writing New Audited Resources
+
+Cloud Inquisitor provides a base interface to model all resources off of.
+
+```go
+// Resource is an interaface that vaugely describes a
+// cloud resource and what actions would be necessary to both
+// collect information on the resource, audit and remediate it,
+// and report the end result
+type Resource interface {
+	// RefreshState is provided to give an easy hook to
+	// retrieve current resource information from the
+	// cloud provider of choice
+	RefreshState() error
+	// SendNotification is provided to give an easy hook for
+	// implementing various methods for sending status updates
+	// via any medium
+	SendNotification() error
+	// GetType returns an ENUM of the supported services
+	GetType() Service
+	// GetMetadata returns a map of Resoruce metadata
+	GetMetadata() map[string]interface{}
+	GetLogger() *log.Logger
+}
+```
+
+This interface is the base interface and can be used to compose hierarchical interfaces that are specific to a workflow.
+
+This resource is also a payload in the struct `PassableResource` which is used to move resources through the various workflow steps.
+
+```go
+type PassableResource struct {
+	Resource interface{}
+	Type     Service
+	Finished bool
+	Metadata map[string]interface{}
+}
+
+func (p PassableResource) GetHijackableResource(ctx context.Context, metadata map[string]interface{}) (HijackableResource, error)
+func (p PassableResource) GetTaggableResource(ctx context.Context, metadata map[string]interface{}) (TaggableResource, error)
+```
+
+#### Hijackable Resource (DNS Hijacking)
+
+##### Golang Interface
+
+The interface used to represent a hijackable resource is:
+
+```go
+type HijackableResource interface {
+	Resource
+	NewFromEventBus(events.CloudWatchEvent, context.Context, map[string]interface{}) error
+	NewFromPassableResource(PassableResource, context.Context, map[string]interface{}) error
+	// PublishState is provided to give an easy hook to
+	// send and store struct state in a backend data store
+	PublishState() error
+}
+```
+
+This resource is used to track and describe AWS resource which could either contribute to or result in a DNS hijack or subdomain take over.
+
+Current supported resources are:
+
+  - Route53 Hosted Zones
+    - CreateHostedZone event
+
+  - Route53 RecordSets (tracked as individual records)
+    - ChangeResourceRecordSets event
+
+*NOTE*: As of writing, only the create portions of the flow are functioning. All Resources listed above will also include the specific events listed unless all events which could lead to a hijack/takeover have been implemented.
+
+These resources can then be added to the NewHijackableResource parser which take EventBus CloudTrail API call events and parse them into HijackableResource's.
+
+```go
+func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, metadata map[string]interface{}) (HijackableResource, error) {
+	var resource HijackableResource = nil
+	switch event.Source {
+	case "aws.route53":
+		detailMap := map[string]interface{}{}
+		err := json.Unmarshal(event.Detail, &detailMap)
+		if err != nil {
+			return resource, err
+		}
+		if eventName, ok := detailMap["eventName"]; ok {
+			switch eventName {
+			case "CreateHostedZone":
+				resource = &AWSRoute53Zone{}
+				resourceErr := resource.NewFromEventBus(event, ctx, metadata)
+				return resource, resourceErr
+			case "ChangeResourceRecordSets":
+				resource = &AWSRoute53RecordSet{}
+				resourceErr := resource.NewFromEventBus(event, ctx, metadata)
+				return resource, resourceErr
+			default:
+				resource = &StubResource{}
+				return resource, errors.New("unknown route53 eventName")
+			}
+		} else {
+			resource = &StubResource{}
+			return resource, errors.New("unable to parse evetName from map")
+		}
+
+	default:
+		resource = &StubResource{}
+		err := resource.NewFromEventBus(event, ctx, metadata)
+		return resource, err
+
+	}
+	return resource, nil
+}
+```
+
+Any resource that can be parsed into a compliant HijackableResource can then be sent through the DNS Hijacking workflow.
+
+###### Implementing PublishState() - Route53 HostedZone Example
+
+`PublishState` is the method which will register the current events actions with the graph that represents the DNS landscape as it pertains to AWS. This graph is then used when resources are deleted to understand which paths are being removed and if by removing a node there is a potential for a hijack.
+
+This may be less important when auditing a singular account (as all of the DNS resources exist there); however, when it comes to multi-account organizations this will save us from having to query all resources in all accounts.
+
+```go
+func (r *AWSRoute53Zone) PublishState() error {
+	db, err := graph.NewDBConnection()
+	defer db.Close()
+	if err != nil {
+		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	// get account
+	account := model.Account{AccountID: r.AccountID}
+	err = db.Preload("ZoneRelation").Preload("RecordRelation").Where(&account).FirstOrCreate(&account).Error
+	if err != nil {
+		return err
+	}
+
+	zone := model.Zone{ZoneID: r.ZoneID}
+	err = db.Preload("RecordRelation").Where(&zone).FirstOrCreate(&zone).Error
+	if err != nil {
+		return err
+	}
+
+	if zone.Name != r.ZoneName || zone.ServiceType != r.GetType() {
+		zone.Name = r.ZoneName
+		zone.ServiceType = r.GetType()
+		err = db.Model(&zone).Updates(&zone).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	// add zone to account
+	err = db.Model(&account).Association("ZoneRelation").Append([]model.Zone{zone}).Error
+	if err != nil {
+		return err
+	}
+	r.logger.WithFields(r.GetMetadata()).Debug("adding account/zone to graph")
+	return nil
+}
+```
+
+The above code saves our HostedZone relations in our MySQL database. 
+
+The model which is used to represent a HostedZone in MySQL can be found in `cloud-inquisitor/graph/model/zone.go`. 
+
+```go
+type Zone struct {
+	gorm.Model
+	ZoneID          string    `json:"zoneID"`
+	Name            string    `json:"name"`
+	ServiceType     string    `json:"serviceType"`
+	RecordRelation  []Record  `gorm:"many2many:zone_records;"`
+	AccountRelation []Account `gorm:"many2many:account_zones;"`
+}
+```
+
+This model can then be bound to by GraphQL resolvers using the schema:
+
+```gql
+type Zone {
+	zoneID: ID! 
+	name: String!
+	serviceType: String!
+	records: [Record!]!
+	record(id: ID!): Record!
+}
+
+type Query {
+	zones: [Zone!]!
+	zone(id: ID!): Zone!
+}
+```
+
+This schema definition, along with other can be found in the file `cloud-inquisitor/graph/schema.graphqls`
+
+Once the model and schema are created the command `make generate` can be ran from the root of the project to generate the stubbed bindings for the GraphQL resolvers.
+
+This generated content will be placed in `cloud-inquisitor/graph/schema.resolvers.go`.
+
+After the model, schema, and resolver code have been wired up we can use the cli tool `cinqctl` to run a local GraphQL frontend with the command `cinqctl dns http` and begin the dev loop.
+
+### GraphQL with `gqlgen`
+
+[`gqlgen`](https://gqlgen.com/getting-started/) is a framework for working with GraphQL as well as providing schema first code generation.
+
+All GraphQL portions of this project exists in the directory `cloud-inquisitor/graph`.
+
+At a high level this architecture is quite simple.
+
+A MySQL database is used for storage and is writen to using models in the `model` subdirectory. These models can be generated by `gqlgen` or provided by the developer. Models are automatically bound to GraphQL resolvers if and only if; 1) the file name is `<schema-model>.go` and contain the struct definition `type <SchemaName> struct` in the file. For example, the file `model/account.go` contains:
+
+```go
+package model
+
+import (
+	"github.com/jinzhu/gorm"
+)
+
+type Account struct {
+	gorm.Model
+	AccountID      string   `json:"accountID"`
+	ZoneRelation   []Zone   `gorm:"many2many:account_zones;"`
+	RecordRelation []Record `gorm:"many2many:account_records;"`
+}
+```
+
+The acompanying GraphQL schema is:
+
+```gql
+type Account {
+	accountID: ID!
+	zones: [Zone!]!
+	zone(id: ID!): Zone!
+	records: [Record!]!
+}
+
+type Query {
+	accounts: [Account!]!
+	account(id: ID!): Account!
+}
+```
+
+Once we have defined the model and the schema, which accompanying query, we can run the code generation.
+
+This has been added to the project make file and can be ran as `make generate`.
+
+By running `make generate`; the resolver routes should be added to the file `schema.resolvers.go` in the `graph` subdirectory.
+
+For the accounts schema, this will generate the methods needed for the resolvers to retrieve the values from the MySQL instance.
+
+```go
+func (r *accountResolver) Zones(ctx context.Context, obj *model.Account) ([]*model.Zone, error) {
+	log.Infof("account <%v> getting zones\n", obj.AccountID)
+	log.Debugf("%#v\n", *obj)
+
+	db, err := NewDBConnection()
+	if err != nil {
+		return []*model.Zone{}, err
+	}
+
+	account := model.Account{AccountID: obj.AccountID}
+	err = db.Where(&account).First(&account).Error
+	if err != nil {
+		return []*model.Zone{}, err
+	}
+	var zones []*model.Zone
+	err = db.Model(&account).Association("ZoneRelation").Find(&zones).Error
+	if err != nil {
+		return []*model.Zone{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for idx, zone := range zones {
+			log.Debugf("%v: account <%#v> zones <%#v>\n", idx, obj.AccountID, *zone)
+		}
+	}
+
+	return zones, nil
+}
+
+func (r *accountResolver) Zone(ctx context.Context, obj *model.Account, id string) (*model.Zone, error) {
+	log.Infof("account %v getting zone %v\n", obj.AccountID, id)
+	zone := model.Zone{ZoneID: id}
+	err := r.DB.Model(obj).Related(&zone, "ZoneRelation").Error
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+
+	log.Debugf("for account %v found zone %v\n", obj.AccountID, zone)
+
+	return &zone, nil
+}
+
+func (r *accountResolver) Records(ctx context.Context, obj *model.Account) ([]*model.Record, error) {
+	log.Infof("account <%v> getting records\n", obj.AccountID)
+	log.Debugf("%#v\n", *obj)
+	account := model.Account{AccountID: obj.AccountID}
+	err := r.DB.Where(&account).First(&account).Error
+	if err != nil {
+		return []*model.Record{}, nil
+	}
+
+	var records []*model.Record
+	err = r.DB.Model(&account).Association("RecordRelation").Find(&records).Error
+	if err != nil {
+		return []*model.Record{}, nil
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for idx, record := range records {
+			log.Debugf("%v: account %v record %#v\n", idx, account.AccountID, *record)
+		}
+	}
+
+	return records, nil
+}
+```
+
+With the resolver code implemented; `gqlgen` can now parse a GraphQL query, qurey our data set, and return the answer as a JSON object.
+
+For simplicity, the cli `cinqctl` contains a frontend for querying the data and can be started by running:
+
+```bash
+cinqctl dns http
+```
+
+
+
+
+
+
+

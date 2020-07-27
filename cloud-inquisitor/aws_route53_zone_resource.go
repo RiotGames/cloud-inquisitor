@@ -218,6 +218,7 @@ func (r *AWSRoute53Zone) RefreshState() error {
 
 	return nil
 }
+
 func (r *AWSRoute53Zone) PublishState() error {
 	db, err := graph.NewDBConnection()
 	defer db.Close()
