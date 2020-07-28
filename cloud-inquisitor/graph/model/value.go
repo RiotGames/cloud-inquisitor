@@ -6,6 +6,6 @@ import (
 
 type Value struct {
 	gorm.Model
-	ValueID        string   `json:"valueID"`
-	RecordRelation []Record `gorm:"many2many:record_values;"`
+	ValueID  string `json:"valueID"`
+	RecordID uint
 }

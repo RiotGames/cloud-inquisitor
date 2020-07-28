@@ -237,7 +237,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Record.Alias(childComplexity), true
 
-	case "Record.RecordID":
+	case "Record.recordID":
 		if e.complexity.Record.RecordID == nil {
 			break
 		}
@@ -371,7 +371,7 @@ type Zone {
 }
 
 type Record {
-	RecordID: ID!
+	recordID: ID!
 	recordType: String!
 	values: [Value!]!
 	alias: Boolean!
@@ -1047,7 +1047,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Record_RecordID(ctx context.Context, field graphql.CollectedField, obj *model.Record) (ret graphql.Marshaler) {
+func (ec *executionContext) _Record_recordID(ctx context.Context, field graphql.CollectedField, obj *model.Record) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2679,8 +2679,8 @@ func (ec *executionContext) _Record(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Record")
-		case "RecordID":
-			out.Values[i] = ec._Record_RecordID(ctx, field, obj)
+		case "recordID":
+			out.Values[i] = ec._Record_recordID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

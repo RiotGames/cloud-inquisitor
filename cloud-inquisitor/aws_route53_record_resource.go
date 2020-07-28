@@ -454,36 +454,43 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 
 	// get account
 	account := model.Account{AccountID: r.AccountID}
-	err = db.Preload("ZoneRelation").Preload("RecordRelation").Where(&account).FirstOrCreate(&account).Error
+	err = db.Model(&model.Account{}).Where(&account).FirstOrCreate(&account).Error
 	if err != nil {
 		return err
 	}
 
+	// get zone with proper account.ID
 	zone := model.Zone{ZoneID: r.ZoneID}
-	err = db.Preload("RecordRelation").Where(&zone).FirstOrCreate(&zone).Error
+	err = db.Model(&model.Zone{}).Where("account_id = ?", account.ID).Where(&zone).FirstOrInit(&zone).Error
+	if err != nil {
+		return err
+	}
+
+	// associate zones if they are not already associated
+	err = db.Model(&account).Association("ZoneRelation").Append(&zone).Error
 	if err != nil {
 		return err
 	}
 
 	// get record
 	record := model.Record{RecordID: r.RecordName}
-	err = db.Preload("ValueRelation").Where(&record).FirstOrCreate(&record).Error
+	err = db.Model(&model.Record{}).Where("account_id = ?", account.ID).Where("zone_id = ?", zone.ID).Where("record_id = ?", r.RecordName).FirstOrInit(&record).Error
 	if record.RecordType != r.RecordType || record.Alias != r.Aliased {
 		record.RecordType = r.RecordType
 		record.Alias = r.Aliased
-		err = db.Model(&record).Updates(&record).Error
+		r.GetLogger().WithFields(r.GetMetadata()).Debugf("saving record: %#v", record)
+		err = db.Model(&model.Record{}).Save(&record).Error
 		if err != nil {
 			return err
 		}
 	}
 
-	// add record relation to account and zone
-	err = db.Model(&zone).Association("RecordRelation").Append([]model.Record{record}).Error
+	err = db.Model(&zone).Association("RecordRelation").Append(&record).Error
 	if err != nil {
 		return err
 	}
 
-	err = db.Model(&account).Association("RecordRelation").Append([]model.Record{record}).Error
+	err = db.Model(&account).Association("RecordRelation").Append(&record).Error
 	if err != nil {
 		return err
 	}
@@ -492,7 +499,7 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 		r.logger.Debugf("looking for value: %v", rawValue)
 		// get each value
 		value := model.Value{ValueID: rawValue}
-		err = db.Where(&value).FirstOrCreate(&value).Error
+		err = db.Model(&model.Value{}).Where("record_id = ?", record.ID).Where("value_id = ?", value.ValueID).FirstOrInit(&value).Error
 		if err != nil {
 			return err
 		}
@@ -507,7 +514,7 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 		r.logger.Debugf("looking for value: %v", r.Alias.RecordName)
 		// get each value
 		value := model.Value{ValueID: r.Alias.RecordName}
-		err = db.Where(&value).FirstOrCreate(&value).Error
+		err = db.Model(&model.Value{}).Where("record_id = ?", record.ID).Where("value_id = ?", value.ValueID).FirstOrInit(&value).Error
 		if err != nil {
 			return err
 		}

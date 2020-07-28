@@ -112,10 +112,6 @@ func DropTables() error {
 		&model.Zone{},
 		&model.Record{},
 		&model.Value{},
-		"account_zones",
-		"account_records",
-		"zone_records",
-		"record_values",
 	).Error
 
 	if err != nil {

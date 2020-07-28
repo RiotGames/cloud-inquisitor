@@ -229,31 +229,34 @@ func (r *AWSRoute53Zone) PublishState() error {
 
 	// get account
 	account := model.Account{AccountID: r.AccountID}
-	err = db.Preload("ZoneRelation").Preload("RecordRelation").Where(&account).FirstOrCreate(&account).Error
+	err = db.Where(&model.Account{}).Where(&account).FirstOrCreate(&account).Error
 	if err != nil {
 		return err
 	}
+	r.GetLogger().WithFields(r.GetMetadata()).Debugf("found account: %#v", account)
 
 	zone := model.Zone{ZoneID: r.ZoneID}
-	err = db.Preload("RecordRelation").Where(&zone).FirstOrCreate(&zone).Error
+	err = db.Model(&model.Zone{}).Where("account_id = ?", account.ID).Where(&zone).FirstOrInit(&zone).Error
 	if err != nil {
 		return err
 	}
+	r.GetLogger().WithFields(r.GetMetadata()).Debugf("found  zone: %#v", zone)
 
 	if zone.Name != r.ZoneName || zone.ServiceType != r.GetType() {
 		zone.Name = r.ZoneName
 		zone.ServiceType = r.GetType()
-		err = db.Model(&zone).Updates(&zone).Error
+		err = db.Model(&model.Zone{}).Updates(&zone).Error
 		if err != nil {
 			return err
 		}
 	}
 
 	// add zone to account
-	err = db.Model(&account).Association("ZoneRelation").Append([]model.Zone{zone}).Error
+	err = db.Model(&account).Where(&account).Association("ZoneRelation").Append(zone).Error
 	if err != nil {
 		return err
 	}
+
 	r.logger.WithFields(r.GetMetadata()).Debug("adding account/zone to graph")
 	return nil
 }
