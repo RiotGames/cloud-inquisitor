@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Domain Hijack</title>
+<style>
+h1 {
+  font-size: 1vw;
+  font-family: Sans-Serif;
+}
+h2 {
+  font-size: 1vw;
+  font-family: Sans-Serif;
+}
+p {
+  font-size: 1vw;
+  font-family: Sans-Serif;
+}
+table {
+    font-size: 1vw;
+    font-family: sans-serif;
+    border: 2px;
+    border-spacing: 2px;
+}
+tr.title {
+    border-bottom:solid #aaaaaa 2px;
+    background-color:#eeeeee;
+    text-align:left;
+    padding:10px;
+}
+tr.odd {
+    padding:2px;
+    background-color:transparent;
+}
+tr.even {
+    padding:2px;
+    background-color:#efefef;
+}
+</style>
+</head>
+<body>
+
+<h1>Potential Domain Hijack Found</h1>
+<h2>Deleting resource S3 Bucket:test.bucket.com in AWS account 12345678 has resulted in a potential domain hijack.</h2>
+<p>The following table includes all resources in the chain that would lead to a potential domain hijack.</p>
+
+<div>
+    <table style="border:0px;">
+        <thead>
+            <tr class="title">
+                <th>
+                    Account ID
+                </th>
+                <th>
+                    Resource
+                </th>
+                <th>
+                    Resource Type
+                </th>
+                <th>
+                    Resource Referenced
+                </th>
+                <th>
+                    Resource Referenced Type
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>
