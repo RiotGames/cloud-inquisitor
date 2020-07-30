@@ -16,7 +16,14 @@ type AWSSESNotifier struct {
 }
 
 func (n *AWSSESNotifier) New() error {
-	n.svc = ses.New(session.New())
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("us-west-2"),
+	})
+	if err != nil {
+		return err
+	}
+
+	n.svc = ses.New(sess)
 	n.email = settings.GetString("simple_email_service.verified_email")
 
 	return nil

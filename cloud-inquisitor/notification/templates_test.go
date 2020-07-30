@@ -51,7 +51,7 @@ func TestHijackHTMLWithChain(t *testing.T) {
 		HijackChain: []HijackChainElement{
 			HijackChainElement{
 				AccountId:              "abcdefg",
-				Resource:               "lol.com",
+				Resource:               "public.test.bucket.com",
 				ResourceType:           "route53",
 				ResourceReferenced:     "test.bucket.com",
 				ResourceReferencedType: "S3 Bucket",
