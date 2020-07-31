@@ -18,6 +18,10 @@ variable "environment" {
     description = "environment to deploy into (prod, staging, dev, etc.)"
 }
 
+variable "project_role" {
+    type = string
+}
+
 variable "event_rules" {
     type = map(string)
     description = "list of event objects"
@@ -62,6 +66,18 @@ variable "step_function_tag_auditor_remove_seconds" {
     type = number
     description = "number of seconds between prevent step and remove step"
     default = 604800 //7 days
+}
+
+variable "workflow_vpc" {
+    type = string
+}
+
+variable "workflow_egress_cidrs" {
+    type = list(string)
+}
+
+variable "workflow_subnets" {
+    type = list(string)
 }
 
 output "name" {

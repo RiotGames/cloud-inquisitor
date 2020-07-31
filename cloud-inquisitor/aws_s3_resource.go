@@ -335,3 +335,19 @@ func (s3 *AWSS3Storage) GetMetadata() map[string]interface{} {
 func (s3 *AWSS3Storage) GetLogger() *log.Logger {
 	return s3.logger
 }
+
+func (s3 *AWSS3Storage) GetTags() map[string]string {
+	return s3.Tags
+}
+
+func (s3 *AWSS3Storage) GetMissingTags() []string {
+	requiredTags := settings.GetString("auditing.required_tags")
+	missingTags := []string{}
+	for _, tag := range strings.Split(requiredTags, ",") {
+		if _, ok := s3.Tags[tag]; !ok {
+			missingTags = append(missingTags, tag)
+		}
+	}
+
+	return missingTags
+}

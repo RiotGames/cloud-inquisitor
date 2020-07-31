@@ -1,9 +1,11 @@
 package cloudinquisitor
 
 import (
+	"context"
 	"errors"
 	"testing"
 
+	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/aws/aws-lambda-go/events"
 )
 
@@ -51,6 +53,14 @@ func (t *testResource) GetTags() map[string]string {
 	return t.tags
 }
 
+func (t *testResource) GetLogger() *log.Logger {
+	return nil
+}
+
+func (t *testResource) GetMetadata() map[string]interface{} {
+	return map[string]interface{}{}
+}
+
 func (t *testResource) GetMissingTags() []string {
 	knownTags := []string{"tag1", "tag2", "tag3"}
 	missingTags := []string{}
@@ -68,11 +78,11 @@ func (t *testResource) GetType() Service {
 	return SERVICE_STUB
 }
 
-func (t *testResource) NewFromEventBus(_ events.CloudWatchEvent) error {
+func (t *testResource) NewFromEventBus(_ events.CloudWatchEvent, _ context.Context, _ map[string]interface{}) error {
 	return nil
 }
 
-func (t *testResource) NewFromPassableResource(_ PassableResource) error {
+func (t *testResource) NewFromPassableResource(_ PassableResource, _ context.Context, _ map[string]interface{}) error {
 	return nil
 }
 

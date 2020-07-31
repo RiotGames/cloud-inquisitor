@@ -18,6 +18,10 @@ variable "environment" {
     description = "environment to run step function in (prod, staging, dev, etc.)"
 }
 
+variable "project_role" {
+    type = string
+}
+
 variable "step_function_selector" {
     type = string
     description = "declaration of the state machine"
@@ -56,6 +60,18 @@ variable "tag_auditor_remove_seconds" {
     type = number
     description = "number of seconds between prevent step and remove step"
     default = 604800 //7 days
+}
+
+variable "workflow_vpc" {
+    type = string
+}
+
+variable "workflow_egress_cidrs" {
+    type = list(string)
+}
+
+variable "workflow_subnets" {
+    type = list(string)
 }
 
 output "step_function_map" {

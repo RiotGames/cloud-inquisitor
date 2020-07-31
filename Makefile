@@ -16,7 +16,7 @@ provider_file:
 $(AVAILABLE_REGIONS): provider_file
 	echo "provider \"aws\" {\n  alias  = \"$@\"\n  region = \"$@\"\n}\n\n" >> regions.tf
 
-build: clean $(AUDITORS)
+build: clean generate $(AUDITORS)
 
 build_dir:
 	mkdir -p builds
@@ -26,3 +26,15 @@ $(AUDITORS): build_dir
 	GOARCH=amd64 GOOS=linux go build -o ./builds/$@/$@ cloud-inquisitor/serverless/$@/*.go
 	cp  $(SETTINGS_FILE) ./builds/$@/settings.json
 	cd ./builds/$@ && zip ../$@.zip ./*
+
+build_cli: generate
+	go build -o ./cinqctl cmd/*.go
+
+generate:
+	cd cloud-inquisitor/graph && go run github.com/99designs/gqlgen generate
+
+deploy:
+	terraform apply
+
+destroy:
+	terraform destroy

@@ -10,42 +10,28 @@ import (
 
 func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResource) (cloudinquisitor.PassableResource, error) {
 
-	parsedResource, err := resource.GetTaggableResource(ctx, map[string]interface{}{
-		"cloud-inquisitor-component": "tag-auditor",
+	parsedResource, err := resource.GetHijackableResource(ctx, map[string]interface{}{
+		"cloud-inquisitor-component": "hijack-graph-updater",
 	})
 	if err != nil {
-		return resource, nil
+		return resource, err
 	}
 
 	err = parsedResource.RefreshState()
 	if err != nil {
-		return resource, nil
+		return resource, err
 	}
 
-	action, err := parsedResource.Audit()
+	err = parsedResource.PublishState()
 	if err != nil {
-		return cloudinquisitor.PassableResource{
-			Resource: parsedResource,
-			Type:     parsedResource.GetType(),
-			Metadata: parsedResource.GetLogger().GetMetadata(),
-			Finished: true,
-		}, nil
-	}
-
-	if err := parsedResource.TakeAction(action); err != nil {
-		return cloudinquisitor.PassableResource{
-			Resource: parsedResource,
-			Type:     parsedResource.GetType(),
-			Metadata: parsedResource.GetLogger().GetMetadata(),
-			Finished: true,
-		}, nil
+		return resource, err
 	}
 
 	return cloudinquisitor.PassableResource{
 		Resource: parsedResource,
 		Type:     parsedResource.GetType(),
 		Metadata: parsedResource.GetLogger().GetMetadata(),
-		Finished: false,
+		Finished: true,
 	}, nil
 }
 

@@ -1,0 +1,7 @@
+{
+	accounts {
+		owns (service-type: "AWS_ROUTE53_ZONE") {
+			id
+		}
+	}
+}

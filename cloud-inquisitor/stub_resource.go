@@ -106,3 +106,11 @@ func (t *StubResource) GetMetadata() map[string]interface{} {
 func (t *StubResource) GetLogger() *log.Logger {
 	return t.logger
 }
+
+func (t *StubResource) GetMissingTags() []string {
+	return []string{}
+}
+
+func (t *StubResource) GetTags() map[string]string {
+	return map[string]string{}
+}

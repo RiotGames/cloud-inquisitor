@@ -1,7 +1,12 @@
 {
     "Comment": "Tag Auditor that tracks a resource over N stages",
+    %{ if tag_auditor_init != "" ~}
     "StartAt": "Init",
+    %{ else ~}
+    "StartAt": "Resource Has Been Remediated",
+    %{ endif ~}
     "States": {
+        %{ if tag_auditor_init != "" ~}
         "Init": {
             "Type": "Task",
             "Resource": "${tag_auditor_init}",
@@ -132,6 +137,7 @@
             "Resource": "${tag_auditor_remove}",
             "Next": "Resource Has Been Remediated"
         },
+        %{ endif }
         "Resource Has Been Remediated": {
             "Type": "Succeed"
         }

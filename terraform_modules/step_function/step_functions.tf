@@ -1,7 +1,8 @@
 locals {
     step_functions = tomap({
         "hello_world" = file("${path.module}/step_function_definitions/hello_world.json")
-        "tag_auditor" = data.template_file.tag_auditor.rendered
+        "tag_auditor" = data.template_file.tag_auditor.rendered,
+        "dns_hijack"  = data.template_file.dns_hijack.rendered
     })
 }
 
@@ -19,5 +20,18 @@ data "template_file" "tag_auditor" {
     second_notify_seconds   = var.tag_auditor_second_notify_seconds,
     prevent_seconds  = var.tag_auditor_prevent_seconds,
     remove_seconds   = var.tag_auditor_remove_seconds,
-  }, local.lambda_arns)
+  }, 
+  {
+    "tag_auditor_init": ""
+  },
+  local.lambda_arns)
+}
+
+data "template_file" "dns_hijack" {
+  template = "${file("${path.module}/step_function_definitions/domain_hijack.tpl")}"
+  vars = merge({
+    "init": "",
+    "graph_updater": ""
+  },
+  local.lambda_arns)
 }

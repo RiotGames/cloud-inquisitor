@@ -46,7 +46,7 @@ func (r *AWSRDSInstance) Audit() (Action, error) {
 
 	requiredTags := settings.GetString("auditing.required_tags")
 
-	compliant := KeysInMap(s.Tags, strings.Split(requiredTags, ","))
+	compliant := KeysInMap(r.Tags, strings.Split(requiredTags, ","))
 
 	if compliant {
 		return ACTION_FIXED_BY_USER, nil
@@ -309,4 +309,20 @@ func (rds *AWSRDSInstance) GetMetadata() map[string]interface{} {
 
 func (r *AWSRDSInstance) GetLogger() *log.Logger {
 	return r.logger
+}
+
+func (r *AWSRDSInstance) GetTags() map[string]string {
+	return r.Tags
+}
+
+func (r *AWSRDSInstance) GetMissingTags() []string {
+	requiredTags := settings.GetString("auditing.required_tags")
+	missingTags := []string{}
+	for _, tag := range strings.Split(requiredTags, ",") {
+		if _, ok := r.Tags[tag]; !ok {
+			missingTags = append(missingTags, tag)
+		}
+	}
+
+	return missingTags
 }
