@@ -1,0 +1,23 @@
+Potential Domain Hijack Found
+
+Deleting resource S3 Bucket:test.bucket.com in AWS account 12345678 has resulted in a potential domain hijack.
+
+The following table includes all resources in the chain that would lead to a potential domain hijack.
+
+
+
+Resource 0:
+    Account ID:                 abcdefg
+    Resource:                   public.test.bucket.com
+    Resource Type:              route53
+    Resource Referenced:        test.bucket.com
+    Resource Referenced Type:   S3 Bucket
+
+Resource 1:
+    Account ID:                 abcdefg
+    Resource:                   public.test.bucket.com
+    Resource Type:              route53
+    Resource Referenced:        test.bucket.com
+    Resource Referenced Type:   S3 Bucket
+
+ 

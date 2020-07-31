@@ -202,6 +202,7 @@ _Settings_
 |vault.secret_mount|string|any|The Vault secret engine path if not the default value|
 |vault.role|string|any| Optional setting in the case that IAM authentication is used. Provide string is used as the Vault role the IAM role is bound to|
 |vault.auth_type|string|`token`,`iam`| Type of auth to use against Vault. If a token is provided either via VAULT_TOKEN or in the `~/vault-token` file; this can be used when selecting `token`. For `iam`; uses the resource provided role and attempts to authenticate to the bound Vault role `vault.role`|
+|simple_email_service.verified_email|string|any| Verified email address enrolled in AWS Simple Email Service. If this value is not set AWS SES notifcations will not be enabled.|
 
 
 Example settings file:
@@ -381,7 +382,6 @@ module "project_role" {
 
 ## Terraform Deploy
 
-Once the files are 
 
 # Setting Up Monitoring/Metrics Integrations
 

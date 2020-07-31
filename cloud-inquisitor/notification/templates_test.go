@@ -12,6 +12,11 @@ func TestHijackTemplateExists(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+
+	_, err = templateBox.FindString("hijack_template.txt")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 }
 
 func TestHijackHTMLNoChain(t *testing.T) {
@@ -56,6 +61,13 @@ func TestHijackHTMLWithChain(t *testing.T) {
 				ResourceReferenced:     "test.bucket.com",
 				ResourceReferencedType: "S3 Bucket",
 			},
+			HijackChainElement{
+				AccountId:              "abcdefg",
+				Resource:               "public.test.bucket.com",
+				ResourceType:           "route53",
+				ResourceReferenced:     "test.bucket.com",
+				ResourceReferencedType: "S3 Bucket",
+			},
 		},
 	}
 
@@ -77,5 +89,78 @@ func TestHijackHTMLWithChain(t *testing.T) {
 
 	if testHtml != html {
 		t.Fatal("generated and test html do not match")
+	}
+}
+
+func TestHijackTextNoChain(t *testing.T) {
+	content := HijackNotificationContent{
+		PrimaryResource:     "test.bucket.com",
+		PrimaryResourceType: "S3 Bucket",
+		PrimaryAccountId:    "12345678",
+		HijackChain:         []HijackChainElement{},
+	}
+
+	text, err := NewHijackText(content)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	if text == "" {
+		t.Fatal("text template should not be empty string")
+	}
+
+	//ioutil.WriteFile("./test_text/hijack_test_no_chain.txt", []byte(text), 0755)
+	testBox := packr.NewBox("./test_text")
+	testText, err := testBox.FindString("hijack_test_no_chain.txt")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	if testText != text {
+		t.Fatal("generated and test text do not match")
+	}
+}
+
+func TestHijackTextWithChain(t *testing.T) {
+	content := HijackNotificationContent{
+		PrimaryResource:     "test.bucket.com",
+		PrimaryResourceType: "S3 Bucket",
+		PrimaryAccountId:    "12345678",
+		HijackChain: []HijackChainElement{
+			HijackChainElement{
+				AccountId:              "abcdefg",
+				Resource:               "public.test.bucket.com",
+				ResourceType:           "route53",
+				ResourceReferenced:     "test.bucket.com",
+				ResourceReferencedType: "S3 Bucket",
+			},
+			HijackChainElement{
+				AccountId:              "abcdefg",
+				Resource:               "public.test.bucket.com",
+				ResourceType:           "route53",
+				ResourceReferenced:     "test.bucket.com",
+				ResourceReferencedType: "S3 Bucket",
+			},
+		},
+	}
+
+	text, err := NewHijackText(content)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	if text == "" {
+		t.Fatal("text template should not be empty string")
+	}
+
+	//ioutil.WriteFile("./test_text/hijack_test_with_chain.txt", []byte(text), 0755)
+	testBox := packr.NewBox("./test_text")
+	testText, err := testBox.FindString("hijack_test_with_chain.txt")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	if testText != text {
+		t.Fatal("generated and test text do not match")
 	}
 }

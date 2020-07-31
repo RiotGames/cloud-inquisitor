@@ -31,10 +31,28 @@ type Message struct {
 	CC      []string
 }
 
-func NewHijackNotficationMessage(subject string, to, cc []string) Message {
+func NewHijackNotficationMessage(subject string, to, cc []string, content HijackNotificationContent) (Message, error) {
+	html, err := NewHijackHTML(content)
+	if err != nil {
+		return Message{}, err
+	}
+	if html == "" {
+		return Message{}, errors.New("html template is blank")
+	}
+
+	text, err := NewHijackText(content)
+	if err != nil {
+		return Message{}, err
+	}
+	if text == "" {
+		return Message{}, errors.New("text template is blank")
+	}
+
 	return Message{
 		Subject: subject,
 		CC:      cc,
 		To:      to,
-	}
+		HTML:    html,
+		Text:    text,
+	}, nil
 }

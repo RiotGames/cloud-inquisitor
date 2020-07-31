@@ -27,11 +27,11 @@ tr.title {
     text-align:left;
     padding:10px;
 }
-tr.odd {
+tr.even {
     padding:2px;
     background-color:transparent;
 }
-tr.even {
+tr.odd {
     padding:2px;
     background-color:#efefef;
 }
@@ -65,30 +65,29 @@ tr.even {
             </tr>
         </thead>
         <tbody>
-            {{ with .HijackChain }}
-                {{ range . }}
-                    <tr class="odd">
+            {{- with .HijackChain }}
+                {{- range $i, $elem := . }}
+                    {{ if isEven $i }}<tr class="even">{{- else }}<tr class="odd">{{- end }}
                         <td>
-                            {{ .AccountId }}
+                            {{ $elem.AccountId }}
                         </td>                    
                         <td>
-                            {{ .Resource }}
+                            {{ $elem.Resource }}
                         </td>
                         <td>
-                            {{ .ResourceType }}
+                            {{ $elem.ResourceType }}
                         </td>
                         <td>
-                            {{ .ResourceReferenced }}
+                            {{ $elem.ResourceReferenced }}
                         </td>
                         <td>
-                            {{ .ResourceReferencedType }}
+                            {{ $elem.ResourceReferencedType }}
                         </td>
                     </tr>
-                {{ end }}
-            {{ end }}
+                {{- end }}
+            {{- end }}
         </tbody>
     </table>
 </div>
-
 </body>
 </html>

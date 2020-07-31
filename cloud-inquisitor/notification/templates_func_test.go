@@ -40,10 +40,19 @@ func TestAWSSES(t *testing.T) {
 	if html == "" {
 		t.Fatal("html template should not be empty string")
 	}
+	
+	text, err := NewHijackText(content)
+	if err !+ nil {
+		t.Fatal(err.Error())
+	}
+	
+	if text == "" {
+		t.Fatal("text template should not be empty string")
+	}
 
 	msg := Message{
 		Subject: "CINQ Funcitonal Test",
-		Text:    "alt-text",
+		Text:    text,
 		HTML:    html,
 		To:      []string{ses.email},
 		CC:      []string{},
