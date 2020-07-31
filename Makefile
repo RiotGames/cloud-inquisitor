@@ -32,3 +32,9 @@ build_cli: generate
 
 generate:
 	cd cloud-inquisitor/graph && go run github.com/99designs/gqlgen generate
+
+deploy:
+	terraform apply
+
+destroy:
+	terraform destroy

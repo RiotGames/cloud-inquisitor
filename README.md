@@ -376,12 +376,61 @@ module "project_role" {
 }
 ```
 
-### Vault
+## Vault
 
+Internally, we use Vault to store our secrets. As such, we have decided to initially support its use in the Cloud Inquisitor project. In order to easily save our infrastructure secrets, we also leverage the Terraform Vault modules.
 
-## Terraform Deploy
+This below example assumes using the datastore module (referenced above) and saving the connection string in Vault.
 
-Once the files are 
+```hcl
+resource "vault_generic_secret" "database_secret" {
+  path = "cloud-inquisitor-secrets/database"
+
+  data_json = <<EOT
+{
+  "value": "${module.datastore.connection_string}"
+}
+EOT
+}
+```
+
+This writes the secrets to an expected location in which we can use the path in our _settings.json_ to make sure Cloud Inquisitor pulls the value properly.
+
+*NOTE*: As of now, Cloud Inquisitor expects the key for any secret it grabs to be `"value"`. If there are multiple secrets you wish to provision, they will have to be in separate paths and documents to be properly found.
+
+## Deployment Steps
+
+By this point in the guide, a number of the requisit steps have already been covered. The following items needed to be moved into the root of this project before following the listed steps.
+
+1. `*.tf` files declaring which modules are to be deployed
+
+1. the `settings.json` file filed out according to the settings reference table
+
+1. a `state.tf` file that configures the Terraform backend
+
+This also requires the following dependecies:
+
+1. local Golang installation
+
+1. vault cli with active session or token (if using)
+
+1. Terraform installed
+
+1. active AWS credentials
+
+Once these files are provided the chosen workflows can be deployed as:
+
+```bash
+make clean build deploy
+```
+
+The command will bundle the settings file with the executable Golang code then deploy all AWS infrastructure needed to deploy the project.
+
+With all of the infrastructure deployed, the datastore tables need to be initialized. This can be done by using the provided cli and running:
+
+```bash
+cinqctl db init
+```
 
 # Setting Up Monitoring/Metrics Integrations
 
