@@ -23,7 +23,7 @@ func TestHijackHTMLNoChain(t *testing.T) {
 	content := HijackNotificationContent{
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
-		PrimaryAccountId:    "12345678",
+		PrimaryAccountId:    "123456789012",
 		HijackChain:         []HijackChainElement{},
 	}
 
@@ -52,17 +52,17 @@ func TestHijackHTMLWithChain(t *testing.T) {
 	content := HijackNotificationContent{
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
-		PrimaryAccountId:    "12345678",
+		PrimaryAccountId:    "123456789012",
 		HijackChain: []HijackChainElement{
 			HijackChainElement{
-				AccountId:              "abcdefg",
+				AccountId:              "123456789012",
 				Resource:               "public.test.bucket.com",
 				ResourceType:           "route53",
 				ResourceReferenced:     "test.bucket.com",
 				ResourceReferencedType: "S3 Bucket",
 			},
 			HijackChainElement{
-				AccountId:              "abcdefg",
+				AccountId:              "123456789012",
 				Resource:               "public.test.bucket.com",
 				ResourceType:           "route53",
 				ResourceReferenced:     "test.bucket.com",
@@ -96,7 +96,7 @@ func TestHijackTextNoChain(t *testing.T) {
 	content := HijackNotificationContent{
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
-		PrimaryAccountId:    "12345678",
+		PrimaryAccountId:    "123456789012",
 		HijackChain:         []HijackChainElement{},
 	}
 
@@ -125,17 +125,17 @@ func TestHijackTextWithChain(t *testing.T) {
 	content := HijackNotificationContent{
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
-		PrimaryAccountId:    "12345678",
+		PrimaryAccountId:    "123456789012",
 		HijackChain: []HijackChainElement{
 			HijackChainElement{
-				AccountId:              "abcdefg",
+				AccountId:              "123456789012",
 				Resource:               "public.test.bucket.com",
 				ResourceType:           "route53",
 				ResourceReferenced:     "test.bucket.com",
 				ResourceReferencedType: "S3 Bucket",
 			},
 			HijackChainElement{
-				AccountId:              "abcdefg",
+				AccountId:              "123456789012",
 				Resource:               "public.test.bucket.com",
 				ResourceType:           "route53",
 				ResourceReferenced:     "test.bucket.com",

@@ -30,7 +30,7 @@ func TestMessageNoChain(t *testing.T) {
 	content := HijackNotificationContent{
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
-		PrimaryAccountId:    "12345678",
+		PrimaryAccountId:    "123456789012",
 		HijackChain:         []HijackChainElement{},
 	}
 	subject := "subject"
@@ -74,17 +74,17 @@ func TestMessageWithChain(t *testing.T) {
 	content := HijackNotificationContent{
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
-		PrimaryAccountId:    "12345678",
+		PrimaryAccountId:    "123456789012",
 		HijackChain: []HijackChainElement{
 			HijackChainElement{
-				AccountId:              "abcdefg",
+				AccountId:              "123456789012",
 				Resource:               "public.test.bucket.com",
 				ResourceType:           "route53",
 				ResourceReferenced:     "test.bucket.com",
 				ResourceReferencedType: "S3 Bucket",
 			},
 			HijackChainElement{
-				AccountId:              "abcdefg",
+				AccountId:              "123456789012",
 				Resource:               "public.test.bucket.com",
 				ResourceType:           "route53",
 				ResourceReferenced:     "test.bucket.com",
