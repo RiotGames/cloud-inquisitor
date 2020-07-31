@@ -16,7 +16,19 @@ provider_file:
 $(AVAILABLE_REGIONS): provider_file
 	echo "provider \"aws\" {\n  alias  = \"$@\"\n  region = \"$@\"\n}\n\n" >> regions.tf
 
-build: clean generate $(AUDITORS)
+generate:
+	cd cloud-inquisitor/graph && go run github.com/99designs/gqlgen generate
+
+packr_dep:
+	go get -u github.com/gobuffalo/packr/packr
+
+packr_generate: packr_dep
+	$(shell go env GOPATH)/bin/packr
+	
+packr_clean: packr_dep
+	$(shell go env GOPATH)/bin/packr clean
+
+build: clean generate packr_generate $(AUDITORS) packr_clean
 
 build_dir:
 	mkdir -p builds

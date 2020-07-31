@@ -1,0 +1,8 @@
+Potential Domain Hijack Found
+
+Deleting resource S3 Bucket:test.bucket.com in AWS account 123456789012 has resulted in a potential domain hijack;
+ there is a DNS record pointing to a resource not owned or no longer owned by us.
+
+The following table includes all resources in the chain that would lead to a potential domain hijack.
+
+ 
