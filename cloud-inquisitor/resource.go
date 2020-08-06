@@ -120,7 +120,7 @@ func (p PassableResource) GetHijackableResource(ctx context.Context, metadata ma
 		err := r53.NewFromPassableResource(p, ctx, metadata)
 		return r53, err
 	case SERVICE_AWS_CLOUDFRONT:
-		cf := &AWSCloudFrontDistribution{}
+		cf := &AWSCloudFrontDistributionHijackableResource{}
 		err := cf.NewFromPassableResource(p, ctx, metadata)
 		return cf, err
 	default:
@@ -183,7 +183,7 @@ func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, me
 			return resource, errors.New("unable to parse evetName from map")
 		}
 	case "aws.cloudfront":
-		resource = &AWSCloudFrontDistribution{}
+		resource = &AWSCloudFrontDistributionHijackableResource{}
 		resourceErr := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, resourceErr
 	default:

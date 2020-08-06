@@ -49,14 +49,22 @@
                                 "Next": "Update DNS Hijack Resource Graph"
                             },
                             {
-                                "And": [
+                                "Or": [
+                                    {
+                                        "And": [
+                                            {
+                                                "Variable": "$.Resource.EventName",
+                                                "StringEquals": "ChangeResourceRecordSets"
+                                            }, 
+                                            {
+                                                "Variable": "$.Resource.Action",
+                                                "StringEquals": "UPSERT"
+                                            }
+                                        ]
+                                    },
                                     {
                                         "Variable": "$.Resource.EventName",
-                                        "StringEquals": "ChangeResourceRecordSets"
-                                    }, 
-                                    {
-                                        "Variable": "$.Resource.Action",
-                                        "StringEquals": "UPSERT"
+                                        "StringEquals": "UpdateDistribution"
                                     }
                                 ],
                                 "Next": "Track and Analyze for Hijack"

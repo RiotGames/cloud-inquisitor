@@ -10,7 +10,8 @@
             "cloudfront.amazonaws.com"
         ],
         "eventName": [
-            "CreateDistribution"
+            "CreateDistribution",
+            "UpdateDistribution"
         ]
     }
 }
