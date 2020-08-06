@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
+	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 	"github.com/aws/aws-lambda-go/events"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
@@ -44,7 +44,7 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passable
 				Metadata: record.GetLogger().GetMetadata(),
 			})
 		}
-	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE:
+	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE, cloudinquisitor.SERVICE_AWS_CLOUDFRONT:
 		passableResources = append(passableResources, cloudinquisitor.PassableResource{
 			Resource: resource,
 			Type:     resource.GetType(),

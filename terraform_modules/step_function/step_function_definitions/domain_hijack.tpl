@@ -40,6 +40,10 @@
                                                 "StringEquals": "CREATE"
                                             }
                                         ]
+                                    },
+                                    {
+                                        "Variable": "$.Resource.EventName",
+                                        "StringEquals": "CreateDistribution"
                                     }
                                 ],
                                 "Next": "Update DNS Hijack Resource Graph"

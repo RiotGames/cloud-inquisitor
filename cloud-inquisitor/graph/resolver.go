@@ -90,8 +90,12 @@ func CreateTables() error {
 		db.CreateTable(&model.Value{})
 	}
 
-	if err != nil {
-		return err
+	if !db.HasTable(&model.Distribution{}) {
+		db.CreateTable(&model.Distribution{})
+	}
+
+	if !db.HasTable(&model.Origin{}) {
+		db.CreateTable(&model.Origin{})
 	}
 
 	return nil
@@ -112,6 +116,34 @@ func DropTables() error {
 		&model.Zone{},
 		&model.Record{},
 		&model.Value{},
+		&model.Distribution{},
+		&model.Origin{},
+	).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func MigrateTables() error {
+	db, err := NewDBConnection()
+	if err != nil {
+		if db != nil {
+			db.Close()
+		}
+		return err
+	}
+	defer db.Close()
+
+	err = db.AutoMigrate(
+		&model.Account{},
+		&model.Zone{},
+		&model.Record{},
+		&model.Value{},
+		&model.Distribution{},
+		&model.Origin{},
 	).Error
 
 	if err != nil {
