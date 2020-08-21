@@ -39,7 +39,7 @@ Current supported remediation actions are:
 
 Example usage of terraform module:
 
-```terraform
+```hcl
 locals {
   ec2_rule = <<RuleOne
       {
@@ -82,7 +82,7 @@ module "us-west-2" {
 
     step_function_lambda_paths = {
         "hello_world_greeter": {
-            "file": abspath("./builds/greeter"),
+            "file": "greeter",
             "handler": "greeter"
         }
     }
@@ -97,7 +97,7 @@ The map *step_function_lambda_paths* allows some dynamic step function variables
 ```json
 {
     "step_function_lambda_name": {
-        "file": "path to lambda binary",
+        "file": "name of binary/handler to run",
         "handler": "name of binary/handler to run"
     }
 }
@@ -279,16 +279,20 @@ module "us-west-2" {
     step_function_tag_auditor_remove_seconds = 40
     step_function_lambda_paths = {
         "tag_auditor_init": {
-			"lambda": "resource_initializer"
+			"lambda": "resource_initializer",
+            "handler": "resource_initializer"
         },
         "tag_auditor_notify": {
-			"lambda": "tag_auditor"
+			"lambda": "tag_auditor",
+            "handler": "tag_auditor"
         },
         "tag_auditor_prevent": {
-			"lambda": "tag_auditor"
+			"lambda": "tag_auditor",
+            "handler": "tag_auditor"
         },
         "tag_auditor_remove": {
-			"lambda": "tag_auditor"
+			"lambda": "tag_auditor",
+            "handler": "tag_auditor"
         }
     }
 
