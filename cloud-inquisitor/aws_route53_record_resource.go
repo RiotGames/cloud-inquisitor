@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
+	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	"github.com/aws/aws-lambda-go/events"
@@ -391,7 +392,10 @@ func (r *AWSRoute53Record) RefreshState() error {
 					"aws-route53-call": "ListResourceRecordSets",
 				}).Debugf("record set: %#v", *recordSet)
 
-				if *recordSet.Name == r.RecordName {
+				// aws events do no format record names properly
+				// users do not need to end the domain with a "." and the API call provides the trailing "."
+				// for record names
+				if *recordSet.Name == r.RecordName || strings.HasPrefix(*recordSet.Name, r.RecordName) {
 					matchingRecordSet = recordSet
 					return false // immediately exits loop and func/API call
 				}
