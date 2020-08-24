@@ -42,9 +42,6 @@ $(AUDITORS): build_dir
 build_cli: generate
 	go build -o ./cinqctl cmd/*.go
 
-generate:
-	cd cloud-inquisitor/graph && go run github.com/99designs/gqlgen generate
-
 deploy:
 	terraform apply
 

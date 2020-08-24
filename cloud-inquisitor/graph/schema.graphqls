@@ -3,6 +3,7 @@ type Account {
 	zones: [Zone!]!
 	zone(id: ID!): Zone!
 	records: [Record!]!
+	distributions: [Distribution!]!
 }
 
 type Zone {
@@ -24,6 +25,17 @@ type Value {
 	valueID: ID!
 }
 
+type Distribution {
+	distributionID: ID!
+	domain: String!
+	origins: [Origin!]!
+}
+
+type Origin {
+	originID: ID!
+	values: [Value!]!
+}
+
 type Query {
 	accounts: [Account!]!
 	account(id: ID!): Account!
@@ -36,4 +48,10 @@ type Query {
 	
 	values: [Value!]!
 	value(id: ID!): Value!
+
+	distributions: [Distribution!]!
+	distribution(id: ID!): Distribution!
+
+	origins: [Origin!]!
+	origin(id: ID!): Origin
 }

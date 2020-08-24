@@ -6,7 +6,7 @@ package graph
 import (
 	"context"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
+	generated1 "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	log "github.com/sirupsen/logrus"
 )
@@ -76,6 +76,59 @@ func (r *accountResolver) Records(ctx context.Context, obj *model.Account) ([]*m
 	}
 
 	return records, nil
+}
+
+func (r *accountResolver) Distributions(ctx context.Context, obj *model.Account) ([]*model.Distribution, error) {
+	log.Infof("account <%v> getting cloudfront distributions\n", obj.AccountID)
+	log.Debugf("%#v\n", *obj)
+	account := model.Account{AccountID: obj.AccountID}
+	err := r.DB.Where(&account).First(&account).Error
+	if err != nil {
+		return []*model.Distribution{}, nil
+	}
+
+	var distributions []*model.Distribution
+	err = r.DB.Model(&account).Association("DistributionRelation").Find(&distributions).Error
+	if err != nil {
+		return []*model.Distribution{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for idx, distro := range distributions {
+			log.Debugf("%v: account %v record %#v\n", idx, account.AccountID, *distro)
+		}
+	}
+
+	return distributions, nil
+}
+
+func (r *distributionResolver) Origins(ctx context.Context, obj *model.Distribution) ([]*model.Origin, error) {
+	log.Debugf("getting all origins for distribution %v\v", obj.DistributionID)
+	distro := model.Distribution{DistributionID: obj.DistributionID}
+	err := r.DB.Model(&model.Distribution{}).Where(&distro).First(&distro).Error
+	if err != nil {
+		return []*model.Origin{}, err
+	}
+
+	var origins []*model.Origin
+	err = r.DB.Model(&distro).Association("OriginRelation").Find(&origins).Error
+	if err != nil {
+		return []*model.Origin{}, err
+	}
+
+	return origins, nil
+}
+
+func (r *originResolver) Values(ctx context.Context, obj *model.Origin) ([]*model.Value, error) {
+	log.Debugf("getting all values for origin %v\n", obj.OriginID)
+
+	var values []*model.Value
+	err := r.DB.Where("origin_id = ?", obj.ID).Find(&values).Error
+	if err != nil {
+		return []*model.Value{}, err
+	}
+
+	return values, nil
 }
 
 func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) {
@@ -205,6 +258,57 @@ func (r *queryResolver) Value(ctx context.Context, id string) (*model.Value, err
 	return &value, nil
 }
 
+func (r *queryResolver) Distributions(ctx context.Context) ([]*model.Distribution, error) {
+	log.Info("getting all distributions")
+	var distributions []*model.Distribution
+	err := r.DB.Find(&distributions).Error
+	if err != nil {
+		return []*model.Distribution{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for idx, distro := range distributions {
+			log.Debugf("%v: cloudfront distro <%#v>\n", idx, *distro)
+		}
+	}
+
+	return distributions, nil
+}
+
+func (r *queryResolver) Distribution(ctx context.Context, id string) (*model.Distribution, error) {
+	log.Debugf("getting distribution with id: %v\n", id)
+	distro := model.Distribution{DistributionID: id}
+	err := r.DB.First(&distro, distro).Error
+	if err != nil {
+		return &model.Distribution{}, err
+	}
+
+	return &distro, nil
+}
+
+func (r *queryResolver) Origins(ctx context.Context) ([]*model.Origin, error) {
+	log.Debugln("getting all origins")
+	var origins []*model.Origin
+	err := r.DB.Model(&model.Origin{}).Find(&origins).Error
+	if err != nil {
+		return []*model.Origin{}, err
+	}
+
+	return origins, nil
+}
+
+func (r *queryResolver) Origin(ctx context.Context, id string) (*model.Origin, error) {
+	log.Debugf("getting origin with id: %v\n", id)
+
+	origin := model.Origin{OriginID: id}
+	err := r.DB.First(&origin, origin).Error
+	if err != nil {
+		return &model.Origin{}, err
+	}
+
+	return &origin, nil
+}
+
 func (r *recordResolver) Values(ctx context.Context, obj *model.Record) ([]*model.Value, error) {
 	log.Infof("record <%v> getting values\n", obj.RecordID)
 	log.Debugf("%#v\n", *obj)
@@ -266,19 +370,27 @@ func (r *zoneResolver) Record(ctx context.Context, obj *model.Zone, id string) (
 	return &record, nil
 }
 
-// Account returns generated.AccountResolver implementation.
-func (r *Resolver) Account() generated.AccountResolver { return &accountResolver{r} }
+// Account returns generated1.AccountResolver implementation.
+func (r *Resolver) Account() generated1.AccountResolver { return &accountResolver{r} }
 
-// Query returns generated.QueryResolver implementation.
-func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
+// Distribution returns generated1.DistributionResolver implementation.
+func (r *Resolver) Distribution() generated1.DistributionResolver { return &distributionResolver{r} }
 
-// Record returns generated.RecordResolver implementation.
-func (r *Resolver) Record() generated.RecordResolver { return &recordResolver{r} }
+// Origin returns generated1.OriginResolver implementation.
+func (r *Resolver) Origin() generated1.OriginResolver { return &originResolver{r} }
 
-// Zone returns generated.ZoneResolver implementation.
-func (r *Resolver) Zone() generated.ZoneResolver { return &zoneResolver{r} }
+// Query returns generated1.QueryResolver implementation.
+func (r *Resolver) Query() generated1.QueryResolver { return &queryResolver{r} }
+
+// Record returns generated1.RecordResolver implementation.
+func (r *Resolver) Record() generated1.RecordResolver { return &recordResolver{r} }
+
+// Zone returns generated1.ZoneResolver implementation.
+func (r *Resolver) Zone() generated1.ZoneResolver { return &zoneResolver{r} }
 
 type accountResolver struct{ *Resolver }
+type distributionResolver struct{ *Resolver }
+type originResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type recordResolver struct{ *Resolver }
 type zoneResolver struct{ *Resolver }

@@ -566,6 +566,25 @@ func (p PassableResource) GetHijackableResource(ctx context.Context, metadata ma
 func (p PassableResource) GetTaggableResource(ctx context.Context, metadata map[string]interface{}) (TaggableResource, error)
 ```
 
+As new subresources are added to the project, the intent is to keep heirarchical compositons. So when a new interface is introduces such as `HijackableResource` (see below), the idea is to create a new struct that inherits the `Resource` interface implementations. For example:
+
+```go
+type AWSCloudFrontDistributionResource struct {
+	AccountID      string
+	DistributionID string
+	DomainName     string
+	EventName      string
+	Origin         AWSCloudFrontOrigin
+	logger         *log.Logger
+}
+
+type AWSCloudFrontDistributionResource struct {
+	*AWSCloudFrontDistributionResource
+}
+```
+
+In this case, the `AWSCloudFrontDistributionResource` implements the `Resource` interface and `AWSCloudFrontDistributionResource` implemenents the `HijackableResource` interface. This allows for maximal code reuse while also allowing for different audited resources to provide different functionality without the base struct becoming a dumping ground.
+
 #### Hijackable Resource (DNS Hijacking)
 
 ##### Golang Interface
@@ -592,6 +611,9 @@ Current supported resources are:
 
   - Route53 RecordSets (tracked as individual records)
     - ChangeResourceRecordSets event
+
+  - CloudFront Distributions
+    - CreateDistribution
 
 *NOTE*: As of writing, only the create portions of the flow are functioning. All Resources listed above will also include the specific events listed unless all events which could lead to a hijack/takeover have been implemented.
 

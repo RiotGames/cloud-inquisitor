@@ -9,7 +9,7 @@ import (
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
+	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	"github.com/aws/aws-lambda-go/events"
@@ -229,14 +229,14 @@ func (r *AWSRoute53Zone) PublishState() error {
 
 	// get account
 	account := model.Account{AccountID: r.AccountID}
-	err = db.Where(&model.Account{}).Where(&account).FirstOrCreate(&account).Error
+	err = db.FirstOrCreate(&account, account).Error
 	if err != nil {
 		return err
 	}
 	r.GetLogger().WithFields(r.GetMetadata()).Debugf("found account: %#v", account)
 
-	zone := model.Zone{ZoneID: r.ZoneID}
-	err = db.Model(&model.Zone{}).Where("account_id = ?", account.ID).Where(&zone).FirstOrInit(&zone).Error
+	zone := model.Zone{ZoneID: r.ZoneID, AccountID: account.ID}
+	err = db.FirstOrCreate(&zone, zone).Error
 	if err != nil {
 		return err
 	}

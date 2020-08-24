@@ -458,14 +458,14 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 
 	// get account
 	account := model.Account{AccountID: r.AccountID}
-	err = db.Model(&model.Account{}).Where(&account).FirstOrCreate(&account).Error
+	err = db.FirstOrCreate(&account, account).Error
 	if err != nil {
 		return err
 	}
 
 	// get zone with proper account.ID
-	zone := model.Zone{ZoneID: r.ZoneID}
-	err = db.Model(&model.Zone{}).Where("account_id = ?", account.ID).Where(&zone).FirstOrInit(&zone).Error
+	zone := model.Zone{ZoneID: r.ZoneID, AccountID: account.ID}
+	err = db.FirstOrCreate(&zone, zone).Error
 	if err != nil {
 		return err
 	}
@@ -477,8 +477,8 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 	}
 
 	// get record
-	record := model.Record{RecordID: r.RecordName}
-	err = db.Model(&model.Record{}).Where("account_id = ?", account.ID).Where("zone_id = ?", zone.ID).Where("record_id = ?", r.RecordName).FirstOrInit(&record).Error
+	record := model.Record{RecordID: r.RecordName, AccountID: account.ID, ZoneID: zone.ID}
+	err = db.FirstOrCreate(&record, record).Error
 	if record.RecordType != r.RecordType || record.Alias != r.Aliased {
 		record.RecordType = r.RecordType
 		record.Alias = r.Aliased
@@ -502,8 +502,8 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 	for _, rawValue := range r.RecordValues {
 		r.logger.Debugf("looking for value: %v", rawValue)
 		// get each value
-		value := model.Value{ValueID: rawValue}
-		err = db.Model(&model.Value{}).Where("record_id = ?", record.ID).Where("value_id = ?", value.ValueID).FirstOrInit(&value).Error
+		value := model.Value{ValueID: rawValue, RecordID: record.ID}
+		err = db.FirstOrCreate(&value, value).Error
 		if err != nil {
 			return err
 		}
@@ -517,8 +517,8 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 	if r.Aliased {
 		r.logger.Debugf("looking for value: %v", r.Alias.RecordName)
 		// get each value
-		value := model.Value{ValueID: r.Alias.RecordName}
-		err = db.Model(&model.Value{}).Where("record_id = ?", record.ID).Where("value_id = ?", value.ValueID).FirstOrInit(&value).Error
+		value := model.Value{ValueID: r.Alias.RecordName, RecordID: record.ID}
+		err = db.FirstOrCreate(&value, value).Error
 		if err != nil {
 			return err
 		}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
+	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 	"github.com/aws/aws-lambda-go/events"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
@@ -17,10 +17,14 @@ type passableResourcesStruct struct {
 }
 
 func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passableResourcesStruct, error) {
-	resource, _ := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
+	resource, err := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,
 		"cloud-inquisitor-component": "hijack-initializer",
 	})
+
+	if err != nil {
+		return passableResourcesStruct{}, err
+	}
 
 	if resource.GetType() == cloudinquisitor.SERVICE_STUB && settings.GetString("stub_resources") != "enabled" {
 		return passableResourcesStruct{[]cloudinquisitor.PassableResource{
@@ -44,7 +48,7 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passable
 				Metadata: record.GetLogger().GetMetadata(),
 			})
 		}
-	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE:
+	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE, cloudinquisitor.SERVICE_AWS_CLOUDFRONT:
 		passableResources = append(passableResources, cloudinquisitor.PassableResource{
 			Resource: resource,
 			Type:     resource.GetType(),

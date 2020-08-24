@@ -1,0 +1,17 @@
+{
+    "source": [
+        "aws.cloudfront"
+    ],
+    "detail-type": [
+        "AWS API Call via CloudTrail"
+    ],
+    "detail": {
+        "eventSource": [
+            "cloudfront.amazonaws.com"
+        ],
+        "eventName": [
+            "CreateDistribution",
+            "UpdateDistribution"
+        ]
+    }
+}

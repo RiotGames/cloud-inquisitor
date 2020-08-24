@@ -30,6 +30,7 @@ const (
 	SERVICE_AWS_ROUTE53_ZONE       Service = "AWS_ROUTE53_ZONE"
 	SERVICE_AWS_ROUTE53_RECORD     Service = "AWS_ROUTE53_RECORD"
 	SERVICE_AWS_ROUTE53_RECORD_SET Service = "AWS_ROUTE53_RECORD_SET"
+	SERVICE_AWS_CLOUDFRONT         Service = "AWS_CLOUDFRONT"
 )
 
 // Resource is an interaface that vaugely describes a
@@ -118,6 +119,10 @@ func (p PassableResource) GetHijackableResource(ctx context.Context, metadata ma
 		r53 := &AWSRoute53Record{}
 		err := r53.NewFromPassableResource(p, ctx, metadata)
 		return r53, err
+	case SERVICE_AWS_CLOUDFRONT:
+		cf := &AWSCloudFrontDistributionHijackableResource{}
+		err := cf.NewFromPassableResource(p, ctx, metadata)
+		return cf, err
 	default:
 		return nil, errors.New("no matching resource for type " + p.Type)
 	}
@@ -177,7 +182,10 @@ func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, me
 			resource = &StubResource{}
 			return resource, errors.New("unable to parse evetName from map")
 		}
-
+	case "aws.cloudfront":
+		resource = &AWSCloudFrontDistributionHijackableResource{}
+		resourceErr := resource.NewFromEventBus(event, ctx, metadata)
+		return resource, resourceErr
 	default:
 		resource = &StubResource{}
 		err := resource.NewFromEventBus(event, ctx, metadata)
