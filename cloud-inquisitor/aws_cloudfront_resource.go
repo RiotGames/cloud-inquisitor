@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"reflect"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
@@ -29,24 +30,26 @@ type AWSCloudFrontOrigin struct {
 }
 
 type AWSCloudFrontDetail struct {
-	EventName        string `json:"eventName"`
-	ErrorCode        string `json:"errorCode"`
-	ErrorMessage     string `json:"errorMessage"`
-	ResponseElements struct {
-		Distribution struct {
-			ID                 string `json:"id"`
-			DomainName         string `json:"domainName"`
-			Status             string `json:"status"`
-			DistributionConfig struct {
-				Origins struct {
-					Items []struct {
-						DomainName string `json:"domainName"`
-						ID         string `json:"id"`
-					} `json:"items"`
-				} `json:"origins"`
-			} `json:"distributionConfig"`
-		} `json:"distribution"`
-	} `json:"responseElements"`
+	EventName        string                             `json:"eventName"`
+	ErrorCode        string                             `json:"errorCode"`
+	ErrorMessage     string                             `json:"errorMessage"`
+	ResponseElements AWSCloudFrontDetailResponseElement `json:"responseElements"`
+}
+
+type AWSCloudFrontDetailResponseElement struct {
+	Distribution struct {
+		ID                 string `json:"id"`
+		DomainName         string `json:"domainName"`
+		Status             string `json:"status"`
+		DistributionConfig struct {
+			Origins struct {
+				Items []struct {
+					DomainName string `json:"domainName"`
+					ID         string `json:"id"`
+				} `json:"items"`
+			} `json:"origins"`
+		} `json:"distributionConfig"`
+	} `json:"distribution"`
 }
 
 func (cf *AWSCloudFrontDistributionResource) RefreshState() error {
@@ -165,6 +168,10 @@ func (cf *AWSCloudFrontDistributionHijackableResource) NewFromEventBus(event eve
 
 	if cfDetails.ErrorCode != "" {
 		return errors.New(cfDetails.ErrorMessage)
+	}
+
+	if reflect.DeepEqual(cfDetails.ResponseElements, (AWSCloudFrontDetailResponseElement{})) {
+		return errors.New("response element of cloudfront distribution is missing")
 	}
 	cf.AccountID = event.AccountID
 	cf.DistributionID = cfDetails.ResponseElements.Distribution.ID

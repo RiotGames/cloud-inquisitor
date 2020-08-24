@@ -17,10 +17,14 @@ type passableResourcesStruct struct {
 }
 
 func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passableResourcesStruct, error) {
-	resource, _ := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
+	resource, err := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,
 		"cloud-inquisitor-component": "hijack-initializer",
 	})
+
+	if err != nil {
+		return passableResourcesStruct{}, err
+	}
 
 	if resource.GetType() == cloudinquisitor.SERVICE_STUB && settings.GetString("stub_resources") != "enabled" {
 		return passableResourcesStruct{[]cloudinquisitor.PassableResource{
