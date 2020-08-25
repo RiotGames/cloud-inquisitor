@@ -20,13 +20,13 @@ type AWSCloudFrontDistributionResource struct {
 	DistributionID string
 	DomainName     string
 	EventName      string
-	Origin         AWSCloudFrontOrigin
+	Origins        []AWSCloudFrontOrigin
 	logger         *log.Logger
 }
 
 type AWSCloudFrontOrigin struct {
-	ID      string
-	Domains []string
+	ID     string
+	Domain string
 }
 
 type AWSCloudFrontDetail struct {
@@ -106,7 +106,7 @@ func (cf *AWSCloudFrontDistributionResource) createDistributionEntries() error {
 	if distro.Domain != cf.DomainName {
 		cf.GetLogger().WithFields(cf.GetMetadata()).Debugf("saving cloudfront distro: %#v", distro)
 		distro.Domain = cf.DomainName
-		err = db.Model(&model.Distribution{}).Save(&distro).Error
+		err = db.Save(&distro).Error
 		if err != nil {
 			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
 			return err
@@ -114,22 +114,119 @@ func (cf *AWSCloudFrontDistributionResource) createDistributionEntries() error {
 	}
 
 	//write origins
-	origin := model.Origin{OriginID: cf.Origin.ID, DistributionID: distro.ID}
-	err = db.FirstOrCreate(&origin, origin).Error
-	if err != nil {
-		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
-		return err
-	}
-	cf.logger.WithFields(cf.GetMetadata()).Debugf("origin: %#v", origin)
+	for _, cfOrigin := range cf.Origins {
+		origin := model.Origin{
+			OriginID:       cfOrigin.ID,
+			Domain:         cfOrigin.Domain,
+			DistributionID: distro.ID,
+		}
 
-	for _, val := range cf.Origin.Domains {
-		value := model.Value{ValueID: val, OriginID: origin.ID}
-		err = db.FirstOrCreate(&value, value).Error
+		err = db.FirstOrCreate(&origin, origin).Error
 		if err != nil {
 			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
 			return err
 		}
-		cf.logger.WithFields(cf.GetMetadata()).Debugf("value: %#v", value)
+
+		cf.logger.WithFields(cf.GetMetadata()).Debugf("origin: %#v", origin)
+
+	}
+	return nil
+}
+
+func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
+	db, err := graph.NewDBConnection()
+	defer db.Close()
+	if err != nil {
+		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	// get account
+	account := model.Account{AccountID: cf.AccountID}
+	err = db.FirstOrCreate(&account, account).Error
+	if err != nil {
+		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+		return err
+	}
+	cf.logger.WithFields(cf.GetMetadata()).Debugf("account: %#v", account)
+
+	distro := model.Distribution{DistributionID: cf.DistributionID, Domain: cf.DomainName, AccountID: account.ID}
+	err = db.FirstOrCreate(&distro, distro).Error
+	if err != nil {
+		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+		return err
+	}
+	cf.logger.WithFields(cf.GetMetadata()).Debugf("distro: %#v", distro)
+
+	if distro.Domain != cf.DomainName {
+		cf.GetLogger().WithFields(cf.GetMetadata()).Debugf("saving cloudfront distro: %#v", distro)
+		distro.Domain = cf.DomainName
+		err = db.Model(&model.Distribution{}).Save(&distro).Error
+		if err != nil {
+			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+			return err
+		}
+	}
+
+	// get all current origins
+	var currentOrigins []model.Origin
+	err = db.Find(&currentOrigins, model.Origin{DistributionID: distro.ID}).Error
+	if err != nil {
+		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	currentOriginsMap := map[string]model.Origin{}
+	for _, origin := range currentOrigins {
+		currentOriginsMap[origin.OriginID] = origin
+	}
+
+	updateOriginsMap := map[string]model.Origin{}
+	for _, origin := range cf.Origins {
+		updateOriginsMap[origin.ID] = model.Origin{
+			DistributionID: distro.ID,
+			OriginID:       origin.ID,
+			Domain:         origin.Domain,
+		}
+	}
+
+	// origins to remove
+	removeOrigins := []model.Origin{}
+	// origins to add
+	addOrigns := []model.Origin{}
+
+	for originID, origin := range updateOriginsMap {
+		if _, ok := currentOriginsMap[originID]; ok {
+			// update origin is already in db/graph
+		} else {
+			// need to add origin as its not in graph
+			addOrigns = append(addOrigns, origin)
+		}
+	}
+
+	for originID, origin := range currentOriginsMap {
+		if _, ok := updateOriginsMap[originID]; ok {
+			// origin in graph is in update
+		} else {
+			// origin in graph is not in update
+			removeOrigins = append(removeOrigins, origin)
+		}
+	}
+
+	for _, origin := range addOrigns {
+		err := db.FirstOrCreate(&origin, origin).Error
+		if err != nil {
+			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+			return err
+		}
+	}
+
+	for _, origin := range removeOrigins {
+		err := db.Delete(&origin).Error
+		if err != nil {
+			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+			return err
+		}
 	}
 	return nil
 }
@@ -178,16 +275,15 @@ func (cf *AWSCloudFrontDistributionHijackableResource) NewFromEventBus(event eve
 	cf.DomainName = cfDetails.ResponseElements.Distribution.DomainName
 	cf.EventName = cfDetails.EventName
 
-	cfOrigin := AWSCloudFrontOrigin{
-		Domains: make([]string, len(cfDetails.ResponseElements.Distribution.DistributionConfig.Origins.Items)),
-	}
+	origins := make([]AWSCloudFrontOrigin, len(cfDetails.ResponseElements.Distribution.DistributionConfig.Origins.Items))
+
 	for idx, origin := range cfDetails.ResponseElements.Distribution.DistributionConfig.Origins.Items {
-		if idx == 0 {
-			cfOrigin.ID = origin.ID
+		origins[idx] = AWSCloudFrontOrigin{
+			ID:     origin.ID,
+			Domain: origin.DomainName,
 		}
-		cfOrigin.Domains[idx] = origin.DomainName
 	}
-	cf.Origin = cfOrigin
+	cf.Origins = origins
 
 	return nil
 }
@@ -236,6 +332,8 @@ func (cf *AWSCloudFrontDistributionHijackableResource) PublishState() error {
 	switch cf.EventName {
 	case "CreateDistribution":
 		return cf.createDistributionEntries()
+	case "UpdateDistribution":
+		return cf.updateDistributionEntries()
 	default:
 		cf.logger.WithFields(cf.GetMetadata()).Debugf("cloudfront distribution event %v unknown", cf.EventName)
 	}

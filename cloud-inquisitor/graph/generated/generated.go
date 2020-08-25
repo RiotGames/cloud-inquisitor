@@ -37,7 +37,6 @@ type Config struct {
 type ResolverRoot interface {
 	Account() AccountResolver
 	Distribution() DistributionResolver
-	Origin() OriginResolver
 	Query() QueryResolver
 	Record() RecordResolver
 	Zone() ZoneResolver
@@ -62,8 +61,8 @@ type ComplexityRoot struct {
 	}
 
 	Origin struct {
+		Domain   func(childComplexity int) int
 		OriginID func(childComplexity int) int
-		Values   func(childComplexity int) int
 	}
 
 	Query struct {
@@ -109,9 +108,6 @@ type AccountResolver interface {
 }
 type DistributionResolver interface {
 	Origins(ctx context.Context, obj *model.Distribution) ([]*model.Origin, error)
-}
-type OriginResolver interface {
-	Values(ctx context.Context, obj *model.Origin) ([]*model.Value, error)
 }
 type QueryResolver interface {
 	Accounts(ctx context.Context) ([]*model.Account, error)
@@ -211,19 +207,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Distribution.Origins(childComplexity), true
 
+	case "Origin.domain":
+		if e.complexity.Origin.Domain == nil {
+			break
+		}
+
+		return e.complexity.Origin.Domain(childComplexity), true
+
 	case "Origin.originID":
 		if e.complexity.Origin.OriginID == nil {
 			break
 		}
 
 		return e.complexity.Origin.OriginID(childComplexity), true
-
-	case "Origin.values":
-		if e.complexity.Origin.Values == nil {
-			break
-		}
-
-		return e.complexity.Origin.Values(childComplexity), true
 
 	case "Query.account":
 		if e.complexity.Query.Account == nil {
@@ -499,7 +495,7 @@ type Distribution {
 
 type Origin {
 	originID: ID!
-	values: [Value!]!
+	domain: String!
 }
 
 type Query {
@@ -1003,7 +999,7 @@ func (ec *executionContext) _Origin_originID(ctx context.Context, field graphql.
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Origin_values(ctx context.Context, field graphql.CollectedField, obj *model.Origin) (ret graphql.Marshaler) {
+func (ec *executionContext) _Origin_domain(ctx context.Context, field graphql.CollectedField, obj *model.Origin) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1014,13 +1010,13 @@ func (ec *executionContext) _Origin_values(ctx context.Context, field graphql.Co
 		Object:   "Origin",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Origin().Values(rctx, obj)
+		return obj.Domain, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1032,9 +1028,9 @@ func (ec *executionContext) _Origin_values(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Value)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNValue2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValueᚄ(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_accounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3106,22 +3102,13 @@ func (ec *executionContext) _Origin(ctx context.Context, sel ast.SelectionSet, o
 		case "originID":
 			out.Values[i] = ec._Origin_originID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
-		case "values":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Origin_values(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+		case "domain":
+			out.Values[i] = ec._Origin_domain(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

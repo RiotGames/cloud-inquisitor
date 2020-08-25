@@ -33,7 +33,7 @@ type Distribution {
 
 type Origin {
 	originID: ID!
-	values: [Value!]!
+	domain: String!
 }
 
 type Query {
