@@ -36,6 +36,11 @@ type Origin {
 	domain: String!
 }
 
+type OriginGroup {
+	groupID: ID!
+	origins: [Value!]!
+}
+
 type Query {
 	accounts: [Account!]!
 	account(id: ID!): Account!

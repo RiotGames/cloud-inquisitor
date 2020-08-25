@@ -21,12 +21,18 @@ type AWSCloudFrontDistributionResource struct {
 	DomainName     string
 	EventName      string
 	Origins        []AWSCloudFrontOrigin
+	OriginGroups   []AWSCloudFrontOriginGroup
 	logger         *log.Logger
 }
 
 type AWSCloudFrontOrigin struct {
 	ID     string
 	Domain string
+}
+
+type AWSCloudFrontOriginGroup struct {
+	ID      string
+	Domains []string
 }
 
 type AWSCloudFrontDetail struct {
@@ -48,6 +54,16 @@ type AWSCloudFrontDetailResponseElement struct {
 					ID         string `json:"id"`
 				} `json:"items"`
 			} `json:"origins"`
+			OriginGroups struct {
+				Items []struct {
+					ID      string `json:"id"`
+					Members struct {
+						Items []struct {
+							OriginID string `json:"originId"`
+						} `json:"items"`
+					} `json:"members"`
+				} `json:"items"`
+			} `json:"originGroups"`
 		} `json:"distributionConfig"`
 	} `json:"distribution"`
 }
@@ -129,6 +145,37 @@ func (cf *AWSCloudFrontDistributionResource) createDistributionEntries() error {
 
 		cf.logger.WithFields(cf.GetMetadata()).Debugf("origin: %#v", origin)
 
+	}
+
+	//write origin groups
+	for _, cfGroup := range cf.OriginGroups {
+		group := model.OriginGroup{
+			GroupID:        cfGroup.ID,
+			DistributionID: distro.ID,
+		}
+
+		err = db.FirstOrCreate(&group, group).Error
+		if err != nil {
+			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+			return err
+		}
+
+		cf.logger.WithFields(cf.GetMetadata()).Debugf("origin group: %#v", group)
+
+		for _, groupDomain := range cfGroup.Domains {
+			domain := model.Value{
+				ValueID:       groupDomain,
+				OriginGroupID: group.ID,
+			}
+
+			err = db.FirstOrCreate(&domain, domain).Error
+			if err != nil {
+				cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+				return err
+			}
+
+			cf.logger.WithFields(cf.GetMetadata()).Debugf("origin group domain: %#v", domain)
+		}
 	}
 	return nil
 }
@@ -228,6 +275,56 @@ func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 			return err
 		}
 	}
+
+	//get all current origin groups
+	var currentOriginGroups []model.OriginGroup
+	err = db.Model(model.OriginGroup).Preload("Origins").Find(&currentOriginGroups, model.OriginGroup{DistributionID: distro.ID}).Error
+	if err != nil {
+		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	currentOriginGroupMap := map[string]model.OriginGroup{}
+	for _, group := range currentOriginGroups {
+		currentOriginGroupMap[group.GroupID] = group
+	}
+	updateOriginGroupMap := map[string]model.OriginGroup{}
+	for _, group := range cf.OriginGroups {
+
+		groupModel := model.OriginGroup{
+			GroupID: group.ID,
+			Origins: make([]model.Value, len(group.Domains)),
+		}
+
+		for idx, domain := range group.Domains {
+			groupModel.Origins[idx] = domain
+		}
+
+		updateOriginGroupMap[group.ID] = groupModel
+
+	}
+
+	removeOriginGroups := []model.OriginGroup{}
+	addOriginGroups := []model.OriginGroup{}
+
+	for groupID, group := range updateOriginGroupMap {
+		if _, ok := currentOriginGroupMap[groupID]; ok {
+			// group already in graph
+		} else {
+			addOriginGroups = append(addOriginGroups, group)
+		}
+	}
+
+	for groupID, group := range currentOriginGroupMap {
+		if _, ok := updateOriginGroupMap[groupID]; ok {
+			// group is still in graph
+		} else {
+			//group has been removed
+			removeOriginGroups = append(removeOriginGroups, group)
+		}
+	}
+
+	for _, group := 
 	return nil
 }
 
@@ -284,6 +381,20 @@ func (cf *AWSCloudFrontDistributionHijackableResource) NewFromEventBus(event eve
 		}
 	}
 	cf.Origins = origins
+
+	groups := make([]AWSCloudFrontOriginGroup, len(cfDetails.ResponseElements.Distribution.DistributionConfig.OriginGroups.Items))
+	for idx, group := range cfDetails.ResponseElements.Distribution.DistributionConfig.OriginGroups.Items {
+		groups[idx] = AWSCloudFrontOriginGroup{
+			ID: group.ID,
+		}
+
+		domains := make([]string, len(group.Members.Items))
+		for dIdx, domain := range group.Members.Items {
+			domains[dIdx] = domain.OriginID
+		}
+
+		groups[idx].Domains = domains
+	}
 
 	return nil
 }

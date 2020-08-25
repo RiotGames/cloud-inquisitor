@@ -65,6 +65,11 @@ type ComplexityRoot struct {
 		OriginID func(childComplexity int) int
 	}
 
+	OriginGroup struct {
+		GroupID func(childComplexity int) int
+		Origins func(childComplexity int) int
+	}
+
 	Query struct {
 		Account       func(childComplexity int, id string) int
 		Accounts      func(childComplexity int) int
@@ -220,6 +225,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Origin.OriginID(childComplexity), true
+
+	case "OriginGroup.groupID":
+		if e.complexity.OriginGroup.GroupID == nil {
+			break
+		}
+
+		return e.complexity.OriginGroup.GroupID(childComplexity), true
+
+	case "OriginGroup.origins":
+		if e.complexity.OriginGroup.Origins == nil {
+			break
+		}
+
+		return e.complexity.OriginGroup.Origins(childComplexity), true
 
 	case "Query.account":
 		if e.complexity.Query.Account == nil {
@@ -496,6 +515,11 @@ type Distribution {
 type Origin {
 	originID: ID!
 	domain: String!
+}
+
+type OriginGroup {
+	groupID: ID!
+	origins: [Value!]!
 }
 
 type Query {
@@ -1031,6 +1055,74 @@ func (ec *executionContext) _Origin_domain(ctx context.Context, field graphql.Co
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OriginGroup_groupID(ctx context.Context, field graphql.CollectedField, obj *model.OriginGroup) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OriginGroup",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GroupID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OriginGroup_origins(ctx context.Context, field graphql.CollectedField, obj *model.OriginGroup) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OriginGroup",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Origins, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.Value)
+	fc.Result = res
+	return ec.marshalNValue2ᚕgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValueᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_accounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3120,6 +3212,38 @@ func (ec *executionContext) _Origin(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var originGroupImplementors = []string{"OriginGroup"}
+
+func (ec *executionContext) _OriginGroup(ctx context.Context, sel ast.SelectionSet, obj *model.OriginGroup) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, originGroupImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OriginGroup")
+		case "groupID":
+			out.Values[i] = ec._OriginGroup_groupID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "origins":
+			out.Values[i] = ec._OriginGroup_origins(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3951,6 +4075,43 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 
 func (ec *executionContext) marshalNValue2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValue(ctx context.Context, sel ast.SelectionSet, v model.Value) graphql.Marshaler {
 	return ec._Value(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNValue2ᚕgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValueᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Value) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNValue2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValue(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNValue2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Value) graphql.Marshaler {
