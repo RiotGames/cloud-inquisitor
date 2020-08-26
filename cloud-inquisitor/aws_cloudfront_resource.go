@@ -324,7 +324,29 @@ func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 		}
 	}
 
-	for _, group := 
+	for _, group := range addOriginGroups {
+		err = db.Preload("Origins").FirstOrCreate(&group, group).Error
+		if err != nil {
+			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+			return err
+		}
+	}
+
+	for _, group := range removeOriginGroups {
+		for _, value := range group.Origins {
+			err = db.Delete(&value).Error
+			if err != nil {
+				cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+				return err
+			}
+		}
+
+		err = db.Delete(&group).Error
+		if err != nil {
+			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+			return err
+		}
+	}
 	return nil
 }
 
