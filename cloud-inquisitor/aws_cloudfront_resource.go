@@ -222,6 +222,7 @@ func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
 		return err
 	}
+	cf.logger.WithFields(cf.GetMetadata()).Debugf("origins: %#v", currentOrigins)
 
 	currentOriginsMap := map[string]model.Origin{}
 	for _, origin := range currentOrigins {
@@ -250,6 +251,7 @@ func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 			addOrigns = append(addOrigns, origin)
 		}
 	}
+	cf.logger.WithFields(cf.GetMetadata()).Debugf("origins to add: %#v", addOrigns)
 
 	for originID, origin := range currentOriginsMap {
 		if _, ok := updateOriginsMap[originID]; ok {
@@ -259,6 +261,7 @@ func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 			removeOrigins = append(removeOrigins, origin)
 		}
 	}
+	cf.logger.WithFields(cf.GetMetadata()).Debugf("origins to remove: %#v", removeOrigins)
 
 	for _, origin := range addOrigns {
 		err := db.FirstOrCreate(&origin, origin).Error
@@ -278,7 +281,7 @@ func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 
 	//get all current origin groups
 	var currentOriginGroups []model.OriginGroup
-	err = db.Model(model.OriginGroup).Preload("Origins").Find(&currentOriginGroups, model.OriginGroup{DistributionID: distro.ID}).Error
+	err = db.Model(model.OriginGroup{}).Preload("Origins").Find(&currentOriginGroups, model.OriginGroup{DistributionID: distro.ID}).Error
 	if err != nil {
 		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
 		return err
@@ -292,12 +295,15 @@ func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 	for _, group := range cf.OriginGroups {
 
 		groupModel := model.OriginGroup{
-			GroupID: group.ID,
-			Origins: make([]model.Value, len(group.Domains)),
+			DistributionID: distro.ID,
+			GroupID:        group.ID,
+			Origins:        make([]model.Value, len(group.Domains)),
 		}
 
 		for idx, domain := range group.Domains {
-			groupModel.Origins[idx] = domain
+			groupModel.Origins[idx] = model.Value{
+				ValueID: domain,
+			}
 		}
 
 		updateOriginGroupMap[group.ID] = groupModel
@@ -314,6 +320,7 @@ func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 			addOriginGroups = append(addOriginGroups, group)
 		}
 	}
+	cf.logger.WithFields(cf.GetMetadata()).Debugf("origin groups to add: %#v", addOriginGroups)
 
 	for groupID, group := range currentOriginGroupMap {
 		if _, ok := updateOriginGroupMap[groupID]; ok {
@@ -323,12 +330,30 @@ func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 			removeOriginGroups = append(removeOriginGroups, group)
 		}
 	}
+	cf.logger.WithFields(cf.GetMetadata()).Debugf("origin groups to remove: %#v", removeOriginGroups)
 
 	for _, group := range addOriginGroups {
-		err = db.Preload("Origins").FirstOrCreate(&group, group).Error
+		groupModel := model.OriginGroup{
+			DistributionID: distro.ID,
+			GroupID:        group.GroupID,
+		}
+		err = db.FirstOrCreate(&groupModel, groupModel).Error
 		if err != nil {
 			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
 			return err
+		}
+
+		for _, origin := range group.Origins {
+			originVal := model.Value{
+				ValueID:       origin.ValueID,
+				OriginGroupID: groupModel.ID,
+			}
+
+			err = db.FirstOrCreate(&originVal, originVal).Error
+			if err != nil {
+				cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+				return err
+			}
 		}
 	}
 
@@ -389,6 +414,9 @@ func (cf *AWSCloudFrontDistributionHijackableResource) NewFromEventBus(event eve
 	if reflect.DeepEqual(cfDetails.ResponseElements, (AWSCloudFrontDetailResponseElement{})) {
 		return errors.New("response element of cloudfront distribution is missing")
 	}
+
+	cf.logger.WithFields(cf.GetMetadata()).Debugf("aws event detail response elements: %#v", cfDetails.ResponseElements)
+
 	cf.AccountID = event.AccountID
 	cf.DistributionID = cfDetails.ResponseElements.Distribution.ID
 	cf.DomainName = cfDetails.ResponseElements.Distribution.DomainName
@@ -417,6 +445,8 @@ func (cf *AWSCloudFrontDistributionHijackableResource) NewFromEventBus(event eve
 
 		groups[idx].Domains = domains
 	}
+
+	cf.OriginGroups = groups
 
 	return nil
 }

@@ -97,6 +97,9 @@ func CreateTables() error {
 	if !db.HasTable(&model.Origin{}) {
 		db.CreateTable(&model.Origin{})
 	}
+	if !db.HasTable(&model.OriginGroup{}) {
+		db.CreateTable(&model.OriginGroup{})
+	}
 
 	return nil
 }
@@ -118,6 +121,7 @@ func DropTables() error {
 		&model.Value{},
 		&model.Distribution{},
 		&model.Origin{},
+		&model.OriginGroup{},
 	).Error
 
 	if err != nil {
@@ -144,6 +148,7 @@ func MigrateTables() error {
 		&model.Value{},
 		&model.Distribution{},
 		&model.Origin{},
+		&model.OriginGroup{},
 	).Error
 
 	if err != nil {

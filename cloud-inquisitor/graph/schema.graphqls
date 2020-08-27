@@ -29,6 +29,7 @@ type Distribution {
 	distributionID: ID!
 	domain: String!
 	origins: [Origin!]!
+	originGroups: [OriginGroup!]!
 }
 
 type Origin {

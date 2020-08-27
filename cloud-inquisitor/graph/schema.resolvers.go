@@ -119,6 +119,23 @@ func (r *distributionResolver) Origins(ctx context.Context, obj *model.Distribut
 	return origins, nil
 }
 
+func (r *distributionResolver) OriginGroups(ctx context.Context, obj *model.Distribution) ([]*model.OriginGroup, error) {
+	log.Debugf("getting all origin groups for distribution: %s", obj.DistributionID)
+	var originGroups []*model.OriginGroup
+	err := r.DB.Preload("Origins").Find(&originGroups, model.OriginGroup{DistributionID: obj.ID}).Error
+	if err != nil {
+		return []*model.OriginGroup{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for idx, group := range originGroups {
+			log.Debugf("%v: origin group %#v\n", idx, *group)
+		}
+	}
+
+	return originGroups, nil
+}
+
 func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) {
 	log.Debug("getting all accounts")
 	var accounts []*model.Account
