@@ -119,16 +119,21 @@ func (r *distributionResolver) Origins(ctx context.Context, obj *model.Distribut
 	return origins, nil
 }
 
-func (r *originResolver) Values(ctx context.Context, obj *model.Origin) ([]*model.Value, error) {
-	log.Debugf("getting all values for origin %v\n", obj.OriginID)
-
-	var values []*model.Value
-	err := r.DB.Where("origin_id = ?", obj.ID).Find(&values).Error
+func (r *distributionResolver) OriginGroups(ctx context.Context, obj *model.Distribution) ([]*model.OriginGroup, error) {
+	log.Debugf("getting all origin groups for distribution: %s", obj.DistributionID)
+	var originGroups []*model.OriginGroup
+	err := r.DB.Preload("Origins").Find(&originGroups, model.OriginGroup{DistributionID: obj.ID}).Error
 	if err != nil {
-		return []*model.Value{}, err
+		return []*model.OriginGroup{}, err
 	}
 
-	return values, nil
+	if log.GetLevel() == log.DebugLevel {
+		for idx, group := range originGroups {
+			log.Debugf("%v: origin group %#v\n", idx, *group)
+		}
+	}
+
+	return originGroups, nil
 }
 
 func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) {
@@ -376,9 +381,6 @@ func (r *Resolver) Account() generated1.AccountResolver { return &accountResolve
 // Distribution returns generated1.DistributionResolver implementation.
 func (r *Resolver) Distribution() generated1.DistributionResolver { return &distributionResolver{r} }
 
-// Origin returns generated1.OriginResolver implementation.
-func (r *Resolver) Origin() generated1.OriginResolver { return &originResolver{r} }
-
 // Query returns generated1.QueryResolver implementation.
 func (r *Resolver) Query() generated1.QueryResolver { return &queryResolver{r} }
 
@@ -390,7 +392,6 @@ func (r *Resolver) Zone() generated1.ZoneResolver { return &zoneResolver{r} }
 
 type accountResolver struct{ *Resolver }
 type distributionResolver struct{ *Resolver }
-type originResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type recordResolver struct{ *Resolver }
 type zoneResolver struct{ *Resolver }

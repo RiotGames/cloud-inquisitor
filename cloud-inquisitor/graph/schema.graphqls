@@ -29,11 +29,17 @@ type Distribution {
 	distributionID: ID!
 	domain: String!
 	origins: [Origin!]!
+	originGroups: [OriginGroup!]!
 }
 
 type Origin {
 	originID: ID!
-	values: [Value!]!
+	domain: String!
+}
+
+type OriginGroup {
+	groupID: ID!
+	origins: [Value!]!
 }
 
 type Query {

@@ -6,7 +6,8 @@ import (
 
 type Value struct {
 	gorm.Model
-	ValueID  string `json:"valueID"`
-	RecordID uint
-	OriginID uint
+	ValueID       string `json:"valueID"`
+	RecordID      uint
+	OriginID      uint
+	OriginGroupID uint
 }
