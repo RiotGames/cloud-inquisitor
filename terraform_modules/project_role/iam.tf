@@ -93,7 +93,8 @@ data "aws_iam_policy_document" "dns_hijack_permissions" {
       "route53:ListHostedZonesByName",
       "route53:GetHostedZone",
       "route53:ListResourceRecordSets",
-      "route53:GetChange"
+      "route53:GetChange",
+      "elasticbeanstalk:DescribeEnvironments"
     ]
 
     resources = [

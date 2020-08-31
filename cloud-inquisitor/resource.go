@@ -31,6 +31,7 @@ const (
 	SERVICE_AWS_ROUTE53_RECORD     Service = "AWS_ROUTE53_RECORD"
 	SERVICE_AWS_ROUTE53_RECORD_SET Service = "AWS_ROUTE53_RECORD_SET"
 	SERVICE_AWS_CLOUDFRONT         Service = "AWS_CLOUDFRONT"
+	SERVICE_AWS_ELASTICBEANSTALK   Service = "AWS_ELASTICBEANSTALK"
 )
 
 // Resource is an interaface that vaugely describes a
@@ -123,6 +124,10 @@ func (p PassableResource) GetHijackableResource(ctx context.Context, metadata ma
 		cf := &AWSCloudFrontDistributionHijackableResource{}
 		err := cf.NewFromPassableResource(p, ctx, metadata)
 		return cf, err
+	case SERVICE_AWS_ELASTICBEANSTALK:
+		eb := &AWSElasticBeanstalkEnvironmentHijackableResource{}
+		err := eb.NewFromPassableResource(p, ctx, metadata)
+		return eb, err
 	default:
 		return nil, errors.New("no matching resource for type " + p.Type)
 	}
@@ -186,6 +191,26 @@ func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, me
 		resource = &AWSCloudFrontDistributionHijackableResource{}
 		resourceErr := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, resourceErr
+	case "aws.elasticbeanstalk":
+		detailMap := map[string]interface{}{}
+		err := json.Unmarshal(event.Detail, &detailMap)
+		if err != nil {
+			return resource, err
+		}
+		if eventName, ok := detailMap["eventName"]; ok {
+			switch eventName {
+			case "TerminateEnvironment":
+				resource = &AWSElasticBeanstalkEnvironmentHijackableResource{}
+				resourceErr := resource.NewFromEventBus(event, ctx, metadata)
+				return resource, resourceErr
+			default:
+				resource = &StubResource{}
+				return resource, errors.New("unknown route53 eventName")
+			}
+		} else {
+			resource = &StubResource{}
+			return resource, errors.New("unable to parse evetName from map")
+		}
 	default:
 		resource = &StubResource{}
 		err := resource.NewFromEventBus(event, ctx, metadata)
