@@ -119,11 +119,11 @@ AWS Step Functions allow for a state machine to be used to monitor and remediate
 
 Current Step Functions include:
 
-  - _Hello World ("hello_world")_
+##### _Hello World ("hello_world")_
 
     The Hello World Step Function is a two stage state machine that prints out "hello" and "world". This is an easy to use function for ensuring event triggers are working properly.
 
-  - _AWS Resource Tag Auditor ("tag_auditor")_
+##### _AWS Resource Tag Auditor ("tag_auditor")_
 
     The AWS Resource Tag Auditor is a multi-stage state machine that notifies, prevents, and removes resources that do not have the mandated key-pair values.
 
@@ -148,7 +148,7 @@ Current Step Functions include:
 
     A diagram including variable names can be found [here](./docs/tag_auditor.png)
 
-  - _AWS DNS Hijack Auditor ("dns_hijack")_
+##### _AWS DNS Hijack Auditor ("dns_hijack")_
 
     The DNS Hijack auditor is a mutlti-stage workflow that creates a graph of all risky resources as they are created and updated. As resources, both DNS and resources that can be a record alias, are deleted; they are used to query the graph and determine if they would result in a possible hijack/takeover.
 
