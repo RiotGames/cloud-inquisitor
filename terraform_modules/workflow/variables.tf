@@ -35,7 +35,7 @@ variable "step_function_lambda_paths" {
 
 variable "event_rules" {
     type = list(string)
-    desciption = "list of selected patterns to use"
+    description = "list of selected patterns to use"
 }
 
 variable "step_function_tag_auditor_init_seconds" {
