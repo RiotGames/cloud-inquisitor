@@ -11,6 +11,7 @@ module "step_function" {
     workflow_subnets      = var.workflow_subnets
     workflow_egress_cidrs = var.workflow_egress_cidrs
 
+    step_function_binary_path   = var.binary_path
     step_function_selector      = var.step_function_selector
     step_function_lambda_paths  = var.step_function_lambda_paths
 

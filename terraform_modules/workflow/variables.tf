@@ -27,6 +27,11 @@ variable "step_function_selector" {
     description = "step function to run"
 }
 
+variable "binary_path" {
+    type = string
+    description = "path to binaries used by the step function"
+}
+
 variable "step_function_lambda_paths" {
     type = map(map(string))
     description = "map(string) of lambda name to lambda binary path"
