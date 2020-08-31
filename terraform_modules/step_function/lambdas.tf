@@ -5,13 +5,18 @@ locals {
     }
 }
 
+resource "local_file" "stanintentionallyblankding" {
+	content = ""
+	filename = "intentionallyblank"
+}
+
 resource "aws_lambda_function" "step_function_lambdas" {
 	for_each         = var.step_function_lambda_paths
-	filename         = abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))
+	filename         = fileexists(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) ? abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"])) : local_file.filename
 	function_name    = "${var.environment}_${var.name}_${each.key}_lambda_${var.region}_${var.version_str}"
 	handler          = each.value["handler"]
 	role             = var.project_role
-	source_code_hash = filebase64sha256(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) 
+	source_code_hash = fileexists(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) ? filebase64sha256(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) : filebase64sha256(local_file.filename)
 	runtime          = "go1.x"
 	timeout          = 900
 	memory_size      = 1024
