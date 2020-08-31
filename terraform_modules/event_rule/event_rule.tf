@@ -11,7 +11,7 @@ locals {
   selected_patterns = {
     for pattern in var.rule_patterns:
        pattern => local.included_patterns[pattern]
-       if lookup(local.included_patterns, pattern, "")
+       if lookup(local.included_patterns, pattern, "") != ""
   }
 }
 
