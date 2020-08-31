@@ -5,19 +5,14 @@ locals {
     }
 }
 
-resource "local_file" "intentionallyblank" {
-	content = ""
-	filename = "intentionallyblank"
-}
-
 resource "aws_lambda_function" "step_function_lambdas" {
-	depends_on [local_file.intentionallyblank]
+	depends_on = [local_file.intentionallyblank]
 	for_each         = var.step_function_lambda_paths
-	filename         = fileexists(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) ? abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"])) : local_file.intentionallyblank.filename
+	filename         = fileexists(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) ? abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"])) : abspath("./intentionallyblank")
 	function_name    = "${var.environment}_${var.name}_${each.key}_lambda_${var.region}_${var.version_str}"
 	handler          = each.value["handler"]
 	role             = var.project_role
-	source_code_hash = fileexists(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) ? filebase64sha256(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) : filebase64sha256(local_file.intentionallyblank.filename)
+	source_code_hash = fileexists(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) ? filebase64sha256(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) : filebase64sha256(abspath("./intentionallyblank"))
 	runtime          = "go1.x"
 	timeout          = 900
 	memory_size      = 1024
