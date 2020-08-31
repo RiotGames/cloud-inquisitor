@@ -22,11 +22,6 @@ variable "project_role" {
     type = string
 }
 
-variable "event_rules" {
-    type = map(string)
-    description = "list of event objects"
-}
-
 variable "step_function_selector" {
     type = string
     description = "step function to run"
@@ -36,6 +31,11 @@ variable "step_function_lambda_paths" {
     type = map(map(string))
     description = "map(string) of lambda name to lambda binary path"
     default = {}
+}
+
+variable "event_rules" {
+    type = list(string)
+    desciption = "list of selected patterns to use"
 }
 
 variable "step_function_tag_auditor_init_seconds" {

@@ -9,8 +9,8 @@ variable "description" {
 }
 
 variable "rule_patterns" {
-    type = map(string)
-    description = "pattern to use to trigger event"
+    type = list(string)
+    description = "patterns to use to trigger event"
 }
 
 variable "target_arn" {
