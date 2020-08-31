@@ -10,13 +10,13 @@ locals {
 locals {
   selected_patterns = {
     for pattern in var.rule_patterns:
-       pattern => included_patterns[pattern]
+       pattern => local.included_patterns[pattern]
        if lookup(local.included_patterns, pattern, "")
   }
 }
 
 resource "aws_cloudwatch_event_rule" "module_rule" {
-  for_each = local.patterns
+  for_each = local.selected_patterns
   name        = "cloudwatch_event_rule_${each.key}"
   description = var.description
   event_pattern = each.value
