@@ -11,6 +11,7 @@ resource "local_file" "intentionallyblank" {
 }
 
 resource "aws_lambda_function" "step_function_lambdas" {
+	depends_on [local_file.intentionallyblank]
 	for_each         = var.step_function_lambda_paths
 	filename         = fileexists(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) ? abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"])) : local_file.intentionallyblank.filename
 	function_name    = "${var.environment}_${var.name}_${each.key}_lambda_${var.region}_${var.version_str}"
