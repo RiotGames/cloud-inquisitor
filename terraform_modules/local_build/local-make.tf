@@ -1,3 +1,7 @@
+locals {
+    build_files = fileset("${var.working_dir}/cloud-inquisitor/builds/*")
+}
+
 resource "null_resource" "local_machine" {
 
     provisioner "local-exec" {
@@ -14,7 +18,7 @@ resource "null_resource" "local_machine" {
     }
     
     triggers = {
-        always_run = "${timestamp()}"
+        builds = build_files
     }
 }
 

@@ -19,7 +19,7 @@ resource "aws_lambda_function" "step_function_lambdas" {
 	role             = var.project_role
 	//source_code_hash = fileexists(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) ? filebase64sha256(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) : filebase64sha256(abspath("${path.module}/intentionallyblank"))
 	//source_code_hash = filebase64sha256(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"])))
-	source_code_hash = base64sha256(local_file.lambda_archive[each.key].content)
+	source_code_hash = base64sha256(data.local_file.lambda_archive[each.key].content)
 	runtime          = "go1.x"
 	timeout          = 900
 	memory_size      = 1024
