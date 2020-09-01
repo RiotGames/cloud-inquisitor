@@ -5,6 +5,7 @@ resource "null_resource" "local_machine" {
         command = <<CMD
             git clone -b ${var.branch} https://github.com/RiotGames/cloud-inquisitor.git &&\
             cd cloud-inquisitor &&\
+            make build
         CMD
 
         environment = {
