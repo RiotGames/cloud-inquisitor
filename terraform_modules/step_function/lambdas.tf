@@ -11,6 +11,7 @@ data "local_file" "lambda_archive" {
 }
 
 resource "aws_lambda_function" "step_function_lambdas" {
+	depends_on = [data.local_file.lambda_archive]
 	for_each         = var.step_function_lambda_paths
 	//filename         = fileexists(abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))) ? abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"])) : abspath("${path.module}/intentionallyblank")
 	filename         = abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))
