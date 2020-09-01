@@ -11,6 +11,10 @@ resource "null_resource" "local_machine" {
         environment = {
             SETTINGS_FILE = var.settings_file
         }
+
+        triggers = {
+            always_run = "${timestamp()}"
+        }
     }
 
 }
@@ -34,4 +38,7 @@ variable "settings_file" {
 
 output "binary_path" {
     value = "${var.working_dir}/cloud-inquisitor/builds"
+    depends_on = [
+        null_resource.local_machine
+    ]
 }
