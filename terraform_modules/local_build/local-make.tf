@@ -1,5 +1,5 @@
 locals {
-    build_files = fileset("${var.working_dir}/cloud-inquisitor/builds/*")
+    build_files = fileset("${var.working_dir}/cloud-inquisitor/builds/", **)
 }
 
 resource "null_resource" "local_machine" {
