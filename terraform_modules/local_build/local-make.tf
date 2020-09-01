@@ -11,12 +11,11 @@ resource "null_resource" "local_machine" {
         environment = {
             SETTINGS_FILE = var.settings_file
         }
-
-        triggers = {
-            always_run = "${timestamp()}"
-        }
     }
-
+    
+    triggers = {
+        always_run = "${timestamp()}"
+    }
 }
 
 variable "branch" {
