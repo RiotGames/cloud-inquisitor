@@ -1,4 +1,4 @@
-package graph
+package database
 
 // This file will not be regenerated automatically.
 //
@@ -9,7 +9,8 @@ import (
 	"strings"
 	"os"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/ledger/model"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph/model"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/secrets/vault"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	
@@ -18,28 +19,6 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
-
-/*func init() {
-	//do all database related setup
-	db, err := NewDBConnection()
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	if !db.HasTable(&model.Account{}) {
-		db.CreateTable(&model.Account{})
-	}
-	if !db.HasTable(&model.Zone{}) {
-		db.CreateTable(&model.Zone{})
-	}
-	if !db.HasTable(&model.Record{}) {
-		db.CreateTable(&model.Record{})
-	}
-	if !db.HasTable(&model.Value{}) {
-		db.CreateTable(&model.Value{})
-	}
-}*/
 
 func NewDBConnection() (*gorm.DB, error) {
 	if settings.IsSet("mysql") {

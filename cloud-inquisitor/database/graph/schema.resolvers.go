@@ -6,8 +6,8 @@ package graph
 import (
 	"context"
 
-	generated1 "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
+	generated1 "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph/generated"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph/model"
 	log "github.com/sirupsen/logrus"
 )
 

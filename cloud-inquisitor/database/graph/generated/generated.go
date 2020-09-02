@@ -12,7 +12,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )

@@ -14,7 +14,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/jinzhu/gorm v1.9.15
-	github.com/mitchellh/mapstructure v1.3.2 // indirect
+	github.com/mitchellh/mapstructure v1.3.2
 	github.com/newrelic/go-agent/v3 v3.7.0
 	github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin v1.0.0
 	github.com/newrelic/go-agent/v3/integrations/nrlambda v1.1.0

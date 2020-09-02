@@ -5,8 +5,8 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph/generated"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

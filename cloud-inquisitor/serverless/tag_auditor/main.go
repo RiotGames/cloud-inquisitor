@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
