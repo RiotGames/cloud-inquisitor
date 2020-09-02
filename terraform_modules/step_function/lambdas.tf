@@ -6,7 +6,6 @@ locals {
 }
 
 resource "aws_lambda_function" "step_function_lambdas" {
-	depends_on = [data.local_file.lambda_archive]
 	for_each         = var.step_function_lambda_paths
 	filename         = abspath(join("", ["${var.step_function_binary_path}/",each.value["lambda"],".zip"]))
 	function_name    = "${var.environment}_${var.name}_${each.key}_lambda_${var.region}_${var.version_str}"
