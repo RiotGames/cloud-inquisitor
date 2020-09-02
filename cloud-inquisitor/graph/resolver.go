@@ -7,10 +7,14 @@ package graph
 import (
 	"errors"
 	"strings"
+	"os"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/secrets/vault"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
+	
+	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/mitchellh/mapstructure"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
@@ -101,6 +105,13 @@ func CreateTables() error {
 		db.CreateTable(&model.OriginGroup{})
 	}
 
+	if !db.HasTable(&model.ActionLedger{}) {
+		db.CreateTable(&model.ActionLedger{})
+	}
+	if !db.HasTable(&model.ConfigLedger{}) {
+		db.CreateTable(&model.ConfigLedger{})
+	}
+
 	return nil
 }
 
@@ -122,6 +133,8 @@ func DropTables() error {
 		&model.Distribution{},
 		&model.Origin{},
 		&model.OriginGroup{},
+		&model.ActionLedger{},
+		&model.ConfigLedger{}
 	).Error
 
 	if err != nil {
@@ -149,6 +162,8 @@ func MigrateTables() error {
 		&model.Distribution{},
 		&model.Origin{},
 		&model.OriginGroup{},
+		&model.ActionLedger{},
+		&model.ConfigLedger{}
 	).Error
 
 	if err != nil {
@@ -156,6 +171,34 @@ func MigrateTables() error {
 	}
 
 	return nil
+}
+
+func ActionLedgerCommit(ctx context.Context, action string, metadata map[string]interface{}) error {
+	db, err := NewDBConnection()
+	if err != nil {
+		if db != nil {
+			db.Close()
+		}
+		return err
+	}
+	defer db.Close()
+
+	var transaction ActionLedgerItem
+	lc, _ := lambdacontext.FromContext(ctx)
+
+	metadata["RequestID"] = ctx.AwsRequestID
+	metadata["StepFunctionID"] = ""
+	metadata["StepFunctionName"] = ""
+	metadata["LambdaFunctionArn"] = ctx.InvokedFunctionArn
+	metadata["ActionTime"] = time.UTC()
+
+	err := Decode(metadata, &transaction)
+	if err != nil {
+		return err
+	}
+
+	err = db.Create(&transaction)
+	return err
 }
 
 type Resolver struct {

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
@@ -40,6 +40,8 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 			Finished: true,
 		}, nil
 	}
+
+	graph.ActionLedgerCommit(ctx, action, parsedResource.GetMetadata())
 
 	return cloudinquisitor.PassableResource{
 		Resource: parsedResource,
