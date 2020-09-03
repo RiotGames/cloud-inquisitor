@@ -17,7 +17,7 @@ locals {
 
 resource "aws_cloudwatch_event_rule" "module_rule" {
   for_each = local.selected_patterns
-  name        = "cloudwatch_event_rule_${each.key}"
+  name        = "${var.environment}_cloudwatch_event_rule_${each.key}"
   description = var.description
   event_pattern = each.value
 }

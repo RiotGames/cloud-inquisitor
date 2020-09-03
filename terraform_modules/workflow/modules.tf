@@ -26,6 +26,7 @@ module "event_rules" {
     source = "../event_rule"
 
     name            = var.name
+    environment     = var.environment
     description     = "needs to be wired up"
     rule_patterns   = var.event_rules
     target_arn      = module.step_function.step_function_arn

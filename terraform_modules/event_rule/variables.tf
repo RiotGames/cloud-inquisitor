@@ -3,6 +3,11 @@ variable "name" {
     description = "name of rule to generate"
 }
 
+variable "environment" {
+    type = string
+    description = "environment the rules exist in"
+}
+
 variable "description" {
     type = string
     description = "description of event rule"
