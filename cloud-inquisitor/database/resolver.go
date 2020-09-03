@@ -152,7 +152,7 @@ func MigrateTables() error {
 	return nil
 }
 
-func ActionLedgerCommit(ctx context.Context, action string, metadata map[string]interface{}) error {
+func ActionLedgerCommit(ctx context.Context, action string, metadata map[string]interface{}, actionError error, StepFunctionExeID string) error {
 	db, err := NewDBConnection()
 	if err != nil {
 		if db != nil {
@@ -166,10 +166,10 @@ func ActionLedgerCommit(ctx context.Context, action string, metadata map[string]
 	lc, _ := lambdacontext.FromContext(ctx)
 
 	metadata["RequestID"] = ctx.AwsRequestID
-	metadata["StepFunctionID"] = ""
-	metadata["StepFunctionName"] = ""
+	metadata["StepFunctionExeID"] = StepFunctionExeID
 	metadata["LambdaFunctionArn"] = ctx.InvokedFunctionArn
 	metadata["ActionTime"] = time.UTC()
+	metadata["ActionError"] = actionError
 
 	err := Decode(metadata, &transaction)
 	if err != nil {

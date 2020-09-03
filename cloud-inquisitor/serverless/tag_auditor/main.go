@@ -8,7 +8,13 @@ import (
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
 
-func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResource) (cloudinquisitor.PassableResource, error) {
+type auditorPayload struct {
+	PassableResource  cloudinquisitor.PassableResource `json:"PassableResource"`
+	StepFunctionExeID string                           `json:"StepFunctionExeID"`
+}
+
+func handlerRequest(ctx context.Context, payload auditorPayload) (cloudinquisitor.PassableResource, error) {
+	resource := payload["PassableResource"]
 
 	parsedResource, err := resource.GetTaggableResource(ctx, map[string]interface{}{
 		"cloud-inquisitor-component": "tag-auditor",
@@ -32,7 +38,16 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 		}, nil
 	}
 
-	if err := parsedResource.TakeAction(action); err != nil {
+	actionError := parsedResource.TakeAction(action)
+	graph.ActionLedgerCommit(
+		ctx, 
+		action, 
+		parsedResource.GetMetadata(), 
+		actionError, 
+		payload["StepFunctionExeID"]
+	)
+
+	if actionError != nil {
 		return cloudinquisitor.PassableResource{
 			Resource: parsedResource,
 			Type:     parsedResource.GetType(),
@@ -40,8 +55,6 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 			Finished: true,
 		}, nil
 	}
-
-	graph.ActionLedgerCommit(ctx, action, parsedResource.GetMetadata())
 
 	return cloudinquisitor.PassableResource{
 		Resource: parsedResource,

@@ -9,14 +9,14 @@ import (
 type ActionLedgerItem struct {
 	gorm.Model
 
-	RequestID          string    `json:"RequestID" mapstructure:"RequestID"`
-	StepFunctionID     string    `json:"StepFunctionID" mapstructure:"StepFunctionID"`
-	StepFunctionArn    string    `json:"StepFunctionArn" mapstructure:"StepFunctionArn"`
-	LambdaFunctionName string    `json:"LambdaFunctionName" mapstructure:"LambdaFunctionName"`
+	RequestID          string    `json:"RequestID"`
+	StepFunctionExeID  string    `json:"StepFunctionID"`
+	LambdaFunctionName string    `json:"LambdaFunctionName"`
+	ActionError        string    `json:"ActionError"`
 	AccountID          string    `json:"AccountID" mapstructure:"AccountID"`
 	Region             string    `json:"Region" mapstructure:"Region"`
 	ActionName         string    `json:"ActionName" mapstructure:"ActionName"`
-	ActionTime         time.Time `json:"ActionTime" mapstructure:"ActionTime"`
+	ActionTime         time.Time `json:"ActionTime"`
 	ResourceID         string    `json:"ResourceID" mapstructure:"ResourceID"`
 	ResourceAltID      string    `json:"ResourceAltID" mapstructure:"ResourceAltID"`
 	ResourceName       string    `json:"ResourceName" mapstructure:"ResourceName"`
