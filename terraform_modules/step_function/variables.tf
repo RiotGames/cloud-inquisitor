@@ -22,6 +22,11 @@ variable "project_role" {
     type = string
 }
 
+variable "step_function_binary_path" {
+    type = string 
+    description = "path to the binaries used by the step functions"
+}
+
 variable "step_function_selector" {
     type = string
     description = "declaration of the state machine"
