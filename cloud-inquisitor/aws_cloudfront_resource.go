@@ -6,8 +6,8 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph/model"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"

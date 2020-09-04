@@ -1,0 +1,16 @@
+package database
+
+// This file will not be regenerated automatically.
+//
+// It serves as dependency injection for your app, add any dependencies you require here.
+
+import (
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/ledger/model"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+)
+
+type Resolver struct {
+	DB *gorm.DB
+}

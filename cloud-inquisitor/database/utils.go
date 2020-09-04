@@ -1,25 +1,3 @@
-package database
-
-// This file will not be regenerated automatically.
-//
-// It serves as dependency injection for your app, add any dependencies you require here.
-
-import (
-	"errors"
-	"strings"
-	"os"
-
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/ledger/model"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database/graph/model"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/secrets/vault"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
-	
-	"github.com/aws/aws-lambda-go/lambdacontext"
-	"github.com/mitchellh/mapstructure"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
-)
-
 func NewDBConnection() (*gorm.DB, error) {
 	if settings.IsSet("mysql") {
 		var connectionString string
@@ -178,8 +156,4 @@ func ActionLedgerCommit(ctx context.Context, action string, metadata map[string]
 
 	err = db.Create(&transaction)
 	return err
-}
-
-type Resolver struct {
-	DB *gorm.DB
 }
