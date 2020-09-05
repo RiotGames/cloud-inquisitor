@@ -131,31 +131,3 @@ func MigrateTables() error {
 
 	return nil
 }
-
-func ActionLedgerCommit(ctx context.Context, action string, metadata map[string]interface{}, actionError error, StepFunctionExeID string) error {
-	db, err := NewDBConnection()
-	if err != nil {
-		if db != nil {
-			db.Close()
-		}
-		return err
-	}
-	defer db.Close()
-
-	var transaction ActionLedgerItem
-	lc, _ := lambdacontext.FromContext(ctx)
-
-	metadata["RequestID"] = ctx.AwsRequestID
-	metadata["StepFunctionExeID"] = StepFunctionExeID
-	metadata["LambdaFunctionArn"] = ctx.InvokedFunctionArn
-	metadata["ActionTime"] = time.UTC()
-	metadata["ActionError"] = actionError
-
-	err := Decode(metadata, &transaction)
-	if err != nil {
-		return err
-	}
-
-	err = db.Create(&transaction)
-	return err
-}

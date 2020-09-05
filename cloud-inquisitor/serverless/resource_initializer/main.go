@@ -10,6 +10,7 @@ import (
 
 func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayload) (cloudinquisitor.PassableResource, error) {
 	event := payload["CloudWatchEvent"]
+	sfnExeId = payload["StepFunctionExecutionID"],
 
 	resource, _ := cloudinquisitor.NewTaggableResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,
@@ -22,7 +23,7 @@ func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayl
 			Type:                    resource.GetType(),
 			Finished:                true,
 			Metadata:                resource.GetLogger().GetMetadata(),
-			StepFunctionExecutionID: payload["StepFunctionExecutionID"],
+			StepFunctionExecutionID: sfnExeId,
 		}, nil
 	}
 	return cloudinquisitor.PassableResource{
@@ -30,7 +31,7 @@ func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayl
 		Type:                    resource.GetType(),
 		Finished:                false,
 		Metadata:                resource.GetLogger().GetMetadata(),
-		StepFunctionExecutionID: payload["StepFunctionExecutionID"],
+		StepFunctionExecutionID: sfnExeId,
 	}, nil
 }
 

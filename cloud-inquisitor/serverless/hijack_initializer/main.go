@@ -17,6 +17,7 @@ type passableResourcesStruct struct {
 
 func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayload) (passableResourcesStruct, error) {
 	event := payload["CloudWatchEvent"]
+	sfnExeId = payload["StepFunctionExecutionID"],
 
 	resource, err := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,
@@ -34,7 +35,7 @@ func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayl
 				Type:                    resource.GetType(),
 				Finished:                true,
 				Metadata:                resource.GetLogger().GetMetadata(),
-				StepFunctionExecutionID: payload["StepFunctionExecutionID"],
+				StepFunctionExecutionID: sfnExeId,
 			},
 		}}, nil
 	}
@@ -48,6 +49,7 @@ func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayl
 				Type:     record.GetType(),
 				Finished: false,
 				Metadata: record.GetLogger().GetMetadata(),
+				StepFunctionExecutionID: sfnExeId,
 			})
 		}
 	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE, cloudinquisitor.SERVICE_AWS_CLOUDFRONT:
@@ -56,6 +58,7 @@ func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayl
 			Type:     resource.GetType(),
 			Finished: false,
 			Metadata: resource.GetLogger().GetMetadata(),
+			StepFunctionExecutionID: sfnExeId,
 		})
 	default:
 		return passableResourcesStruct{passableResources}, errors.New("unknown resource type " + resource.GetType())
