@@ -1,4 +1,4 @@
-package model
+package ledger
 
 import (
 	"context"
@@ -6,9 +6,12 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/jinzhu/gorm"
+	"github.com/mitchellh/mapstructure"
+
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/cloud-inquisitor/database"
 )
 
-type AWSActionLedgerItem struct {
+type AWSActionLedger struct {
 	gorm.Model
 
 	RequestID          string    `json:"RequestID"`
@@ -26,18 +29,8 @@ type AWSActionLedgerItem struct {
 	ResourceSubType    string    `json:"ResourceSubType" mapstructure:"ResourceSubType"`
 }
 
-type AWSConfigLedgerItem struct {
-	gorm.Model
-
-	ConfigurationPath string `json:"ConfigurationPath"`
-	Action            string `json:"Action"`
-	PreviousVaule     string `json:"PreviousVaule"`
-	CurrentValue      string `json:"CurrentValue"`
-	User              string `json:"User"`
-}
-
-func (al *AWSActionLedgerItem) Commit(ctx context.Context, action string, metadata map[string]interface{}, actionError error) error {
-	db, err := NewDBConnection()
+func (al *AWSActionLedger) Commit(ctx context.Context, action string, metadata map[string]interface{}, actionError error) error {
+	db, err := database.NewDBConnection()
 	if err != nil {
 		if db != nil {
 			db.Close()
@@ -46,19 +39,24 @@ func (al *AWSActionLedgerItem) Commit(ctx context.Context, action string, metada
 	}
 	defer db.Close()
 
-	var transaction ActionLedgerItem
+	var transaction AWSActionLedgerItem
+	tz, _ := time.LoadLocation("UTC")
 	lc, _ := lambdacontext.FromContext(ctx)
 
-	metadata["RequestID"] = ctx.AwsRequestID
-	metadata["LambdaFunctionArn"] = ctx.InvokedFunctionArn
-	metadata["ActionTime"] = time.UTC()
+	metadata["RequestID"] = lc.AwsRequestID
+	metadata["LambdaFunctionArn"] = lc.InvokedFunctionArn
+	metadata["ActionTime"] = time.Now().In(tz)
 	metadata["ActionError"] = actionError
 
-	err := Decode(metadata, &transaction)
+	err := mapstructure.Decode(metadata, &transaction)
 	if err != nil {
 		return err
 	}
 
 	err = db.Create(&transaction)
 	return err
+}
+
+func GetAWSActionLedger() AWSActionLedger {
+	return AWSActionLedger{}
 }

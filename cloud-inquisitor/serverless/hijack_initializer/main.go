@@ -5,10 +5,9 @@ import (
 	"errors"
 
 	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
-	"github.com/aws/aws-lambda-go/events"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
-
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/serverless"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
 
@@ -16,7 +15,9 @@ type passableResourcesStruct struct {
 	Resources []cloudinquisitor.PassableResource `json:"resources"`
 }
 
-func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passableResourcesStruct, error) {
+func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayload) (passableResourcesStruct, error) {
+	event := payload["CloudWatchEvent"]
+
 	resource, err := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,
 		"cloud-inquisitor-component": "hijack-initializer",
@@ -29,10 +30,11 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passable
 	if resource.GetType() == cloudinquisitor.SERVICE_STUB && settings.GetString("stub_resources") != "enabled" {
 		return passableResourcesStruct{[]cloudinquisitor.PassableResource{
 			cloudinquisitor.PassableResource{
-				Resource: resource,
-				Type:     resource.GetType(),
-				Finished: true,
-				Metadata: resource.GetLogger().GetMetadata(),
+				Resource:                resource,
+				Type:                    resource.GetType(),
+				Finished:                true,
+				Metadata:                resource.GetLogger().GetMetadata(),
+				StepFunctionExecutionID: payload["StepFunctionExecutionID"],
 			},
 		}}, nil
 	}

@@ -9,7 +9,14 @@
         %{ if tag_auditor_init != "" ~}
         "Init": {
             "Type": "Task",
-            "Resource": "${tag_auditor_init}",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+                "FunctionName": "${tag_auditor_init}",
+                "Payload": {
+                    "PassableResource.$": "$",
+                    "StepFunctionExeID.$": "$$.Execution.Id"
+                }
+            },
             "Next": "Check if Fixed After Init"
         },
         "Check if Fixed After Init": {
@@ -34,14 +41,7 @@
         },
         "First Notification": {
             "Type": "Task",
-            "Resource": "arn:aws:states:::lambda:invoke",
-            "Parameters": {
-                "FunctionName": "${tag_auditor_notify}",
-                "Payload": {
-                    "PassableResource.$": "$",
-                    "StepFunctionExeID.$": "$$.Execution.Id"
-                }
-            },
+            "Resource": "${tag_auditor_notify}",
             "Next": "Check if Fixed After First Notification"
         },
         "Check if Fixed After First Notification": {
@@ -66,14 +66,7 @@
         },
         "Second Notification": {
             "Type": "Task",
-            "Resource": "arn:aws:states:::lambda:invoke",
-            "Parameters": {
-                "FunctionName": "${tag_auditor_notify}",
-                "Payload": {
-                    "PassableResource.$": "$",
-                    "StepFunctionExeID.$": "$$.Execution.Id"
-                }
-            },
+            "Resource": "${tag_auditor_notify}",
             "Next": "Check if Fixed After Second Notification"
         },
         "Check if Fixed After Second Notification": {
@@ -98,14 +91,7 @@
         },
         "Third Notification": {
             "Type": "Task",
-            "Resource": "arn:aws:states:::lambda:invoke",
-            "Parameters": {
-                "FunctionName": "${tag_auditor_notify}",
-                "Payload": {
-                    "PassableResource.$": "$",
-                    "StepFunctionExeID.$": "$$.Execution.Id"
-                }
-            },
+            "Resource": "${tag_auditor_notify}",
             "Next": "Check if Fixed After Third Notification"
         },
         "Check if Fixed After Third Notification": {
@@ -130,14 +116,7 @@
         },
         "Check if Fixed or Prevent": {
             "Type": "Task",
-            "Resource": "arn:aws:states:::lambda:invoke",
-            "Parameters": {
-                "FunctionName": "${tag_auditor_prevent}",
-                "Payload": {
-                    "PassableResource.$": "$",
-                    "StepFunctionExeID.$": "$$.Execution.Id"
-                }
-            },
+            "Resource": "${tag_auditor_prevent}",
             "Next": "Check if Fixed After Prevent"
         },
         "Check if Fixed After Prevent": {
@@ -162,15 +141,8 @@
         },
         "Check if Fixed or Remove": {
             "Type": "Task",
-            "Resource": "arn:aws:states:::lambda:invoke",
-            "Parameters": {
-                "FunctionName": "${tag_auditor_remove}",
-                "Payload": {
-                    "PassableResource.$": "$",
-                    "StepFunctionExeID.$": "$$.Execution.Id"
-                }
-            },
-            "Next": "Resource Has Been Remediated",  
+            "Resource": "${tag_auditor_remove}",
+            "Next": "Resource Has Been Remediated"
         },
         %{ endif }
         "Resource Has Been Remediated": {

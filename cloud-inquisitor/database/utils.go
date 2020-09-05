@@ -1,3 +1,5 @@
+package database
+
 func NewDBConnection() (*gorm.DB, error) {
 	if settings.IsSet("mysql") {
 		var connectionString string

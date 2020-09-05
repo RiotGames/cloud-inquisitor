@@ -3,18 +3,13 @@ package main
 import (
 	"context"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/ledger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
 
-type auditorPayload struct {
-	PassableResource  cloudinquisitor.PassableResource `json:"PassableResource"`
-	StepFunctionExeID string                           `json:"StepFunctionExeID"`
-}
-
-func handlerRequest(ctx context.Context, payload auditorPayload) (cloudinquisitor.PassableResource, error) {
-	resource := payload["PassableResource"]
+func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResource) (cloudinquisitor.PassableResource, error) {
 
 	parsedResource, err := resource.GetTaggableResource(ctx, map[string]interface{}{
 		"cloud-inquisitor-component": "tag-auditor",
@@ -39,12 +34,12 @@ func handlerRequest(ctx context.Context, payload auditorPayload) (cloudinquisito
 	}
 
 	actionError := parsedResource.TakeAction(action)
+	ledger := GetActionLedger()
 	graph.ActionLedgerCommit(
 		ctx, 
 		action, 
 		parsedResource.GetMetadata(), 
-		actionError, 
-		payload["StepFunctionExeID"]
+		actionError
 	)
 
 	if actionError != nil {
