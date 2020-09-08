@@ -68,6 +68,15 @@
                                     }
                                 ],
                                 "Next": "Track and Analyze for Hijack"
+                            },
+                            {
+                                "Or":[
+                                    {
+                                        "Variable": "$.Resource.EventName",
+                                        "StringEquals": "TerminateEnvironment"
+                                    }
+                                ],
+                                "Next": "Analyze for Hijack and Remove From Graph"
                             }
                         ],
                         "Default": "End of iterator"
@@ -75,6 +84,11 @@
                     "Update DNS Hijack Resource Graph": {
                         "Type": "Task",
                         "Resource": "${graph_updater}",
+                        "End": true
+                    },
+                    "Analyze for Hijack and Remove From Graph": {
+                        "Type": "Task",
+                        "Resource": "${graph_analyzer}",
                         "End": true
                     },
                     "Track and Analyze for Hijack": {

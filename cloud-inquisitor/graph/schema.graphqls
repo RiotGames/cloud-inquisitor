@@ -1,3 +1,11 @@
+enum Type {
+	ACCOUNT
+	ZONE
+	RECORD
+	DISTRIBUTION
+	ORIGIN
+}
+
 type Account {
 	accountID: ID!
 	zones: [Zone!]!
@@ -42,6 +50,20 @@ type OriginGroup {
 	origins: [Value!]!
 }
 
+type HijackableResource {
+	id: ID!
+	account: String!
+	type: Type!
+	value: Value!
+}
+
+type HijackableResourceChain {
+	id: ID!
+	resource: HijackableResource!
+	upstream: [HijackableResource!]!
+	downsteam: [HijackableResource!]!
+}
+
 type Query {
 	accounts: [Account!]!
 	account(id: ID!): Account!
@@ -51,13 +73,24 @@ type Query {
 	
 	records: [Record!]!
 	record(id: ID!): Record!
+	pointedAtByRecords(domain: String!): [Record!]!
 	
 	values: [Value!]!
 	value(id: ID!): Value!
 
 	distributions: [Distribution!]!
 	distribution(id: ID!): Distribution!
+	pointedAtByDistribution(domain: String!): [Distribution!]!
 
 	origins: [Origin!]!
 	origin(id: ID!): Origin
+	pointedAtByOrigin(domain: String!): [Origin!]!
+
+	originGroups: [OriginGroup!]!
+	pointedAtByOriginGroup(domain: String!): [OriginGroup!]!
+
+	hijackChainByDomain(domain: String!): HijackableResourceChain!
+	
+	
+	getElasticbeanstalkUpstreamHijack(endpoints: [String!]!): [HijackableResource!]!
 }

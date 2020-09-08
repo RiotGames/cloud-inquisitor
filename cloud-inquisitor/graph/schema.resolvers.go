@@ -5,8 +5,9 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
-	generated1 "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	log "github.com/sirupsen/logrus"
 )
@@ -231,6 +232,10 @@ func (r *queryResolver) Record(ctx context.Context, id string) (*model.Record, e
 	return &record, nil
 }
 
+func (r *queryResolver) PointedAtByRecords(ctx context.Context, domain string) ([]*model.Record, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *queryResolver) Values(ctx context.Context) ([]*model.Value, error) {
 	log.Info("getting all values")
 	var values []*model.Value
@@ -291,6 +296,10 @@ func (r *queryResolver) Distribution(ctx context.Context, id string) (*model.Dis
 	return &distro, nil
 }
 
+func (r *queryResolver) PointedAtByDistribution(ctx context.Context, domain string) ([]*model.Distribution, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *queryResolver) Origins(ctx context.Context) ([]*model.Origin, error) {
 	log.Debugln("getting all origins")
 	var origins []*model.Origin
@@ -312,6 +321,26 @@ func (r *queryResolver) Origin(ctx context.Context, id string) (*model.Origin, e
 	}
 
 	return &origin, nil
+}
+
+func (r *queryResolver) PointedAtByOrigin(ctx context.Context, domain string) ([]*model.Origin, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) OriginGroups(ctx context.Context) ([]*model.OriginGroup, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) PointedAtByOriginGroup(ctx context.Context, domain string) ([]*model.OriginGroup, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) HijackChainByDomain(ctx context.Context, domain string) (*model.HijackableResourceChain, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) GetElasticbeanstalkUpstreamHijack(ctx context.Context, endpoints []string) ([]*model.HijackableResource, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *recordResolver) Values(ctx context.Context, obj *model.Record) ([]*model.Value, error) {
@@ -375,20 +404,20 @@ func (r *zoneResolver) Record(ctx context.Context, obj *model.Zone, id string) (
 	return &record, nil
 }
 
-// Account returns generated1.AccountResolver implementation.
-func (r *Resolver) Account() generated1.AccountResolver { return &accountResolver{r} }
+// Account returns generated.AccountResolver implementation.
+func (r *Resolver) Account() generated.AccountResolver { return &accountResolver{r} }
 
-// Distribution returns generated1.DistributionResolver implementation.
-func (r *Resolver) Distribution() generated1.DistributionResolver { return &distributionResolver{r} }
+// Distribution returns generated.DistributionResolver implementation.
+func (r *Resolver) Distribution() generated.DistributionResolver { return &distributionResolver{r} }
 
-// Query returns generated1.QueryResolver implementation.
-func (r *Resolver) Query() generated1.QueryResolver { return &queryResolver{r} }
+// Query returns generated.QueryResolver implementation.
+func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// Record returns generated1.RecordResolver implementation.
-func (r *Resolver) Record() generated1.RecordResolver { return &recordResolver{r} }
+// Record returns generated.RecordResolver implementation.
+func (r *Resolver) Record() generated.RecordResolver { return &recordResolver{r} }
 
-// Zone returns generated1.ZoneResolver implementation.
-func (r *Resolver) Zone() generated1.ZoneResolver { return &zoneResolver{r} }
+// Zone returns generated.ZoneResolver implementation.
+func (r *Resolver) Zone() generated.ZoneResolver { return &zoneResolver{r} }
 
 type accountResolver struct{ *Resolver }
 type distributionResolver struct{ *Resolver }

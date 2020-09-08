@@ -18,6 +18,7 @@ import (
 
 type AWSElasticBeanstalkEnvironmentResource struct {
 	AccountID       string
+	EventName       string
 	ApplicationName string
 	EnvironmentName string
 	EnvironmentId   string
@@ -75,6 +76,14 @@ func (eb *AWSElasticBeanstalkEnvironmentResource) RefreshState() error {
 		return errors.New("settings value assume_role not set")
 	}
 	accountSession, err := AWSAssumeRole(eb.AccountID, settings.GetString("assume_role"), session.New())
+	if err != nil {
+		eb.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-elasticbeanstalk-environment",
+			"cloud-inquisitor-error":    "error getting regional session",
+		}).WithFields(eb.GetMetadata()).Error(err.Error())
+
+		return err
+	}
 	regionalSession := accountSession.Copy(&aws.Config{
 		Region: aws.String(eb.Region),
 	})
@@ -103,12 +112,24 @@ func (eb *AWSElasticBeanstalkEnvironmentResource) RefreshState() error {
 		return err
 	}
 
+	eb.GetLogger().Debugf("describe environments input %#v", *input)
+	eb.GetLogger().Debugf("describe environments result %#v", *result)
+
 	var foundEnv *elasticbeanstalk.EnvironmentDescription = nil
 	for _, env := range result.Environments {
+		eb.GetLogger().Debugf("beanstalk environment: %#v", *env)
 		if *env.EnvironmentId == eb.EnvironmentId {
 			foundEnv = env
 			break
 		}
+	}
+
+	if foundEnv == nil {
+		eb.logger.WithFields(logrus.Fields{
+			"cloud-inquisitor-resource": "aws-elasticbeanstalk-environment",
+			"cloud-inquisitor-error":    "DescribeEnvironments",
+		}).WithFields(eb.GetMetadata()).Error("could not find elasticbeanstalk environment")
+		return errors.New("could not find elasticbeanstalk environment")
 	}
 
 	eb.Status = *foundEnv.Status
@@ -150,6 +171,10 @@ type AWSElasticBeanstalkEnvironmentHijackableResource struct {
 }
 
 func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) NewFromEventBus(event events.CloudWatchEvent, ctx context.Context, passedInMetadata map[string]interface{}) error {
+	// set account id first
+	eb.AccountID = event.AccountID
+	eb.Region = event.Region
+
 	defaultMetadata, err := DefaultLambdaMetadata(ctx)
 	if err != nil {
 		return err
@@ -186,10 +211,11 @@ func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) NewFromEventBus(even
 		//return errors.New("response element of cloudfront distribution is missing")
 	}
 
+	// set detail specific fields
 	eb.logger.WithFields(eb.GetMetadata()).Debugf("aws event detail response elements: %#v", ebDetails.ResponseElements)
-
+	eb.logger.WithFields(eb.GetMetadata()).Debugf("aws event detail request parameters: %#v", ebDetails.RequestParamaters)
 	eb.EnvironmentId = ebDetails.RequestParamaters.EnvironmentId
-	eb.Region = ebDetails.AWSRegion
+	eb.EventName = ebDetails.EventName
 
 	err = eb.RefreshState()
 	if err != nil {
@@ -224,7 +250,7 @@ func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) NewFromPassableResou
 			"cloud-inquisitor-resource": "aws-elasticbeanstalk-environment",
 			"cloud-inquisitor-error":    "json marshal error",
 		}).WithFields(eb.GetMetadata()).Error(err.Error(), nil)
-		return errors.New("unable to marshal aws-route53-record-set resource")
+		return errors.New("unable to marshal aws-elasticbeanstalk-environment resource")
 	}
 
 	err = json.Unmarshal(structJson, eb)
@@ -241,4 +267,8 @@ func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) NewFromPassableResou
 
 func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) PublishState() error {
 	return nil
+}
+
+func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) AnalyzeForHijack() (HijackChain, error) {
+	return HijackChain{[]HijackChainElement{}}, nil
 }

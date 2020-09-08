@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
+	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 	"github.com/aws/aws-lambda-go/events"
@@ -113,4 +113,8 @@ func (t *StubResource) GetMissingTags() []string {
 
 func (t *StubResource) GetTags() map[string]string {
 	return map[string]string{}
+}
+
+func (t *StubResource) AnalyzeForHijack() (HijackChain, error) {
+	return HijackChain{[]HijackChainElement{}}, nil
 }

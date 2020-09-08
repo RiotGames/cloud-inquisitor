@@ -61,6 +61,20 @@ type ComplexityRoot struct {
 		Origins        func(childComplexity int) int
 	}
 
+	HijackableResource struct {
+		Account func(childComplexity int) int
+		ID      func(childComplexity int) int
+		Type    func(childComplexity int) int
+		Value   func(childComplexity int) int
+	}
+
+	HijackableResourceChain struct {
+		Downsteam func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Resource  func(childComplexity int) int
+		Upstream  func(childComplexity int) int
+	}
+
 	Origin struct {
 		Domain   func(childComplexity int) int
 		OriginID func(childComplexity int) int
@@ -72,18 +86,25 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Account       func(childComplexity int, id string) int
-		Accounts      func(childComplexity int) int
-		Distribution  func(childComplexity int, id string) int
-		Distributions func(childComplexity int) int
-		Origin        func(childComplexity int, id string) int
-		Origins       func(childComplexity int) int
-		Record        func(childComplexity int, id string) int
-		Records       func(childComplexity int) int
-		Value         func(childComplexity int, id string) int
-		Values        func(childComplexity int) int
-		Zone          func(childComplexity int, id string) int
-		Zones         func(childComplexity int) int
+		Account                           func(childComplexity int, id string) int
+		Accounts                          func(childComplexity int) int
+		Distribution                      func(childComplexity int, id string) int
+		Distributions                     func(childComplexity int) int
+		GetElasticbeanstalkUpstreamHijack func(childComplexity int, endpoints []string) int
+		HijackChainByDomain               func(childComplexity int, domain string) int
+		Origin                            func(childComplexity int, id string) int
+		OriginGroups                      func(childComplexity int) int
+		Origins                           func(childComplexity int) int
+		PointedAtByDistribution           func(childComplexity int, domain string) int
+		PointedAtByOrigin                 func(childComplexity int, domain string) int
+		PointedAtByOriginGroup            func(childComplexity int, domain string) int
+		PointedAtByRecords                func(childComplexity int, domain string) int
+		Record                            func(childComplexity int, id string) int
+		Records                           func(childComplexity int) int
+		Value                             func(childComplexity int, id string) int
+		Values                            func(childComplexity int) int
+		Zone                              func(childComplexity int, id string) int
+		Zones                             func(childComplexity int) int
 	}
 
 	Record struct {
@@ -123,12 +144,19 @@ type QueryResolver interface {
 	Zone(ctx context.Context, id string) (*model.Zone, error)
 	Records(ctx context.Context) ([]*model.Record, error)
 	Record(ctx context.Context, id string) (*model.Record, error)
+	PointedAtByRecords(ctx context.Context, domain string) ([]*model.Record, error)
 	Values(ctx context.Context) ([]*model.Value, error)
 	Value(ctx context.Context, id string) (*model.Value, error)
 	Distributions(ctx context.Context) ([]*model.Distribution, error)
 	Distribution(ctx context.Context, id string) (*model.Distribution, error)
+	PointedAtByDistribution(ctx context.Context, domain string) ([]*model.Distribution, error)
 	Origins(ctx context.Context) ([]*model.Origin, error)
 	Origin(ctx context.Context, id string) (*model.Origin, error)
+	PointedAtByOrigin(ctx context.Context, domain string) ([]*model.Origin, error)
+	OriginGroups(ctx context.Context) ([]*model.OriginGroup, error)
+	PointedAtByOriginGroup(ctx context.Context, domain string) ([]*model.OriginGroup, error)
+	HijackChainByDomain(ctx context.Context, domain string) (*model.HijackableResourceChain, error)
+	GetElasticbeanstalkUpstreamHijack(ctx context.Context, endpoints []string) ([]*model.HijackableResource, error)
 }
 type RecordResolver interface {
 	Values(ctx context.Context, obj *model.Record) ([]*model.Value, error)
@@ -221,6 +249,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Distribution.Origins(childComplexity), true
 
+	case "HijackableResource.account":
+		if e.complexity.HijackableResource.Account == nil {
+			break
+		}
+
+		return e.complexity.HijackableResource.Account(childComplexity), true
+
+	case "HijackableResource.id":
+		if e.complexity.HijackableResource.ID == nil {
+			break
+		}
+
+		return e.complexity.HijackableResource.ID(childComplexity), true
+
+	case "HijackableResource.type":
+		if e.complexity.HijackableResource.Type == nil {
+			break
+		}
+
+		return e.complexity.HijackableResource.Type(childComplexity), true
+
+	case "HijackableResource.value":
+		if e.complexity.HijackableResource.Value == nil {
+			break
+		}
+
+		return e.complexity.HijackableResource.Value(childComplexity), true
+
+	case "HijackableResourceChain.downsteam":
+		if e.complexity.HijackableResourceChain.Downsteam == nil {
+			break
+		}
+
+		return e.complexity.HijackableResourceChain.Downsteam(childComplexity), true
+
+	case "HijackableResourceChain.id":
+		if e.complexity.HijackableResourceChain.ID == nil {
+			break
+		}
+
+		return e.complexity.HijackableResourceChain.ID(childComplexity), true
+
+	case "HijackableResourceChain.resource":
+		if e.complexity.HijackableResourceChain.Resource == nil {
+			break
+		}
+
+		return e.complexity.HijackableResourceChain.Resource(childComplexity), true
+
+	case "HijackableResourceChain.upstream":
+		if e.complexity.HijackableResourceChain.Upstream == nil {
+			break
+		}
+
+		return e.complexity.HijackableResourceChain.Upstream(childComplexity), true
+
 	case "Origin.domain":
 		if e.complexity.Origin.Domain == nil {
 			break
@@ -287,6 +371,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Distributions(childComplexity), true
 
+	case "Query.getElasticbeanstalkUpstreamHijack":
+		if e.complexity.Query.GetElasticbeanstalkUpstreamHijack == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getElasticbeanstalkUpstreamHijack_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetElasticbeanstalkUpstreamHijack(childComplexity, args["endpoints"].([]string)), true
+
+	case "Query.hijackChainByDomain":
+		if e.complexity.Query.HijackChainByDomain == nil {
+			break
+		}
+
+		args, err := ec.field_Query_hijackChainByDomain_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.HijackChainByDomain(childComplexity, args["domain"].(string)), true
+
 	case "Query.origin":
 		if e.complexity.Query.Origin == nil {
 			break
@@ -299,12 +407,67 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Origin(childComplexity, args["id"].(string)), true
 
+	case "Query.originGroups":
+		if e.complexity.Query.OriginGroups == nil {
+			break
+		}
+
+		return e.complexity.Query.OriginGroups(childComplexity), true
+
 	case "Query.origins":
 		if e.complexity.Query.Origins == nil {
 			break
 		}
 
 		return e.complexity.Query.Origins(childComplexity), true
+
+	case "Query.pointedAtByDistribution":
+		if e.complexity.Query.PointedAtByDistribution == nil {
+			break
+		}
+
+		args, err := ec.field_Query_pointedAtByDistribution_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PointedAtByDistribution(childComplexity, args["domain"].(string)), true
+
+	case "Query.pointedAtByOrigin":
+		if e.complexity.Query.PointedAtByOrigin == nil {
+			break
+		}
+
+		args, err := ec.field_Query_pointedAtByOrigin_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PointedAtByOrigin(childComplexity, args["domain"].(string)), true
+
+	case "Query.pointedAtByOriginGroup":
+		if e.complexity.Query.PointedAtByOriginGroup == nil {
+			break
+		}
+
+		args, err := ec.field_Query_pointedAtByOriginGroup_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PointedAtByOriginGroup(childComplexity, args["domain"].(string)), true
+
+	case "Query.pointedAtByRecords":
+		if e.complexity.Query.PointedAtByRecords == nil {
+			break
+		}
+
+		args, err := ec.field_Query_pointedAtByRecords_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PointedAtByRecords(childComplexity, args["domain"].(string)), true
 
 	case "Query.record":
 		if e.complexity.Query.Record == nil {
@@ -488,7 +651,15 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	&ast.Source{Name: "schema.graphqls", Input: `type Account {
+	&ast.Source{Name: "schema.graphqls", Input: `enum Type {
+	ACCOUNT
+	ZONE
+	RECORD
+	DISTRIBUTION
+	ORIGIN
+}
+
+type Account {
 	accountID: ID!
 	zones: [Zone!]!
 	zone(id: ID!): Zone!
@@ -532,6 +703,20 @@ type OriginGroup {
 	origins: [Value!]!
 }
 
+type HijackableResource {
+	id: ID!
+	account: String!
+	type: Type!
+	value: Value!
+}
+
+type HijackableResourceChain {
+	id: ID!
+	resource: HijackableResource!
+	upstream: [HijackableResource!]!
+	downsteam: [HijackableResource!]!
+}
+
 type Query {
 	accounts: [Account!]!
 	account(id: ID!): Account!
@@ -541,15 +726,26 @@ type Query {
 	
 	records: [Record!]!
 	record(id: ID!): Record!
+	pointedAtByRecords(domain: String!): [Record!]!
 	
 	values: [Value!]!
 	value(id: ID!): Value!
 
 	distributions: [Distribution!]!
 	distribution(id: ID!): Distribution!
+	pointedAtByDistribution(domain: String!): [Distribution!]!
 
 	origins: [Origin!]!
 	origin(id: ID!): Origin
+	pointedAtByOrigin(domain: String!): [Origin!]!
+
+	originGroups: [OriginGroup!]!
+	pointedAtByOriginGroup(domain: String!): [OriginGroup!]!
+
+	hijackChainByDomain(domain: String!): HijackableResourceChain!
+	
+	
+	getElasticbeanstalkUpstreamHijack(endpoints: [String!]!): [HijackableResource!]!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -614,6 +810,34 @@ func (ec *executionContext) field_Query_distribution_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_getElasticbeanstalkUpstreamHijack_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []string
+	if tmp, ok := rawArgs["endpoints"]; ok {
+		arg0, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["endpoints"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_hijackChainByDomain_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["domain"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["domain"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_origin_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -625,6 +849,62 @@ func (ec *executionContext) field_Query_origin_args(ctx context.Context, rawArgs
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_pointedAtByDistribution_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["domain"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["domain"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_pointedAtByOriginGroup_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["domain"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["domain"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_pointedAtByOrigin_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["domain"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["domain"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_pointedAtByRecords_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["domain"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["domain"] = arg0
 	return args, nil
 }
 
@@ -1033,6 +1313,278 @@ func (ec *executionContext) _Distribution_originGroups(ctx context.Context, fiel
 	return ec.marshalNOriginGroup2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐOriginGroupᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _HijackableResource_id(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResource) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HijackableResource",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HijackableResource_account(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResource) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HijackableResource",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Account, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HijackableResource_type(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResource) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HijackableResource",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Type)
+	fc.Result = res
+	return ec.marshalNType2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HijackableResource_value(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResource) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HijackableResource",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Value)
+	fc.Result = res
+	return ec.marshalNValue2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValue(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HijackableResourceChain_id(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResourceChain) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HijackableResourceChain",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HijackableResourceChain_resource(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResourceChain) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HijackableResourceChain",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Resource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.HijackableResource)
+	fc.Result = res
+	return ec.marshalNHijackableResource2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResource(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HijackableResourceChain_upstream(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResourceChain) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HijackableResourceChain",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Upstream, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.HijackableResource)
+	fc.Result = res
+	return ec.marshalNHijackableResource2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResourceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HijackableResourceChain_downsteam(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResourceChain) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HijackableResourceChain",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Downsteam, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.HijackableResource)
+	fc.Result = res
+	return ec.marshalNHijackableResource2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResourceᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Origin_originID(ctx context.Context, field graphql.CollectedField, obj *model.Origin) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1394,6 +1946,47 @@ func (ec *executionContext) _Query_record(ctx context.Context, field graphql.Col
 	return ec.marshalNRecord2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐRecord(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_pointedAtByRecords(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_pointedAtByRecords_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PointedAtByRecords(rctx, args["domain"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Record)
+	fc.Result = res
+	return ec.marshalNRecord2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐRecordᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_values(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1544,6 +2137,47 @@ func (ec *executionContext) _Query_distribution(ctx context.Context, field graph
 	return ec.marshalNDistribution2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐDistribution(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_pointedAtByDistribution(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_pointedAtByDistribution_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PointedAtByDistribution(rctx, args["domain"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Distribution)
+	fc.Result = res
+	return ec.marshalNDistribution2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐDistributionᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_origins(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1614,6 +2248,204 @@ func (ec *executionContext) _Query_origin(ctx context.Context, field graphql.Col
 	res := resTmp.(*model.Origin)
 	fc.Result = res
 	return ec.marshalOOrigin2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐOrigin(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_pointedAtByOrigin(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_pointedAtByOrigin_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PointedAtByOrigin(rctx, args["domain"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Origin)
+	fc.Result = res
+	return ec.marshalNOrigin2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐOriginᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_originGroups(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().OriginGroups(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.OriginGroup)
+	fc.Result = res
+	return ec.marshalNOriginGroup2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐOriginGroupᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_pointedAtByOriginGroup(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_pointedAtByOriginGroup_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PointedAtByOriginGroup(rctx, args["domain"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.OriginGroup)
+	fc.Result = res
+	return ec.marshalNOriginGroup2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐOriginGroupᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_hijackChainByDomain(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_hijackChainByDomain_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().HijackChainByDomain(rctx, args["domain"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.HijackableResourceChain)
+	fc.Result = res
+	return ec.marshalNHijackableResourceChain2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResourceChain(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getElasticbeanstalkUpstreamHijack(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getElasticbeanstalkUpstreamHijack_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetElasticbeanstalkUpstreamHijack(rctx, args["endpoints"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.HijackableResource)
+	fc.Result = res
+	return ec.marshalNHijackableResource2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResourceᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3238,6 +4070,90 @@ func (ec *executionContext) _Distribution(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var hijackableResourceImplementors = []string{"HijackableResource"}
+
+func (ec *executionContext) _HijackableResource(ctx context.Context, sel ast.SelectionSet, obj *model.HijackableResource) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, hijackableResourceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HijackableResource")
+		case "id":
+			out.Values[i] = ec._HijackableResource_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "account":
+			out.Values[i] = ec._HijackableResource_account(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._HijackableResource_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "value":
+			out.Values[i] = ec._HijackableResource_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var hijackableResourceChainImplementors = []string{"HijackableResourceChain"}
+
+func (ec *executionContext) _HijackableResourceChain(ctx context.Context, sel ast.SelectionSet, obj *model.HijackableResourceChain) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, hijackableResourceChainImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HijackableResourceChain")
+		case "id":
+			out.Values[i] = ec._HijackableResourceChain_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "resource":
+			out.Values[i] = ec._HijackableResourceChain_resource(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "upstream":
+			out.Values[i] = ec._HijackableResourceChain_upstream(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "downsteam":
+			out.Values[i] = ec._HijackableResourceChain_downsteam(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var originImplementors = []string{"Origin"}
 
 func (ec *executionContext) _Origin(ctx context.Context, sel ast.SelectionSet, obj *model.Origin) graphql.Marshaler {
@@ -3401,6 +4317,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "pointedAtByRecords":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_pointedAtByRecords(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "values":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -3457,6 +4387,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "pointedAtByDistribution":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_pointedAtByDistribution(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "origins":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -3480,6 +4424,76 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_origin(ctx, field)
+				return res
+			})
+		case "pointedAtByOrigin":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_pointedAtByOrigin(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "originGroups":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_originGroups(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "pointedAtByOriginGroup":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_pointedAtByOriginGroup(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "hijackChainByDomain":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_hijackChainByDomain(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getElasticbeanstalkUpstreamHijack":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getElasticbeanstalkUpstreamHijack(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "__type":
@@ -4001,6 +5015,71 @@ func (ec *executionContext) marshalNDistribution2ᚖgithubᚗcomᚋRiotGamesᚋc
 	return ec._Distribution(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNHijackableResource2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResource(ctx context.Context, sel ast.SelectionSet, v model.HijackableResource) graphql.Marshaler {
+	return ec._HijackableResource(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNHijackableResource2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResourceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.HijackableResource) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNHijackableResource2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResource(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNHijackableResource2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResource(ctx context.Context, sel ast.SelectionSet, v *model.HijackableResource) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._HijackableResource(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNHijackableResourceChain2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResourceChain(ctx context.Context, sel ast.SelectionSet, v model.HijackableResourceChain) graphql.Marshaler {
+	return ec._HijackableResourceChain(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNHijackableResourceChain2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResourceChain(ctx context.Context, sel ast.SelectionSet, v *model.HijackableResourceChain) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._HijackableResourceChain(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalID(v)
 }
@@ -4180,6 +5259,44 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNType2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐType(ctx context.Context, v interface{}) (model.Type, error) {
+	var res model.Type
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNType2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐType(ctx context.Context, sel ast.SelectionSet, v model.Type) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNValue2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐValue(ctx context.Context, sel ast.SelectionSet, v model.Value) graphql.Marshaler {

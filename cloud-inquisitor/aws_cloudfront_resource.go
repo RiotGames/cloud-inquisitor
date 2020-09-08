@@ -503,3 +503,7 @@ func (cf *AWSCloudFrontDistributionHijackableResource) PublishState() error {
 
 	return nil
 }
+
+func (cf *AWSCloudFrontDistributionHijackableResource) AnalyzeForHijack() (HijackChain, error) {
+	return HijackChain{[]HijackChainElement{}}, nil
+}
