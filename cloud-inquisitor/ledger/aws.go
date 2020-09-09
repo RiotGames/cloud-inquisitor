@@ -40,7 +40,7 @@ func (al AWSActionLedger) Commit(ctx context.Context, action string, resource cl
 	defer db.Close()
 
 	var ledgerItem AWSActionLedger
-	err = mapstructure.Decode(resource.GetMetadata(), &ledgerItem)
+	err = mapstructure.Decode(resource.Metadata, &ledgerItem)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (al AWSActionLedger) Commit(ctx context.Context, action string, resource cl
 	transaction.ActionError = actionError.Error()
 	transaction.StepFunctionExecutionID = resource.StepFunctionExecutionID
 
-	err = db.Create(&transaction)
+	db.Create(&transaction)
 	return err
 }
 
