@@ -233,7 +233,33 @@ func (r *queryResolver) Record(ctx context.Context, id string) (*model.Record, e
 }
 
 func (r *queryResolver) PointedAtByRecords(ctx context.Context, domain string) ([]*model.Record, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Infof("finding all records that point to %v", domain)
+	var recordValues []*model.Value
+	err := r.DB.Where(model.Value{ValueID: domain}).Find(&recordValues).Error
+	if err != nil {
+		return []*model.Record{}, err
+	}
+
+	recordIds := []uint{}
+	for _, val := range recordValues {
+		if val.RecordID != 0 {
+			recordIds = append(recordIds, val.RecordID)
+		}
+	}
+
+	var records []*model.Record
+	err = r.DB.Find(&records, recordIds).Error
+	if err != nil {
+		return []*model.Record{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, record := range records {
+			log.Debugf("record %#v points to domain %v", record, domain)
+		}
+	}
+
+	return records, nil
 }
 
 func (r *queryResolver) Values(ctx context.Context) ([]*model.Value, error) {
@@ -297,7 +323,39 @@ func (r *queryResolver) Distribution(ctx context.Context, id string) (*model.Dis
 }
 
 func (r *queryResolver) PointedAtByDistribution(ctx context.Context, domain string) ([]*model.Distribution, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Infof("finding all distributions pointing at domain %v", domain)
+	distroIds := []uint{}
+	origins, err := r.PointedAtByOrigin(ctx, domain)
+	if err != nil {
+		log.Errorf("erroring getting origins for distribution: %v", err.Error())
+	} else {
+		for _, origin := range origins {
+			distroIds = append(distroIds, origin.DistributionID)
+		}
+	}
+
+	originGroups, err := r.PointedAtByOriginGroup(ctx, domain)
+	if err != nil {
+		log.Errorf("error getting origin groups for distribution: %v", err.Error())
+	} else {
+		for _, origin := range originGroups {
+			distroIds = append(distroIds, origin.DistributionID)
+		}
+	}
+
+	var distributions []*model.Distribution
+	err = r.DB.Find(&distributions, distroIds).Error
+	if err != nil {
+		return []*model.Distribution{}, nil
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, distro := range distributions {
+			log.Debugf("found distribution %v for domain %v", *distro, domain)
+		}
+	}
+
+	return distributions, nil
 }
 
 func (r *queryResolver) Origins(ctx context.Context) ([]*model.Origin, error) {
@@ -324,15 +382,53 @@ func (r *queryResolver) Origin(ctx context.Context, id string) (*model.Origin, e
 }
 
 func (r *queryResolver) PointedAtByOrigin(ctx context.Context, domain string) ([]*model.Origin, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Infof("looking for all origins pointing at dominan %v", domain)
+	var origins []*model.Origin
+	err := r.DB.Where(model.Origin{Domain: domain}).Find(&origins).Error
+	if err != nil {
+		return []*model.Origin{}, err
+	}
+
+	return origins, nil
 }
 
 func (r *queryResolver) OriginGroups(ctx context.Context) ([]*model.OriginGroup, error) {
-	panic(fmt.Errorf("not implemented"))
+	var originGroups []*model.OriginGroup
+	err := r.DB.Preload("Origins").Find(&originGroups).Error
+	if err != nil {
+		return []*model.OriginGroup{}, err
+	}
+
+	return originGroups, nil
 }
 
 func (r *queryResolver) PointedAtByOriginGroup(ctx context.Context, domain string) ([]*model.OriginGroup, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Infof("looking for origin groups pointing at domain %v", domain)
+
+	var domainValues []*model.Value
+	err := r.DB.Where(model.Value{ValueID: domain}).Find(&domainValues).Error
+	if err != nil {
+		return []*model.OriginGroup{}, err
+	}
+
+	originGroupIds := []uint{}
+	for _, val := range domainValues {
+		originGroupIds = append(originGroupIds, val.OriginGroupID)
+	}
+
+	var originGroups []*model.OriginGroup
+	err = r.DB.Find(&originGroups, originGroupIds).Error
+	if err != nil {
+		return []*model.OriginGroup{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, group := range originGroups {
+			log.Debugf("origin group %v pointing to domain %v", group, domain)
+		}
+	}
+
+	return originGroups, nil
 }
 
 func (r *queryResolver) HijackChainByDomain(ctx context.Context, domain string) (*model.HijackableResourceChain, error) {
@@ -346,18 +442,14 @@ func (r *queryResolver) GetElasticbeanstalkUpstreamHijack(ctx context.Context, e
 func (r *recordResolver) Values(ctx context.Context, obj *model.Record) ([]*model.Value, error) {
 	log.Infof("record <%v> getting values\n", obj.RecordID)
 	log.Debugf("%#v\n", *obj)
-	db, err := NewDBConnection()
-	if err != nil {
-		return []*model.Value{}, err
-	}
 
 	record := model.Record{RecordID: obj.RecordID}
-	err = db.Where(&record).First(&record).Error
+	err := r.DB.Where(&record).First(&record).Error
 	if err != nil {
 		return []*model.Value{}, err
 	}
 	var values []*model.Value
-	err = db.Model(&record).Association("ValueRelation").Find(&values).Error
+	err = r.DB.Model(&record).Association("ValueRelation").Find(&values).Error
 	if err != nil {
 		return []*model.Value{}, err
 	}
