@@ -4,6 +4,7 @@ enum Type {
 	RECORD
 	DISTRIBUTION
 	ORIGIN
+	ELASTICBEANSTALK
 }
 
 type Account {
@@ -74,6 +75,7 @@ type Query {
 	records: [Record!]!
 	record(id: ID!): Record!
 	pointedAtByRecords(domain: String!): [Record!]!
+
 	
 	values: [Value!]!
 	value(id: ID!): Value!
@@ -89,8 +91,8 @@ type Query {
 	originGroups: [OriginGroup!]!
 	pointedAtByOriginGroup(domain: String!): [OriginGroup!]!
 
-	hijackChainByDomain(domain: String!): HijackableResourceChain!
-	
-	
 	getElasticbeanstalkUpstreamHijack(endpoints: [String!]!): [HijackableResource!]!
+
+	hijackChainByDomain(domain: String!, type: Type!): HijackableResourceChain!
+	
 }

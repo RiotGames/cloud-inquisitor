@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
@@ -431,12 +430,107 @@ func (r *queryResolver) PointedAtByOriginGroup(ctx context.Context, domain strin
 	return originGroups, nil
 }
 
-func (r *queryResolver) HijackChainByDomain(ctx context.Context, domain string) (*model.HijackableResourceChain, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) GetElasticbeanstalkUpstreamHijack(ctx context.Context, endpoints []string) ([]*model.HijackableResource, error) {
+	// elasticbeanstalks are endpoints are only fronted by other resources
+	hijackChain := []*model.HijackableResource{}
+	searchEndpoints := endpoints
+	// need to check:
+	// 1. cloudfront
+	for _, endpoint := range searchEndpoints {
+		distributions, err := r.Query().PointedAtByDistribution(ctx, endpoint)
+		if err != nil {
+			log.Errorf("error looking up distributions for endpoint %v", endpoint)
+			continue
+		}
+
+		for _, distro := range distributions {
+			completeDistro, err := r.Query().Distribution(ctx, distro.DistributionID)
+			if err != nil {
+				log.Errorf("error looking up distribution with id %v", distro.DistributionID)
+				continue
+			}
+
+			var account model.Account
+			err = r.DB.First(&account, completeDistro.AccountID).Error
+			if err != nil {
+				log.Errorf("unable to get account for distribution %#v", *completeDistro)
+				continue
+			}
+
+			hijackChain = append(hijackChain, &model.HijackableResource{
+				ID:      completeDistro.DistributionID,
+				Type:    model.TypeDistribution,
+				Account: account.AccountID,
+				Value: &model.Value{
+					ValueID: completeDistro.Domain,
+				},
+			})
+		}
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, resource := range hijackChain {
+			log.Debugf("resource: %#v", *resource)
+		}
+	}
+
+	for _, resource := range hijackChain {
+		searchEndpoints = append(searchEndpoints, resource.Value.ValueID)
+	}
+	// 2. route53
+	for _, endpoint := range searchEndpoints {
+		records, err := r.Query().PointedAtByRecords(ctx, endpoint)
+		if err != nil {
+			log.Errorf("unable to get records taht point to endpoint %v", endpoint)
+			continue
+		}
+
+		for _, record := range records {
+			completeRecord, err := r.Query().Record(ctx, record.RecordID)
+			if err != nil {
+				log.Errorf("unable to get complete record for record id %v", record.RecordID)
+				continue
+			}
+
+			var account model.Account
+			err = r.DB.First(&account, completeRecord.AccountID).Error
+			if err != nil {
+				log.Errorf("unable to get account for distribution %#v", *completeRecord)
+				continue
+			}
+
+			hijackChain = append(hijackChain, &model.HijackableResource{
+				ID:      completeRecord.RecordID,
+				Type:    model.TypeRecord,
+				Account: account.AccountID,
+				Value: &model.Value{
+					ValueID: completeRecord.RecordID,
+				},
+			})
+
+		}
+	}
+
+	return hijackChain, nil
 }
 
-func (r *queryResolver) GetElasticbeanstalkUpstreamHijack(ctx context.Context, endpoints []string) ([]*model.HijackableResource, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) HijackChainByDomain(ctx context.Context, domain string, typeArg model.Type) (*model.HijackableResourceChain, error) {
+	switch typeArg {
+	case model.TypeElasticbeanstalk:
+		chain, err := r.Query().GetElasticbeanstalkUpstreamHijack(ctx, []string{domain})
+		if err != nil {
+			log.Errorf("recieved error when querying for elastic beanstalk hijacks: %v", err.Error())
+		}
+
+		return &model.HijackableResourceChain{
+			ID:        domain,
+			Resource:  &model.HijackableResource{},
+			Upstream:  chain,
+			Downsteam: []*model.HijackableResource{},
+		}, err
+	}
+
+	return &model.HijackableResourceChain{}, nil
 }
 
 func (r *recordResolver) Values(ctx context.Context, obj *model.Record) ([]*model.Value, error) {

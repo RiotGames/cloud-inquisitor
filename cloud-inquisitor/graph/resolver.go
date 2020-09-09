@@ -7,6 +7,7 @@ package graph
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/secrets/vault"
@@ -160,4 +161,26 @@ func MigrateTables() error {
 
 type Resolver struct {
 	DB *gorm.DB
+}
+
+func NewResolver() (*Resolver, error) {
+	db, err := graph.NewDBConnection()
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
+	db.DB().SetMaxIdleConns(10)
+
+	// SetMaxOpenConns sets the maximum number of open connections to the database.
+	db.DB().SetMaxOpenConns(100)
+
+	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+	db.DB().SetConnMaxLifetime(time.Hour)
+
+	return &Resolver{DB: db}, nil
+}
+
+func (r *Resolver) Close() error {
+	return r.DB.Close()
 }

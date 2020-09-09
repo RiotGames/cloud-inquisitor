@@ -25,11 +25,12 @@ type HijackableResourceChain struct {
 type Type string
 
 const (
-	TypeAccount      Type = "ACCOUNT"
-	TypeZone         Type = "ZONE"
-	TypeRecord       Type = "RECORD"
-	TypeDistribution Type = "DISTRIBUTION"
-	TypeOrigin       Type = "ORIGIN"
+	TypeAccount          Type = "ACCOUNT"
+	TypeZone             Type = "ZONE"
+	TypeRecord           Type = "RECORD"
+	TypeDistribution     Type = "DISTRIBUTION"
+	TypeOrigin           Type = "ORIGIN"
+	TypeElasticbeanstalk Type = "ELASTICBEANSTALK"
 )
 
 var AllType = []Type{
@@ -38,11 +39,12 @@ var AllType = []Type{
 	TypeRecord,
 	TypeDistribution,
 	TypeOrigin,
+	TypeElasticbeanstalk,
 }
 
 func (e Type) IsValid() bool {
 	switch e {
-	case TypeAccount, TypeZone, TypeRecord, TypeDistribution, TypeOrigin:
+	case TypeAccount, TypeZone, TypeRecord, TypeDistribution, TypeOrigin, TypeElasticbeanstalk:
 		return true
 	}
 	return false
