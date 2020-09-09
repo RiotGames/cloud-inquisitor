@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/cloud-inquisitor/database"
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/jinzhu/gorm"
@@ -28,7 +29,7 @@ type AWSActionLedger struct {
 	ResourceSubType         string    `json:"ResourceSubType" mapstructure:"ResourceSubType"`
 }
 
-func (al *AWSActionLedger) Commit(ctx context.Context, action string, resource cloudinquisitor.PassableResource, actionError error) error {
+func (al AWSActionLedger) Commit(ctx context.Context, action string, resource cloudinquisitor.PassableResource, actionError error) error {
 	db, err := database.NewDBConnection()
 	if err != nil {
 		if db != nil {

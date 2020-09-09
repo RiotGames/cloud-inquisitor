@@ -35,7 +35,7 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 
 	actionError := parsedResource.TakeAction(action)
 	ledger := GetActionLedger()
-	graph.ActionLedgerCommit(
+	ledger.ActionLedgerCommit(
 		ctx, 
 		action, 
 		parsedResource.GetMetadata(), 

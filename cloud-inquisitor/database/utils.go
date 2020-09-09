@@ -1,5 +1,16 @@
 package database
 
+import (
+	"errors"
+	graphmodel "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
+	ledgermodel "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/ledger"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/secrets/vault"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"strings"
+)
+
 func NewDBConnection() (*gorm.DB, error) {
 	if settings.IsSet("mysql") {
 		var connectionString string
@@ -40,35 +51,32 @@ func CreateTables() error {
 	}
 	defer db.Close()
 
-	if !db.HasTable(&model.Account{}) {
-		db.CreateTable(&model.Account{})
+	if !db.HasTable(&graphmodel.Account{}) {
+		db.CreateTable(&graphmodel.Account{})
 	}
-	if !db.HasTable(&model.Zone{}) {
-		db.CreateTable(&model.Zone{})
+	if !db.HasTable(&graphmodel.Zone{}) {
+		db.CreateTable(&graphmodel.Zone{})
 	}
-	if !db.HasTable(&model.Record{}) {
-		db.CreateTable(&model.Record{})
+	if !db.HasTable(&graphmodel.Record{}) {
+		db.CreateTable(&graphmodel.Record{})
 	}
-	if !db.HasTable(&model.Value{}) {
-		db.CreateTable(&model.Value{})
-	}
-
-	if !db.HasTable(&model.Distribution{}) {
-		db.CreateTable(&model.Distribution{})
+	if !db.HasTable(&graphmodel.Value{}) {
+		db.CreateTable(&graphmodel.Value{})
 	}
 
-	if !db.HasTable(&model.Origin{}) {
-		db.CreateTable(&model.Origin{})
-	}
-	if !db.HasTable(&model.OriginGroup{}) {
-		db.CreateTable(&model.OriginGroup{})
+	if !db.HasTable(&graphmodel.Distribution{}) {
+		db.CreateTable(&graphmodel.Distribution{})
 	}
 
-	if !db.HasTable(&model.ActionLedger{}) {
-		db.CreateTable(&model.ActionLedger{})
+	if !db.HasTable(&graphmodel.Origin{}) {
+		db.CreateTable(&graphmodel.Origin{})
 	}
-	if !db.HasTable(&model.ConfigLedger{}) {
-		db.CreateTable(&model.ConfigLedger{})
+	if !db.HasTable(&graphmodel.OriginGroup{}) {
+		db.CreateTable(&graphmodel.OriginGroup{})
+	}
+
+	if !db.HasTable(&ledgermodel.AWSActionLedger{}) {
+		db.CreateTable(&ledgermodel.AWSActionLedger{})
 	}
 
 	return nil
@@ -85,15 +93,14 @@ func DropTables() error {
 	defer db.Close()
 
 	err = db.DropTableIfExists(
-		&model.Account{},
-		&model.Zone{},
-		&model.Record{},
-		&model.Value{},
-		&model.Distribution{},
-		&model.Origin{},
-		&model.OriginGroup{},
-		&model.ActionLedger{},
-		&model.ConfigLedger{}
+		&graphmodel.Account{},
+		&graphmodel.Zone{},
+		&graphmodel.Record{},
+		&graphmodel.Value{},
+		&graphmodel.Distribution{},
+		&graphmodel.Origin{},
+		&graphmodel.OriginGroup{},
+		&ledgermodel.AWSActionLedger{},
 	).Error
 
 	if err != nil {
@@ -114,15 +121,14 @@ func MigrateTables() error {
 	defer db.Close()
 
 	err = db.AutoMigrate(
-		&model.Account{},
-		&model.Zone{},
-		&model.Record{},
-		&model.Value{},
-		&model.Distribution{},
-		&model.Origin{},
-		&model.OriginGroup{},
-		&model.ActionLedger{},
-		&model.ConfigLedger{}
+		&graphmodel.Account{},
+		&graphmodel.Zone{},
+		&graphmodel.Record{},
+		&graphmodel.Value{},
+		&graphmodel.Distribution{},
+		&graphmodel.Origin{},
+		&graphmodel.OriginGroup{},
+		&ledgermodel.AWSActionLedger{},
 	).Error
 
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
-	"go.riotgames.com/OpSec/rVault"
+	rVault "github.com/RiotGames/vault-go-client"
 )
 
 func newVaultClient() (*rVault.Client, error) {

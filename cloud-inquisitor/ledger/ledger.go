@@ -1,11 +1,14 @@
 package ledger
 
-import "github.com/aws/aws-lambda-go/events"
+import (
+	"context"
+	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
+)
 
 type ActionLedger interface {
-	Commit() error
+	Commit(ctx context.Context, action string, resource cloudinquisitor.PassableResource, actionError error) error
 }
 
-func GetActionLedger() (ActionLedger, error) ActionLedger {
+func GetActionLedger() AWSActionLedger {
 	return GetAWSActionLedger()
 }
