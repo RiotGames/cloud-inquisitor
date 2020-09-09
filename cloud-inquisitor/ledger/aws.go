@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/cloud-inquisitor/database"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/jinzhu/gorm"
 	"github.com/mitchellh/mapstructure"
