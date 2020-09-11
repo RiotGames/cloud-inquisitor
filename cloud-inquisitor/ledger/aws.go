@@ -11,7 +11,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type AWSActionLedger struct {
+type AWSActionLedgerEntry struct {
 	gorm.Model
 
 	RequestID               string    `json:"RequestID"`
@@ -29,7 +29,7 @@ type AWSActionLedger struct {
 	ResourceSubType         string    `json:"ResourceSubType" mapstructure:"ResourceSubType"`
 }
 
-func (al AWSActionLedger) Commit(ctx context.Context, action string, resource cloudinquisitor.PassableResource, actionError error) error {
+func (al AWSActionLedgerEntry) Commit(ctx context.Context, action string, resource cloudinquisitor.PassableResource, actionError error) error {
 	db, err := database.NewDBConnection()
 	if err != nil {
 		if db != nil {
@@ -39,7 +39,7 @@ func (al AWSActionLedger) Commit(ctx context.Context, action string, resource cl
 	}
 	defer db.Close()
 
-	var ledgerItem AWSActionLedger
+	var ledgerItem AWSActionLedgerEntry
 	err = mapstructure.Decode(resource.Metadata, &ledgerItem)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (al AWSActionLedger) Commit(ctx context.Context, action string, resource cl
 
 	tz, _ := time.LoadLocation("UTC")
 	lc, _ := lambdacontext.FromContext(ctx)
-	transaction := AWSActionLedger{
+	transaction := AWSActionLedgerEntry{
 		RequestID:         lc.AwsRequestID,
 		LambdaFunctionArn: lc.InvokedFunctionArn,
 	}
@@ -62,6 +62,6 @@ func (al AWSActionLedger) Commit(ctx context.Context, action string, resource cl
 	return err
 }
 
-func GetAWSActionLedger() AWSActionLedger {
-	return AWSActionLedger{}
+func GetAWSActionLedger() AWSActionLedgerEntry {
+	return AWSActionLedgerEntry{}
 }

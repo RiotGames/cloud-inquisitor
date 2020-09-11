@@ -75,8 +75,8 @@ func CreateTables() error {
 		db.CreateTable(&graphmodel.OriginGroup{})
 	}
 
-	if !db.HasTable(&ledgermodel.AWSActionLedger{}) {
-		db.CreateTable(&ledgermodel.AWSActionLedger{})
+	if !db.HasTable(&ledgermodel.AWSActionLedgerEntry{}) {
+		db.CreateTable(&ledgermodel.AWSActionLedgerEntry{})
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func DropTables() error {
 		&graphmodel.Distribution{},
 		&graphmodel.Origin{},
 		&graphmodel.OriginGroup{},
-		&ledgermodel.AWSActionLedger{},
+		&ledgermodel.AWSActionLedgerEntry{},
 	).Error
 
 	if err != nil {
@@ -128,7 +128,7 @@ func MigrateTables() error {
 		&graphmodel.Distribution{},
 		&graphmodel.Origin{},
 		&graphmodel.OriginGroup{},
-		&ledgermodel.AWSActionLedger{},
+		&ledgermodel.AWSActionLedgerEntry{},
 	).Error
 
 	if err != nil {

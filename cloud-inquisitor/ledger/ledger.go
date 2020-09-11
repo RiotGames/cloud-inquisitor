@@ -9,6 +9,6 @@ type ActionLedger interface {
 	Commit(ctx context.Context, action string, resource cloudinquisitor.PassableResource, actionError error) error
 }
 
-func GetActionLedger() AWSActionLedger {
+func GetActionLedger() AWSActionLedgerEntry {
 	return GetAWSActionLedger()
 }
