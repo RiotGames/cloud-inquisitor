@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 	"reflect"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
@@ -95,7 +95,7 @@ func (cf *AWSCloudFrontDistributionResource) GetLogger() *log.Logger {
 }
 
 func (cf *AWSCloudFrontDistributionResource) createDistributionEntries() error {
-	db, err := graph.NewDBConnection()
+	db, err := database.NewDBConnection()
 	defer db.Close()
 	if err != nil {
 		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
@@ -181,7 +181,7 @@ func (cf *AWSCloudFrontDistributionResource) createDistributionEntries() error {
 }
 
 func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
-	db, err := graph.NewDBConnection()
+	db, err := database.NewDBConnection()
 	defer db.Close()
 	if err != nil {
 		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
