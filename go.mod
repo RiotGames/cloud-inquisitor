@@ -1,6 +1,6 @@
 module github.com/RiotGames/cloud-inquisitor
 
-go 1.13
+go 1.15
 
 require (
 	github.com/99designs/gqlgen v0.12.2
