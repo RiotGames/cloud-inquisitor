@@ -3,14 +3,19 @@ variable "name" {
     description = "name of rule to generate"
 }
 
+variable "environment" {
+    type = string
+    description = "environment the rules exist in"
+}
+
 variable "description" {
     type = string
     description = "description of event rule"
 }
 
 variable "rule_patterns" {
-    type = map(string)
-    description = "pattern to use to trigger event"
+    type = list(string)
+    description = "patterns to use to trigger event"
 }
 
 variable "target_arn" {
