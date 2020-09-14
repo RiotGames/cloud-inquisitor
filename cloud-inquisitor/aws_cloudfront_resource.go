@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 	"reflect"
+
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"

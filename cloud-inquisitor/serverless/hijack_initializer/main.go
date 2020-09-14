@@ -17,7 +17,7 @@ type passableResourcesStruct struct {
 
 func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayload) (passableResourcesStruct, error) {
 	event := payload["CloudWatchEvent"]
-	sfnExeId = payload["StepFunctionExecutionID"],
+	sfnExeID := payload["StepFunctionExecutionID"]
 
 	resource, err := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,
@@ -35,7 +35,7 @@ func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayl
 				Type:                    resource.GetType(),
 				Finished:                true,
 				Metadata:                resource.GetLogger().GetMetadata(),
-				StepFunctionExecutionID: sfnExeId,
+				StepFunctionExecutionID: sfnExeID,
 			},
 		}}, nil
 	}
@@ -45,20 +45,20 @@ func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayl
 	case cloudinquisitor.SERVICE_AWS_ROUTE53_RECORD_SET:
 		for _, record := range resource.(*cloudinquisitor.AWSRoute53RecordSet).RecordSet {
 			passableResources = append(passableResources, cloudinquisitor.PassableResource{
-				Resource: record,
-				Type:     record.GetType(),
-				Finished: false,
-				Metadata: record.GetLogger().GetMetadata(),
-				StepFunctionExecutionID: sfnExeId,
+				Resource:                record,
+				Type:                    record.GetType(),
+				Finished:                false,
+				Metadata:                record.GetLogger().GetMetadata(),
+				StepFunctionExecutionID: sfnExeID,
 			})
 		}
 	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE, cloudinquisitor.SERVICE_AWS_CLOUDFRONT:
 		passableResources = append(passableResources, cloudinquisitor.PassableResource{
-			Resource: resource,
-			Type:     resource.GetType(),
-			Finished: false,
-			Metadata: resource.GetLogger().GetMetadata(),
-			StepFunctionExecutionID: sfnExeId,
+			Resource:                resource,
+			Type:                    resource.GetType(),
+			Finished:                false,
+			Metadata:                resource.GetLogger().GetMetadata(),
+			StepFunctionExecutionID: sfnExeID,
 		})
 	default:
 		return passableResourcesStruct{passableResources}, errors.New("unknown resource type " + resource.GetType())

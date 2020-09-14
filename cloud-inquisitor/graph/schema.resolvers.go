@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 	generated1 "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	log "github.com/sirupsen/logrus"
@@ -15,7 +16,7 @@ func (r *accountResolver) Zones(ctx context.Context, obj *model.Account) ([]*mod
 	log.Infof("account <%v> getting zones\n", obj.AccountID)
 	log.Debugf("%#v\n", *obj)
 
-	db, err := NewDBConnection()
+	db, err := database.NewDBConnection()
 	if err != nil {
 		return []*model.Zone{}, err
 	}
@@ -317,7 +318,7 @@ func (r *queryResolver) Origin(ctx context.Context, id string) (*model.Origin, e
 func (r *recordResolver) Values(ctx context.Context, obj *model.Record) ([]*model.Value, error) {
 	log.Infof("record <%v> getting values\n", obj.RecordID)
 	log.Debugf("%#v\n", *obj)
-	db, err := NewDBConnection()
+	db, err := database.NewDBConnection()
 	if err != nil {
 		return []*model.Value{}, err
 	}
