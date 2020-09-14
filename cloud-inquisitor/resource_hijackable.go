@@ -85,13 +85,13 @@ func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, me
 		}
 		if eventName, ok := detailMap["eventName"]; ok {
 			switch eventName {
-			case "TerminateEnvironment":
+			case "TerminateEnvironment", "CreateEnvironment":
 				resource = &AWSElasticBeanstalkEnvironmentHijackableResource{}
 				resourceErr := resource.NewFromEventBus(event, ctx, metadata)
 				return resource, resourceErr
 			default:
 				resource = &StubResource{}
-				return resource, errors.New("unknown route53 eventName")
+				return resource, errors.New("unknown elasticbeanstalk eventName")
 			}
 		} else {
 			resource = &StubResource{}

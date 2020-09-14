@@ -26,6 +26,11 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passable
 		return passableResourcesStruct{}, err
 	}
 
+	err = resource.RefreshState()
+	if err != nil {
+		return passableResourcesStruct{}, err
+	}
+
 	if resource.GetType() == cloudinquisitor.SERVICE_STUB && settings.GetString("stub_resources") != "enabled" {
 		return passableResourcesStruct{[]cloudinquisitor.PassableResource{
 			cloudinquisitor.PassableResource{

@@ -19,11 +19,6 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 		return resource, err
 	}
 
-	err = parsedResource.RefreshState()
-	if err != nil {
-		return resource, err
-	}
-
 	hijackChain, err := parsedResource.AnalyzeForHijack()
 	if err != nil {
 		return cloudinquisitor.PassableResource{
@@ -47,7 +42,6 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 		// send notification
 	}
 
-	err = parsedResource.PublishState()
 	if err != nil {
 		return cloudinquisitor.PassableResource{
 			Resource: parsedResource,

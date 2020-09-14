@@ -102,6 +102,10 @@ func CreateTables() error {
 		db.CreateTable(&model.OriginGroup{})
 	}
 
+	if !db.HasTable(&model.ElasticbeanstalkEnvironment{}) {
+		db.CreateTable(&model.ElasticbeanstalkEnvironment{})
+	}
+
 	return nil
 }
 
@@ -123,6 +127,7 @@ func DropTables() error {
 		&model.Distribution{},
 		&model.Origin{},
 		&model.OriginGroup{},
+		&model.ElasticbeanstalkEnvironment{},
 	).Error
 
 	if err != nil {
@@ -150,6 +155,7 @@ func MigrateTables() error {
 		&model.Distribution{},
 		&model.Origin{},
 		&model.OriginGroup{},
+		&model.ElasticbeanstalkEnvironment{},
 	).Error
 
 	if err != nil {
@@ -164,7 +170,7 @@ type Resolver struct {
 }
 
 func NewResolver() (*Resolver, error) {
-	db, err := graph.NewDBConnection()
+	db, err := NewDBConnection()
 	if err != nil {
 		db.Close()
 		return nil, err

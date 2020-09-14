@@ -61,6 +61,15 @@ type ComplexityRoot struct {
 		Origins        func(childComplexity int) int
 	}
 
+	ElasticbeanstalkEnvironment struct {
+		ApplicationName func(childComplexity int) int
+		CName           func(childComplexity int) int
+		EnvironmentID   func(childComplexity int) int
+		EnvironmentName func(childComplexity int) int
+		EnvironmentURL  func(childComplexity int) int
+		Region          func(childComplexity int) int
+	}
+
 	HijackableResource struct {
 		Account func(childComplexity int) int
 		ID      func(childComplexity int) int
@@ -90,6 +99,7 @@ type ComplexityRoot struct {
 		Accounts                          func(childComplexity int) int
 		Distribution                      func(childComplexity int, id string) int
 		Distributions                     func(childComplexity int) int
+		ElasticbeanstalkEnvironments      func(childComplexity int) int
 		GetElasticbeanstalkUpstreamHijack func(childComplexity int, endpoints []string) int
 		HijackChainByDomain               func(childComplexity int, domain string, typeArg model.Type) int
 		Origin                            func(childComplexity int, id string) int
@@ -155,6 +165,7 @@ type QueryResolver interface {
 	PointedAtByOrigin(ctx context.Context, domain string) ([]*model.Origin, error)
 	OriginGroups(ctx context.Context) ([]*model.OriginGroup, error)
 	PointedAtByOriginGroup(ctx context.Context, domain string) ([]*model.OriginGroup, error)
+	ElasticbeanstalkEnvironments(ctx context.Context) ([]*model.ElasticbeanstalkEnvironment, error)
 	GetElasticbeanstalkUpstreamHijack(ctx context.Context, endpoints []string) ([]*model.HijackableResource, error)
 	HijackChainByDomain(ctx context.Context, domain string, typeArg model.Type) (*model.HijackableResourceChain, error)
 }
@@ -248,6 +259,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Distribution.Origins(childComplexity), true
+
+	case "ElasticbeanstalkEnvironment.applicationName":
+		if e.complexity.ElasticbeanstalkEnvironment.ApplicationName == nil {
+			break
+		}
+
+		return e.complexity.ElasticbeanstalkEnvironment.ApplicationName(childComplexity), true
+
+	case "ElasticbeanstalkEnvironment.cname":
+		if e.complexity.ElasticbeanstalkEnvironment.CName == nil {
+			break
+		}
+
+		return e.complexity.ElasticbeanstalkEnvironment.CName(childComplexity), true
+
+	case "ElasticbeanstalkEnvironment.environmentID":
+		if e.complexity.ElasticbeanstalkEnvironment.EnvironmentID == nil {
+			break
+		}
+
+		return e.complexity.ElasticbeanstalkEnvironment.EnvironmentID(childComplexity), true
+
+	case "ElasticbeanstalkEnvironment.environmentName":
+		if e.complexity.ElasticbeanstalkEnvironment.EnvironmentName == nil {
+			break
+		}
+
+		return e.complexity.ElasticbeanstalkEnvironment.EnvironmentName(childComplexity), true
+
+	case "ElasticbeanstalkEnvironment.environmentURL":
+		if e.complexity.ElasticbeanstalkEnvironment.EnvironmentURL == nil {
+			break
+		}
+
+		return e.complexity.ElasticbeanstalkEnvironment.EnvironmentURL(childComplexity), true
+
+	case "ElasticbeanstalkEnvironment.region":
+		if e.complexity.ElasticbeanstalkEnvironment.Region == nil {
+			break
+		}
+
+		return e.complexity.ElasticbeanstalkEnvironment.Region(childComplexity), true
 
 	case "HijackableResource.account":
 		if e.complexity.HijackableResource.Account == nil {
@@ -370,6 +423,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Distributions(childComplexity), true
+
+	case "Query.elasticbeanstalkEnvironments":
+		if e.complexity.Query.ElasticbeanstalkEnvironments == nil {
+			break
+		}
+
+		return e.complexity.Query.ElasticbeanstalkEnvironments(childComplexity), true
 
 	case "Query.getElasticbeanstalkUpstreamHijack":
 		if e.complexity.Query.GetElasticbeanstalkUpstreamHijack == nil {
@@ -704,6 +764,15 @@ type OriginGroup {
 	origins: [Value!]!
 }
 
+type ElasticbeanstalkEnvironment {
+	 environmentID: ID!
+	 environmentName: String!
+	 applicationName: String!
+	 environmentURL: String!
+	 cname: String!
+	 region: String!
+}
+
 type HijackableResource {
 	id: ID!
 	account: String!
@@ -744,6 +813,7 @@ type Query {
 	originGroups: [OriginGroup!]!
 	pointedAtByOriginGroup(domain: String!): [OriginGroup!]!
 
+	elasticbeanstalkEnvironments: [ElasticbeanstalkEnvironment!]!
 	getElasticbeanstalkUpstreamHijack(endpoints: [String!]!): [HijackableResource!]!
 
 	hijackChainByDomain(domain: String!, type: Type!): HijackableResourceChain!
@@ -1321,6 +1391,210 @@ func (ec *executionContext) _Distribution_originGroups(ctx context.Context, fiel
 	res := resTmp.([]*model.OriginGroup)
 	fc.Result = res
 	return ec.marshalNOriginGroup2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐOriginGroupᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ElasticbeanstalkEnvironment_environmentID(ctx context.Context, field graphql.CollectedField, obj *model.ElasticbeanstalkEnvironment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ElasticbeanstalkEnvironment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnvironmentID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ElasticbeanstalkEnvironment_environmentName(ctx context.Context, field graphql.CollectedField, obj *model.ElasticbeanstalkEnvironment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ElasticbeanstalkEnvironment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnvironmentName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ElasticbeanstalkEnvironment_applicationName(ctx context.Context, field graphql.CollectedField, obj *model.ElasticbeanstalkEnvironment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ElasticbeanstalkEnvironment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ElasticbeanstalkEnvironment_environmentURL(ctx context.Context, field graphql.CollectedField, obj *model.ElasticbeanstalkEnvironment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ElasticbeanstalkEnvironment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnvironmentURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ElasticbeanstalkEnvironment_cname(ctx context.Context, field graphql.CollectedField, obj *model.ElasticbeanstalkEnvironment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ElasticbeanstalkEnvironment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ElasticbeanstalkEnvironment_region(ctx context.Context, field graphql.CollectedField, obj *model.ElasticbeanstalkEnvironment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ElasticbeanstalkEnvironment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Region, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HijackableResource_id(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResource) (ret graphql.Marshaler) {
@@ -2374,6 +2648,40 @@ func (ec *executionContext) _Query_pointedAtByOriginGroup(ctx context.Context, f
 	res := resTmp.([]*model.OriginGroup)
 	fc.Result = res
 	return ec.marshalNOriginGroup2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐOriginGroupᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_elasticbeanstalkEnvironments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ElasticbeanstalkEnvironments(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ElasticbeanstalkEnvironment)
+	fc.Result = res
+	return ec.marshalNElasticbeanstalkEnvironment2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐElasticbeanstalkEnvironmentᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getElasticbeanstalkUpstreamHijack(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4080,6 +4388,58 @@ func (ec *executionContext) _Distribution(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var elasticbeanstalkEnvironmentImplementors = []string{"ElasticbeanstalkEnvironment"}
+
+func (ec *executionContext) _ElasticbeanstalkEnvironment(ctx context.Context, sel ast.SelectionSet, obj *model.ElasticbeanstalkEnvironment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, elasticbeanstalkEnvironmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ElasticbeanstalkEnvironment")
+		case "environmentID":
+			out.Values[i] = ec._ElasticbeanstalkEnvironment_environmentID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "environmentName":
+			out.Values[i] = ec._ElasticbeanstalkEnvironment_environmentName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "applicationName":
+			out.Values[i] = ec._ElasticbeanstalkEnvironment_applicationName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "environmentURL":
+			out.Values[i] = ec._ElasticbeanstalkEnvironment_environmentURL(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cname":
+			out.Values[i] = ec._ElasticbeanstalkEnvironment_cname(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "region":
+			out.Values[i] = ec._ElasticbeanstalkEnvironment_region(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var hijackableResourceImplementors = []string{"HijackableResource"}
 
 func (ec *executionContext) _HijackableResource(ctx context.Context, sel ast.SelectionSet, obj *model.HijackableResource) graphql.Marshaler {
@@ -4473,6 +4833,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_pointedAtByOriginGroup(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "elasticbeanstalkEnvironments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_elasticbeanstalkEnvironments(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -5023,6 +5397,57 @@ func (ec *executionContext) marshalNDistribution2ᚖgithubᚗcomᚋRiotGamesᚋc
 		return graphql.Null
 	}
 	return ec._Distribution(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNElasticbeanstalkEnvironment2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐElasticbeanstalkEnvironment(ctx context.Context, sel ast.SelectionSet, v model.ElasticbeanstalkEnvironment) graphql.Marshaler {
+	return ec._ElasticbeanstalkEnvironment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNElasticbeanstalkEnvironment2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐElasticbeanstalkEnvironmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ElasticbeanstalkEnvironment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNElasticbeanstalkEnvironment2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐElasticbeanstalkEnvironment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNElasticbeanstalkEnvironment2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐElasticbeanstalkEnvironment(ctx context.Context, sel ast.SelectionSet, v *model.ElasticbeanstalkEnvironment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ElasticbeanstalkEnvironment(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNHijackableResource2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResource(ctx context.Context, sel ast.SelectionSet, v model.HijackableResource) graphql.Marshaler {

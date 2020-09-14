@@ -11,7 +11,8 @@
         ],
         "eventName": [
             "DeleteApplication",
-            "TerminateEnvironment"
+            "TerminateEnvironment",
+            "CreateEnvironment"
         ]
     }
 }

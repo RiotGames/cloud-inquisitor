@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"time"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
@@ -39,7 +42,8 @@ type AWSElasticBeanstalkDetail struct {
 }
 
 type AWSElasticBeastalkRequestParameters struct {
-	EnvironmentId string `json:"environmentId"`
+	EnvironmentId   string `json:"environmentId"`
+	EnvironmentName string `json:"environmentName"`
 }
 type AWSElasticBeanstalkResponseElement struct {
 	/*Distribution struct {
@@ -96,6 +100,21 @@ func (eb *AWSElasticBeanstalkEnvironmentResource) RefreshState() error {
 	}
 
 	svc := elasticbeanstalk.New(regionalSession)
+
+	switch eb.EventName {
+	case "TerminateEnvironment":
+		return eb.refreshDeletedEnvironment(svc)
+	case "CreateEnvironment":
+		return eb.refreshCreatedEnvironment(svc)
+	default:
+		return errors.New("unkown elasticbeanstalk event to parse")
+	}
+
+	return nil
+
+}
+
+func (eb *AWSElasticBeanstalkEnvironmentResource) refreshDeletedEnvironment(svc *elasticbeanstalk.ElasticBeanstalk) error {
 	input := &elasticbeanstalk.DescribeEnvironmentsInput{
 		EnvironmentIds: []*string{
 			aws.String(eb.EnvironmentId),
@@ -137,6 +156,66 @@ func (eb *AWSElasticBeanstalkEnvironmentResource) RefreshState() error {
 	eb.CNAME = *foundEnv.CNAME
 	eb.Endpoint = *foundEnv.EndpointURL
 	eb.EnvironmentName = *foundEnv.EnvironmentName
+	eb.CNAME = *foundEnv.CNAME
+
+	return nil
+}
+
+func (eb *AWSElasticBeanstalkEnvironmentResource) refreshCreatedEnvironment(svc *elasticbeanstalk.ElasticBeanstalk) error {
+	input := &elasticbeanstalk.DescribeEnvironmentsInput{
+		EnvironmentNames: []*string{
+			aws.String(eb.EnvironmentName),
+		},
+		IncludeDeleted: aws.Bool(true),
+	}
+
+	isReady := false
+	var foundEnv *elasticbeanstalk.EnvironmentDescription = nil
+	for !isReady {
+
+		result, err := svc.DescribeEnvironments(input)
+		if err != nil {
+			eb.logger.WithFields(logrus.Fields{
+				"cloud-inquisitor-resource": "aws-elasticbeanstalk-environment",
+				"cloud-inquisitor-error":    "DescribeEnvironments",
+			}).WithFields(eb.GetMetadata()).Error(err.Error())
+			return err
+		}
+
+		eb.GetLogger().Debugf("describe environments input %#v", *input)
+		eb.GetLogger().Debugf("describe environments result %#v", *result)
+
+		for _, env := range result.Environments {
+			eb.GetLogger().Debugf("beanstalk environment: %#v", *env)
+			if *env.EnvironmentName == eb.EnvironmentName {
+				foundEnv = env
+				break
+			}
+		}
+
+		if foundEnv == nil {
+			eb.logger.WithFields(logrus.Fields{
+				"cloud-inquisitor-resource": "aws-elasticbeanstalk-environment",
+				"cloud-inquisitor-error":    "DescribeEnvironments",
+			}).WithFields(eb.GetMetadata()).Error("could not find elasticbeanstalk environment")
+			return errors.New("could not find elasticbeanstalk environment")
+		}
+
+		if *foundEnv.Status == "Ready" {
+			break
+		}
+
+		foundEnv = nil
+		time.Sleep(time.Second * 1)
+	}
+
+	eb.Status = *foundEnv.Status
+	eb.ApplicationName = *foundEnv.ApplicationName
+	eb.CNAME = *foundEnv.CNAME
+	eb.Endpoint = *foundEnv.EndpointURL
+	eb.EnvironmentName = *foundEnv.EnvironmentName
+	eb.EnvironmentId = *foundEnv.EnvironmentId
+	eb.CNAME = *foundEnv.CNAME
 
 	return nil
 }
@@ -215,6 +294,7 @@ func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) NewFromEventBus(even
 	eb.logger.WithFields(eb.GetMetadata()).Debugf("aws event detail response elements: %#v", ebDetails.ResponseElements)
 	eb.logger.WithFields(eb.GetMetadata()).Debugf("aws event detail request parameters: %#v", ebDetails.RequestParamaters)
 	eb.EnvironmentId = ebDetails.RequestParamaters.EnvironmentId
+	eb.EnvironmentName = ebDetails.RequestParamaters.EnvironmentName
 	eb.EventName = ebDetails.EventName
 
 	err = eb.RefreshState()
@@ -266,9 +346,114 @@ func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) NewFromPassableResou
 }
 
 func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) PublishState() error {
+	switch eb.EventName {
+	case "TerminateEnvironment":
+		return eb.publishDeletedEnvironment()
+	case "CreateEnvironment":
+		return eb.publishCreatedEnvironment()
+	default:
+		return errors.New("unknown elasticbeastalk event to publish")
+	}
+	return nil
+}
+
+func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) publishCreatedEnvironment() error {
+	db, err := graph.NewDBConnection()
+	defer db.Close()
+	if err != nil {
+		eb.logger.WithFields(eb.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	var account model.Account
+	err = db.Where(model.Account{AccountID: eb.AccountID}).FirstOrCreate(&account).Error
+	if err != nil {
+		eb.GetLogger().Errorf("error getting account for elasticbeastalk %v: %v", eb.EnvironmentId, err.Error())
+		return err
+	}
+
+	env := model.ElasticbeanstalkEnvironment{
+		AccountID:       account.ID,
+		ApplicationName: eb.ApplicationName,
+		EnvironmentID:   eb.EnvironmentId,
+		EnvironmentName: eb.EnvironmentName,
+		EnvironmentURL:  eb.Endpoint,
+		CName:           eb.CNAME,
+		Region:          eb.Region,
+	}
+	err = db.Where(env).FirstOrCreate(&env).Error
+	if err != nil {
+		eb.GetLogger().Errorf("error creating elasticbeastalk environment  %v: %v", eb.EnvironmentId, err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) publishDeletedEnvironment() error {
+	db, err := graph.NewDBConnection()
+	defer db.Close()
+	if err != nil {
+		eb.logger.WithFields(eb.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	env := model.ElasticbeanstalkEnvironment{
+		EnvironmentID:   eb.EnvironmentId,
+		EnvironmentName: eb.EnvironmentName,
+		ApplicationName: eb.ApplicationName,
+		EnvironmentURL:  eb.Endpoint,
+		CName:           eb.CNAME,
+		Region:          eb.Region,
+	}
+
+	err = db.Delete(&env).Error
+	if err != nil {
+		eb.GetLogger().Errorf("error removing elasticbeanstalk %v: %v", eb.EnvironmentId, err.Error)
+		return err
+	}
+
 	return nil
 }
 
 func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) AnalyzeForHijack() (HijackChain, error) {
-	return HijackChain{[]HijackChainElement{}}, nil
+	switch eb.EventName {
+	case "CreateEnvironment":
+		return eb.analyzeCreatedEnvironment()
+	case "TerminateEnvironment":
+		return eb.analyzeTerminatedEnvironment()
+	default:
+		return HijackChain{}, errors.New("unknown elasticbeanstalk event to analyze for hijacks")
+	}
+}
+
+func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) analyzeCreatedEnvironment() (HijackChain, error) {
+	return HijackChain{}, nil
+}
+
+func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) analyzeTerminatedEnvironment() (HijackChain, error) {
+	resolver, err := graph.NewResolver()
+	if err != nil {
+		eb.GetLogger().Errorf("error creating a new resolver to evaluate elasticbeanstalk hijacks: %v", err.Error())
+		return HijackChain{}, err
+	}
+
+	ctx := context.Background()
+	chain, err := resolver.Query().GetElasticbeanstalkUpstreamHijack(ctx, []string{eb.CNAME, eb.Endpoint})
+	if err != nil {
+		eb.GetLogger().Errorf("error querying graph for elasticbeanstalk hijack analysis: %v", err.Error())
+	}
+
+	hijacksChain := &HijackChain{Chain: make([]HijackChainElement, 0)}
+
+	for _, link := range chain {
+		hijacksChain.Chain = append(hijacksChain.Chain, HijackChainElement{
+			AccountId:          link.Account,
+			Resource:           link.ID,
+			ResourceType:       link.Type.String(),
+			ResourceReferenced: link.Value.ValueID,
+		})
+	}
+
+	return *hijacksChain, nil
 }

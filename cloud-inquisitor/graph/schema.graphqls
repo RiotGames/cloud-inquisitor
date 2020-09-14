@@ -51,6 +51,15 @@ type OriginGroup {
 	origins: [Value!]!
 }
 
+type ElasticbeanstalkEnvironment {
+	 environmentID: ID!
+	 environmentName: String!
+	 applicationName: String!
+	 environmentURL: String!
+	 cname: String!
+	 region: String!
+}
+
 type HijackableResource {
 	id: ID!
 	account: String!
@@ -91,6 +100,7 @@ type Query {
 	originGroups: [OriginGroup!]!
 	pointedAtByOriginGroup(domain: String!): [OriginGroup!]!
 
+	elasticbeanstalkEnvironments: [ElasticbeanstalkEnvironment!]!
 	getElasticbeanstalkUpstreamHijack(endpoints: [String!]!): [HijackableResource!]!
 
 	hijackChainByDomain(domain: String!, type: Type!): HijackableResourceChain!

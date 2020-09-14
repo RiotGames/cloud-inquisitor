@@ -430,6 +430,24 @@ func (r *queryResolver) PointedAtByOriginGroup(ctx context.Context, domain strin
 	return originGroups, nil
 }
 
+func (r *queryResolver) ElasticbeanstalkEnvironments(ctx context.Context) ([]*model.ElasticbeanstalkEnvironment, error) {
+	log.Debug("getting all elasticbeanstalk environments")
+	var environments []*model.ElasticbeanstalkEnvironment
+	err := r.DB.Find(&environments).Error
+	if err != nil {
+		log.Errorf("error getting all elasticbeanstalk environments: %v", err.Error())
+		return []*model.ElasticbeanstalkEnvironment{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, env := range environments {
+			log.Debugf("got elasticbeanstalk environment: %#v", *env)
+		}
+	}
+
+	return environments, nil
+}
+
 func (r *queryResolver) GetElasticbeanstalkUpstreamHijack(ctx context.Context, endpoints []string) ([]*model.HijackableResource, error) {
 	// elasticbeanstalks are endpoints are only fronted by other resources
 	hijackChain := []*model.HijackableResource{}
