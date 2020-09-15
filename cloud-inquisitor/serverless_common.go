@@ -1,4 +1,4 @@
-package serverless
+package cloudinquisitor
 
 import "github.com/aws/aws-lambda-go/events"
 

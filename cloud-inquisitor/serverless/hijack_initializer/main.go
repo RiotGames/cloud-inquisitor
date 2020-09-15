@@ -7,7 +7,6 @@ import (
 	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/serverless"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
 
@@ -15,9 +14,9 @@ type passableResourcesStruct struct {
 	Resources []cloudinquisitor.PassableResource `json:"resources"`
 }
 
-func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayload) (passableResourcesStruct, error) {
-	event := payload["CloudWatchEvent"]
-	sfnExeID := payload["StepFunctionExecutionID"]
+func handlerRequest(ctx context.Context, payload cloudinquisitor.StepFunctionInitPayload) (passableResourcesStruct, error) {
+	event := payload.CloudWatchEvent
+	sfnExeID := payload.StepFunctionExecutionID
 
 	resource, err := cloudinquisitor.NewHijackableResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,

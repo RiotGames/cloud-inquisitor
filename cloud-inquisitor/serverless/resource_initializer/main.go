@@ -5,13 +5,12 @@ import (
 
 	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/serverless"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
 
-func handlerRequest(ctx context.Context, payload serverless.StepFunctionInitPayload) (cloudinquisitor.PassableResource, error) {
-	event := payload["CloudWatchEvent"]
-	sfnExeID := payload["StepFunctionExecutionID"]
+func handlerRequest(ctx context.Context, payload cloudinquisitor.StepFunctionInitPayload) (cloudinquisitor.PassableResource, error) {
+	event := payload.CloudWatchEvent
+	sfnExeID := payload.StepFunctionExecutionID
 
 	resource, _ := cloudinquisitor.NewTaggableResource(event, ctx, map[string]interface{}{
 		"aws-intial-event-id":        event.ID,
