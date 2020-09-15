@@ -40,57 +40,44 @@ Current supported remediation actions are:
 Example usage of terraform module:
 
 ```hcl
-locals {
-  ec2_rule = <<RuleOne
-      {
-          "source": [
-              "aws.ec2"
-          ],
-          "detail-type": [
-              "AWS API Call via CloudTrail"
-          ],
-          "detail": {
-              "eventSource": [
-                  "ec2.amazonaws.com"
-              ],
-              "eventName": [
-                  "ModifyInstanceAttribute",
-                  "RunInstances",
-                  "StartInstances",
-                  "StopInstances",
-                  "TerminateInstances"
-              ]
-          }
-      } 
-  RuleOne
-}
-
-module "us-west-2" {
-    source = "./terraform_modules/workflow"
-
-    name = "cinq_next_test"
-    environment = "dev"
-    region = "us-west-2"
-    version_str = "v0_0_0"
+module "dns-hijack-us-east-1" {
+	source = "./cloud-inquisitor/terraform_modules/workflow"
+    name = "cinq_next_dns_hijack"
+    environment = "${terraform.workspace}"
+    region = "us-east-1"
+    version_str = var.project_version
 
 
-    event_rules = { 
-        "ec2_tag_auditing":  local.ec2_rule
-    }
+    event_rules = [
+        "route53_dns_hijacks",
+        "cloudfront_dns_hijacks",
+        "elasticbeanstalk_dns_hijacks"
+    ]
 
-    step_function_selector = "hello_world"
+    step_function_selector = "dns_hijack"
 
     step_function_lambda_paths = {
-        "hello_world_greeter": {
-            "file": "greeter",
-            "handler": "greeter"
-        }
+        "init": {
+            "lambda": "hijack_initializer",
+            "handler": "hijack_initializer"
+        },
+        "graph_updater": {
+            "lambda": "hijack_graph_updater",
+            "handler": "hijack_graph_updater"
+        },
+		"graph_analyzer": {
+	    	"lambda": "hijack_graph_analyzer",
+            "handler": "hijack_graph_analyzer"
+		}
+    }
+
+    binary_path = abspath("./cloud-inquisitor/builds")
+
+    providers = {
+        aws = aws.us-east-1
     }
 }
 ```
-
-This configuration allows a map of Cloudwatch Event rules (and a label to give them) to be provisioned by the module and configure the Cloudwatch Event target 
- to be the selected.
 
 The map *step_function_lambda_paths* allows some dynamic step function variables to be set. For a given step function, there is a list of lambdas that must be provided for the step function to be deployed. The format for setting a lambda is:
 
