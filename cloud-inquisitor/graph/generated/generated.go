@@ -78,10 +78,10 @@ type ComplexityRoot struct {
 	}
 
 	HijackableResourceChain struct {
-		Downsteam func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Resource  func(childComplexity int) int
-		Upstream  func(childComplexity int) int
+		Downstream func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Resource   func(childComplexity int) int
+		Upstream   func(childComplexity int) int
 	}
 
 	Origin struct {
@@ -99,9 +99,10 @@ type ComplexityRoot struct {
 		Accounts                          func(childComplexity int) int
 		Distribution                      func(childComplexity int, id string) int
 		Distributions                     func(childComplexity int) int
+		ElasticbeanstalkByEndpoint        func(childComplexity int, endpoint string) int
 		ElasticbeanstalkEnvironments      func(childComplexity int) int
 		GetElasticbeanstalkUpstreamHijack func(childComplexity int, endpoints []string) int
-		HijackChainByDomain               func(childComplexity int, domain string, typeArg model.Type) int
+		HijackChainByDomain               func(childComplexity int, id string, domains []string, typeArg model.Type) int
 		Origin                            func(childComplexity int, id string) int
 		OriginGroups                      func(childComplexity int) int
 		Origins                           func(childComplexity int) int
@@ -166,8 +167,9 @@ type QueryResolver interface {
 	OriginGroups(ctx context.Context) ([]*model.OriginGroup, error)
 	PointedAtByOriginGroup(ctx context.Context, domain string) ([]*model.OriginGroup, error)
 	ElasticbeanstalkEnvironments(ctx context.Context) ([]*model.ElasticbeanstalkEnvironment, error)
+	ElasticbeanstalkByEndpoint(ctx context.Context, endpoint string) (*model.ElasticbeanstalkEnvironment, error)
 	GetElasticbeanstalkUpstreamHijack(ctx context.Context, endpoints []string) ([]*model.HijackableResource, error)
-	HijackChainByDomain(ctx context.Context, domain string, typeArg model.Type) (*model.HijackableResourceChain, error)
+	HijackChainByDomain(ctx context.Context, id string, domains []string, typeArg model.Type) (*model.HijackableResourceChain, error)
 }
 type RecordResolver interface {
 	Values(ctx context.Context, obj *model.Record) ([]*model.Value, error)
@@ -330,12 +332,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.HijackableResource.Value(childComplexity), true
 
-	case "HijackableResourceChain.downsteam":
-		if e.complexity.HijackableResourceChain.Downsteam == nil {
+	case "HijackableResourceChain.downstream":
+		if e.complexity.HijackableResourceChain.Downstream == nil {
 			break
 		}
 
-		return e.complexity.HijackableResourceChain.Downsteam(childComplexity), true
+		return e.complexity.HijackableResourceChain.Downstream(childComplexity), true
 
 	case "HijackableResourceChain.id":
 		if e.complexity.HijackableResourceChain.ID == nil {
@@ -424,6 +426,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Distributions(childComplexity), true
 
+	case "Query.elasticbeanstalkByEndpoint":
+		if e.complexity.Query.ElasticbeanstalkByEndpoint == nil {
+			break
+		}
+
+		args, err := ec.field_Query_elasticbeanstalkByEndpoint_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ElasticbeanstalkByEndpoint(childComplexity, args["endpoint"].(string)), true
+
 	case "Query.elasticbeanstalkEnvironments":
 		if e.complexity.Query.ElasticbeanstalkEnvironments == nil {
 			break
@@ -453,7 +467,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.HijackChainByDomain(childComplexity, args["domain"].(string), args["type"].(model.Type)), true
+		return e.complexity.Query.HijackChainByDomain(childComplexity, args["id"].(string), args["domains"].([]string), args["type"].(model.Type)), true
 
 	case "Query.origin":
 		if e.complexity.Query.Origin == nil {
@@ -784,7 +798,7 @@ type HijackableResourceChain {
 	id: ID!
 	resource: HijackableResource!
 	upstream: [HijackableResource!]!
-	downsteam: [HijackableResource!]!
+	downstream: [HijackableResource!]!
 }
 
 type Query {
@@ -814,9 +828,10 @@ type Query {
 	pointedAtByOriginGroup(domain: String!): [OriginGroup!]!
 
 	elasticbeanstalkEnvironments: [ElasticbeanstalkEnvironment!]!
+	elasticbeanstalkByEndpoint(endpoint: String!): ElasticbeanstalkEnvironment!
 	getElasticbeanstalkUpstreamHijack(endpoints: [String!]!): [HijackableResource!]!
 
-	hijackChainByDomain(domain: String!, type: Type!): HijackableResourceChain!
+	hijackChainByDomain(id: ID!, domains: [String!]!, type: Type!): HijackableResourceChain!
 	
 }`, BuiltIn: false},
 }
@@ -882,6 +897,20 @@ func (ec *executionContext) field_Query_distribution_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_elasticbeanstalkByEndpoint_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["endpoint"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["endpoint"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_getElasticbeanstalkUpstreamHijack_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -900,21 +929,29 @@ func (ec *executionContext) field_Query_hijackChainByDomain_args(ctx context.Con
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["domain"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["domain"] = arg0
-	var arg1 model.Type
+	args["id"] = arg0
+	var arg1 []string
+	if tmp, ok := rawArgs["domains"]; ok {
+		arg1, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["domains"] = arg1
+	var arg2 model.Type
 	if tmp, ok := rawArgs["type"]; ok {
-		arg1, err = ec.unmarshalNType2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐType(ctx, tmp)
+		arg2, err = ec.unmarshalNType2githubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg1
+	args["type"] = arg2
 	return args, nil
 }
 
@@ -1835,7 +1872,7 @@ func (ec *executionContext) _HijackableResourceChain_upstream(ctx context.Contex
 	return ec.marshalNHijackableResource2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐHijackableResourceᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _HijackableResourceChain_downsteam(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResourceChain) (ret graphql.Marshaler) {
+func (ec *executionContext) _HijackableResourceChain_downstream(ctx context.Context, field graphql.CollectedField, obj *model.HijackableResourceChain) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1852,7 +1889,7 @@ func (ec *executionContext) _HijackableResourceChain_downsteam(ctx context.Conte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Downsteam, nil
+		return obj.Downstream, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2684,6 +2721,47 @@ func (ec *executionContext) _Query_elasticbeanstalkEnvironments(ctx context.Cont
 	return ec.marshalNElasticbeanstalkEnvironment2ᚕᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐElasticbeanstalkEnvironmentᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_elasticbeanstalkByEndpoint(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_elasticbeanstalkByEndpoint_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ElasticbeanstalkByEndpoint(rctx, args["endpoint"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ElasticbeanstalkEnvironment)
+	fc.Result = res
+	return ec.marshalNElasticbeanstalkEnvironment2ᚖgithubᚗcomᚋRiotGamesᚋcloudᚑinquisitorᚋcloudᚑinquisitorᚋgraphᚋmodelᚐElasticbeanstalkEnvironment(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_getElasticbeanstalkUpstreamHijack(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2749,7 +2827,7 @@ func (ec *executionContext) _Query_hijackChainByDomain(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().HijackChainByDomain(rctx, args["domain"].(string), args["type"].(model.Type))
+		return ec.resolvers.Query().HijackChainByDomain(rctx, args["id"].(string), args["domains"].([]string), args["type"].(model.Type))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4508,8 +4586,8 @@ func (ec *executionContext) _HijackableResourceChain(ctx context.Context, sel as
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "downsteam":
-			out.Values[i] = ec._HijackableResourceChain_downsteam(ctx, field, obj)
+		case "downstream":
+			out.Values[i] = ec._HijackableResourceChain_downstream(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4847,6 +4925,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_elasticbeanstalkEnvironments(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "elasticbeanstalkByEndpoint":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_elasticbeanstalkByEndpoint(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

@@ -448,6 +448,24 @@ func (r *queryResolver) ElasticbeanstalkEnvironments(ctx context.Context) ([]*mo
 	return environments, nil
 }
 
+func (r *queryResolver) ElasticbeanstalkByEndpoint(ctx context.Context, endpoint string) (*model.ElasticbeanstalkEnvironment, error) {
+	log.Debugf("getting elasticbeanstalk by domain: %v", endpoint)
+	var beanstalk model.ElasticbeanstalkEnvironment
+	err := r.DB.Find(&beanstalk, model.ElasticbeanstalkEnvironment{
+		CName: endpoint,
+	}).Error
+
+	if err == nil {
+		return &beanstalk, err
+	}
+
+	err = r.DB.Find(&beanstalk, model.ElasticbeanstalkEnvironment{
+		EnvironmentURL: endpoint,
+	}).Error
+
+	return &beanstalk, err
+}
+
 func (r *queryResolver) GetElasticbeanstalkUpstreamHijack(ctx context.Context, endpoints []string) ([]*model.HijackableResource, error) {
 	// elasticbeanstalks are endpoints are only fronted by other resources
 	hijackChain := []*model.HijackableResource{}
@@ -529,22 +547,56 @@ func (r *queryResolver) GetElasticbeanstalkUpstreamHijack(ctx context.Context, e
 		}
 	}
 
+	if log.GetLevel() == log.DebugLevel {
+		log.Debugf("found hijack chain for domains: %#v", endpoints)
+		for idx, chainElement := range hijackChain {
+			log.Debugf("%v: %#v", idx, *chainElement)
+		}
+	}
+
 	return hijackChain, nil
 }
 
-func (r *queryResolver) HijackChainByDomain(ctx context.Context, domain string, typeArg model.Type) (*model.HijackableResourceChain, error) {
+func (r *queryResolver) HijackChainByDomain(ctx context.Context, id string, domains []string, typeArg model.Type) (*model.HijackableResourceChain, error) {
 	switch typeArg {
 	case model.TypeElasticbeanstalk:
-		chain, err := r.Query().GetElasticbeanstalkUpstreamHijack(ctx, []string{domain})
+		/*
+			ID      string `json:"id"`
+			Account string `json:"account"`
+			Type    Type   `json:"type"`
+			Value   *Value `json:"value"`
+		*/
+		beanstalk, err := r.Query().ElasticbeanstalkByEndpoint(ctx, domains[0])
+		if err != nil {
+			log.Errorf("error getting beanstalk: %v", err.Error())
+			return nil, err
+		}
+
+		var account *model.Account = nil
+		err = r.DB.Find(account, beanstalk.AccountID).Error
+		if err != nil {
+			log.Errorf("unable to find account for beanstalk: %#v", *beanstalk)
+			return nil, err
+		}
+
+		chain, err := r.Query().GetElasticbeanstalkUpstreamHijack(ctx, domains)
 		if err != nil {
 			log.Errorf("recieved error when querying for elastic beanstalk hijacks: %v", err.Error())
+			return nil, err
 		}
 
 		return &model.HijackableResourceChain{
-			ID:        domain,
-			Resource:  &model.HijackableResource{},
-			Upstream:  chain,
-			Downsteam: []*model.HijackableResource{},
+			ID: id,
+			Resource: &model.HijackableResource{
+				ID:      id,
+				Account: account.AccountID,
+				Type:    model.TypeElasticbeanstalk,
+				Value: &model.Value{
+					ValueID: beanstalk.CName,
+				},
+			},
+			Upstream:   chain,
+			Downstream: []*model.HijackableResource{},
 		}, err
 	}
 

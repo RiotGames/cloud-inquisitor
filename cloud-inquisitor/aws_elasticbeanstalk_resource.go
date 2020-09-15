@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -416,44 +417,37 @@ func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) publishDeletedEnviro
 	return nil
 }
 
-func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) AnalyzeForHijack() (HijackChain, error) {
+func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) AnalyzeForHijack() (*model.HijackableResourceChain, error) {
 	switch eb.EventName {
 	case "CreateEnvironment":
 		return eb.analyzeCreatedEnvironment()
 	case "TerminateEnvironment":
 		return eb.analyzeTerminatedEnvironment()
 	default:
-		return HijackChain{}, errors.New("unknown elasticbeanstalk event to analyze for hijacks")
+		return &model.HijackableResourceChain{}, errors.New("unknown elasticbeanstalk event to analyze for hijacks")
 	}
 }
 
-func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) analyzeCreatedEnvironment() (HijackChain, error) {
-	return HijackChain{}, nil
+func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) analyzeCreatedEnvironment() (*model.HijackableResourceChain, error) {
+	/*
+		No Hijack is possible for creations as beanstalks are pure sinks
+	*/
+	return &model.HijackableResourceChain{}, nil
 }
 
-func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) analyzeTerminatedEnvironment() (HijackChain, error) {
+func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) analyzeTerminatedEnvironment() (*model.HijackableResourceChain, error) {
 	resolver, err := graph.NewResolver()
 	if err != nil {
 		eb.GetLogger().Errorf("error creating a new resolver to evaluate elasticbeanstalk hijacks: %v", err.Error())
-		return HijackChain{}, err
+		return &model.HijackableResourceChain{}, err
+
 	}
 
 	ctx := context.Background()
-	chain, err := resolver.Query().GetElasticbeanstalkUpstreamHijack(ctx, []string{eb.CNAME, eb.Endpoint})
+	chain, err := resolver.Query().HijackChainByDomain(ctx, fmt.Sprintf("elasticbeanstalk-%s-%s-%s-%s", eb.ApplicationName, eb.Region, eb.EnvironmentName, eb.EnvironmentId), []string{eb.CNAME, eb.Endpoint}, model.TypeElasticbeanstalk)
 	if err != nil {
 		eb.GetLogger().Errorf("error querying graph for elasticbeanstalk hijack analysis: %v", err.Error())
 	}
 
-	hijacksChain := &HijackChain{Chain: make([]HijackChainElement, 0)}
-
-	for _, link := range chain {
-		hijacksChain.Chain = append(hijacksChain.Chain, HijackChainElement{
-			AccountId:          link.Account,
-			Resource:           link.ID,
-			ResourceType:       link.Type.String(),
-			ResourceReferenced: link.Value.ValueID,
-		})
-	}
-
-	return *hijacksChain, nil
+	return chain, err
 }

@@ -16,10 +16,10 @@ type HijackableResource struct {
 }
 
 type HijackableResourceChain struct {
-	ID        string                `json:"id"`
-	Resource  *HijackableResource   `json:"resource"`
-	Upstream  []*HijackableResource `json:"upstream"`
-	Downsteam []*HijackableResource `json:"downsteam"`
+	ID         string                `json:"id"`
+	Resource   *HijackableResource   `json:"resource"`
+	Upstream   []*HijackableResource `json:"upstream"`
+	Downstream []*HijackableResource `json:"downstream"`
 }
 
 type Type string

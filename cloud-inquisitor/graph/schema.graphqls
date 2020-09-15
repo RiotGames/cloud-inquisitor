@@ -71,7 +71,7 @@ type HijackableResourceChain {
 	id: ID!
 	resource: HijackableResource!
 	upstream: [HijackableResource!]!
-	downsteam: [HijackableResource!]!
+	downstream: [HijackableResource!]!
 }
 
 type Query {
@@ -101,8 +101,9 @@ type Query {
 	pointedAtByOriginGroup(domain: String!): [OriginGroup!]!
 
 	elasticbeanstalkEnvironments: [ElasticbeanstalkEnvironment!]!
+	elasticbeanstalkByEndpoint(endpoint: String!): ElasticbeanstalkEnvironment!
 	getElasticbeanstalkUpstreamHijack(endpoints: [String!]!): [HijackableResource!]!
 
-	hijackChainByDomain(domain: String!, type: Type!): HijackableResourceChain!
+	hijackChainByDomain(id: ID!, domains: [String!]!, type: Type!): HijackableResourceChain!
 	
 }

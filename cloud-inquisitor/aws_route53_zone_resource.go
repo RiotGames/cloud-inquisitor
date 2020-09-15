@@ -337,6 +337,6 @@ func (r *AWSRoute53Zone) isPending() (bool, error) {
 	return true, nil
 }
 
-func (r *AWSRoute53Zone) AnalyzeForHijack() (HijackChain, error) {
-	return HijackChain{[]HijackChainElement{}}, nil
+func (r *AWSRoute53Zone) AnalyzeForHijack() (*model.HijackableResourceChain, error) {
+	return &model.HijackableResourceChain{}, nil
 }

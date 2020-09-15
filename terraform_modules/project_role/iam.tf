@@ -114,6 +114,31 @@ resource "aws_iam_role_policy_attachment" "dns_hijack_permissions" {
   policy_arn = aws_iam_policy.dns_hijack_policy.arn
 }
 
+data "aws_iam_policy_document" "ses_permissions" {
+    statement {
+    sid = "SESPermissions"
+
+    actions = [
+      "ses:SendEmail",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "ses_policy" {
+  name   = "${var.environment}-${var.name}-ses_policy"
+  path   = "/"
+  policy = data.aws_iam_policy_document.ses_permissions.json
+}
+
+resource "aws_iam_role_policy_attachment" "ses_permissions" {
+  role       = aws_iam_role.project_role.name
+  policy_arn = aws_iam_policy.ses_policy.arn
+}
+
 data "aws_iam_policy_document" "assume_role_permissions" {
     statement {
     sid = "AssumeRolePermissions"

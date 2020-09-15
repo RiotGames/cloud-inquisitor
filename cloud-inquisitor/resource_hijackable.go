@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	"github.com/aws/aws-lambda-go/events"
 	//"github.com/sirupsen/logrus"
 )
@@ -13,7 +14,7 @@ type HijackableResource interface {
 	Resource
 	NewFromEventBus(events.CloudWatchEvent, context.Context, map[string]interface{}) error
 	NewFromPassableResource(PassableResource, context.Context, map[string]interface{}) error
-	AnalyzeForHijack() (HijackChain, error)
+	AnalyzeForHijack() (*model.HijackableResourceChain, error)
 	// PublishState is provided to give an easy hook to
 	// send and store struct state in a backend data store
 	PublishState() error
@@ -104,16 +105,4 @@ func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, me
 
 	}
 	return resource, nil
-}
-
-type HijackChain struct {
-	Chain []HijackChainElement
-}
-
-type HijackChainElement struct {
-	AccountId              string
-	Resource               string
-	ResourceType           string
-	ResourceReferenced     string
-	ResourceReferencedType string
 }

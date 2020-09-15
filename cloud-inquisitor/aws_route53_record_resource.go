@@ -285,8 +285,8 @@ func (r *AWSRoute53RecordSet) isPending() (bool, error) {
 	return true, nil
 }
 
-func (r *AWSRoute53RecordSet) AnalyzeForHijack() (HijackChain, error) {
-	return HijackChain{[]HijackChainElement{}}, nil
+func (r *AWSRoute53RecordSet) AnalyzeForHijack() (*model.HijackableResourceChain, error) {
+	return &model.HijackableResourceChain{}, nil
 }
 
 func (r *AWSRoute53Record) NewFromEventBus(_ events.CloudWatchEvent, _ context.Context, _ map[string]interface{}) error {
@@ -537,6 +537,6 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 	return nil
 }
 
-func (r *AWSRoute53Record) AnalyzeForHijack() (HijackChain, error) {
-	return HijackChain{[]HijackChainElement{}}, nil
+func (r *AWSRoute53Record) AnalyzeForHijack() (*model.HijackableResourceChain, error) {
+	return &model.HijackableResourceChain{}, nil
 }
