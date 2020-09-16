@@ -26,6 +26,11 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passable
 		return passableResourcesStruct{}, err
 	}
 
+	err = resource.RefreshState()
+	if err != nil {
+		return passableResourcesStruct{}, err
+	}
+
 	if resource.GetType() == cloudinquisitor.SERVICE_STUB && settings.GetString("stub_resources") != "enabled" {
 		return passableResourcesStruct{[]cloudinquisitor.PassableResource{
 			cloudinquisitor.PassableResource{
@@ -48,7 +53,7 @@ func handlerRequest(ctx context.Context, event events.CloudWatchEvent) (passable
 				Metadata: record.GetLogger().GetMetadata(),
 			})
 		}
-	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE, cloudinquisitor.SERVICE_AWS_CLOUDFRONT:
+	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE, cloudinquisitor.SERVICE_AWS_CLOUDFRONT, cloudinquisitor.SERVICE_AWS_ELASTICBEANSTALK:
 		passableResources = append(passableResources, cloudinquisitor.PassableResource{
 			Resource: resource,
 			Type:     resource.GetType(),

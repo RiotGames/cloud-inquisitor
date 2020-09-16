@@ -6,7 +6,7 @@ package graph
 import (
 	"context"
 
-	generated1 "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	log "github.com/sirupsen/logrus"
 )
@@ -231,6 +231,36 @@ func (r *queryResolver) Record(ctx context.Context, id string) (*model.Record, e
 	return &record, nil
 }
 
+func (r *queryResolver) PointedAtByRecords(ctx context.Context, domain string) ([]*model.Record, error) {
+	log.Infof("finding all records that point to %v", domain)
+	var recordValues []*model.Value
+	err := r.DB.Where(model.Value{ValueID: domain}).Find(&recordValues).Error
+	if err != nil {
+		return []*model.Record{}, err
+	}
+
+	recordIds := []uint{}
+	for _, val := range recordValues {
+		if val.RecordID != 0 {
+			recordIds = append(recordIds, val.RecordID)
+		}
+	}
+
+	var records []*model.Record
+	err = r.DB.Find(&records, recordIds).Error
+	if err != nil {
+		return []*model.Record{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, record := range records {
+			log.Debugf("record %#v points to domain %v", record, domain)
+		}
+	}
+
+	return records, nil
+}
+
 func (r *queryResolver) Values(ctx context.Context) ([]*model.Value, error) {
 	log.Info("getting all values")
 	var values []*model.Value
@@ -291,6 +321,42 @@ func (r *queryResolver) Distribution(ctx context.Context, id string) (*model.Dis
 	return &distro, nil
 }
 
+func (r *queryResolver) PointedAtByDistribution(ctx context.Context, domain string) ([]*model.Distribution, error) {
+	log.Infof("finding all distributions pointing at domain %v", domain)
+	distroIds := []uint{}
+	origins, err := r.PointedAtByOrigin(ctx, domain)
+	if err != nil {
+		log.Errorf("erroring getting origins for distribution: %v", err.Error())
+	} else {
+		for _, origin := range origins {
+			distroIds = append(distroIds, origin.DistributionID)
+		}
+	}
+
+	originGroups, err := r.PointedAtByOriginGroup(ctx, domain)
+	if err != nil {
+		log.Errorf("error getting origin groups for distribution: %v", err.Error())
+	} else {
+		for _, origin := range originGroups {
+			distroIds = append(distroIds, origin.DistributionID)
+		}
+	}
+
+	var distributions []*model.Distribution
+	err = r.DB.Find(&distributions, distroIds).Error
+	if err != nil {
+		return []*model.Distribution{}, nil
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, distro := range distributions {
+			log.Debugf("found distribution %v for domain %v", *distro, domain)
+		}
+	}
+
+	return distributions, nil
+}
+
 func (r *queryResolver) Origins(ctx context.Context) ([]*model.Origin, error) {
 	log.Debugln("getting all origins")
 	var origins []*model.Origin
@@ -314,21 +380,240 @@ func (r *queryResolver) Origin(ctx context.Context, id string) (*model.Origin, e
 	return &origin, nil
 }
 
+func (r *queryResolver) PointedAtByOrigin(ctx context.Context, domain string) ([]*model.Origin, error) {
+	log.Infof("looking for all origins pointing at dominan %v", domain)
+	var origins []*model.Origin
+	err := r.DB.Where(model.Origin{Domain: domain}).Find(&origins).Error
+	if err != nil {
+		return []*model.Origin{}, err
+	}
+
+	return origins, nil
+}
+
+func (r *queryResolver) OriginGroups(ctx context.Context) ([]*model.OriginGroup, error) {
+	var originGroups []*model.OriginGroup
+	err := r.DB.Preload("Origins").Find(&originGroups).Error
+	if err != nil {
+		return []*model.OriginGroup{}, err
+	}
+
+	return originGroups, nil
+}
+
+func (r *queryResolver) PointedAtByOriginGroup(ctx context.Context, domain string) ([]*model.OriginGroup, error) {
+	log.Infof("looking for origin groups pointing at domain %v", domain)
+
+	var domainValues []*model.Value
+	err := r.DB.Where(model.Value{ValueID: domain}).Find(&domainValues).Error
+	if err != nil {
+		return []*model.OriginGroup{}, err
+	}
+
+	originGroupIds := []uint{}
+	for _, val := range domainValues {
+		originGroupIds = append(originGroupIds, val.OriginGroupID)
+	}
+
+	var originGroups []*model.OriginGroup
+	err = r.DB.Find(&originGroups, originGroupIds).Error
+	if err != nil {
+		return []*model.OriginGroup{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, group := range originGroups {
+			log.Debugf("origin group %v pointing to domain %v", group, domain)
+		}
+	}
+
+	return originGroups, nil
+}
+
+func (r *queryResolver) ElasticbeanstalkEnvironments(ctx context.Context) ([]*model.ElasticbeanstalkEnvironment, error) {
+	log.Debug("getting all elasticbeanstalk environments")
+	var environments []*model.ElasticbeanstalkEnvironment
+	err := r.DB.Find(&environments).Error
+	if err != nil {
+		log.Errorf("error getting all elasticbeanstalk environments: %v", err.Error())
+		return []*model.ElasticbeanstalkEnvironment{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, env := range environments {
+			log.Debugf("got elasticbeanstalk environment: %#v", *env)
+		}
+	}
+
+	return environments, nil
+}
+
+func (r *queryResolver) ElasticbeanstalkByEndpoint(ctx context.Context, endpoint string) (*model.ElasticbeanstalkEnvironment, error) {
+	log.Debugf("getting elasticbeanstalk by domain: %v", endpoint)
+	var beanstalk model.ElasticbeanstalkEnvironment
+	err := r.DB.Find(&beanstalk, model.ElasticbeanstalkEnvironment{
+		CName: endpoint,
+	}).Error
+
+	if err == nil {
+		return &beanstalk, err
+	}
+
+	err = r.DB.Find(&beanstalk, model.ElasticbeanstalkEnvironment{
+		EnvironmentURL: endpoint,
+	}).Error
+
+	return &beanstalk, err
+}
+
+func (r *queryResolver) GetElasticbeanstalkUpstreamHijack(ctx context.Context, endpoints []string) ([]*model.HijackableResource, error) {
+	// elasticbeanstalks are endpoints are only fronted by other resources
+	hijackChain := []*model.HijackableResource{}
+	searchEndpoints := endpoints
+	// need to check:
+	// 1. cloudfront
+	for _, endpoint := range searchEndpoints {
+		distributions, err := r.Query().PointedAtByDistribution(ctx, endpoint)
+		if err != nil {
+			log.Errorf("error looking up distributions for endpoint %v", endpoint)
+			continue
+		}
+
+		for _, distro := range distributions {
+			completeDistro, err := r.Query().Distribution(ctx, distro.DistributionID)
+			if err != nil {
+				log.Errorf("error looking up distribution with id %v", distro.DistributionID)
+				continue
+			}
+
+			var account model.Account
+			err = r.DB.First(&account, completeDistro.AccountID).Error
+			if err != nil {
+				log.Errorf("unable to get account for distribution %#v", *completeDistro)
+				continue
+			}
+
+			hijackChain = append(hijackChain, &model.HijackableResource{
+				ID:      completeDistro.DistributionID,
+				Type:    model.TypeDistribution,
+				Account: account.AccountID,
+				Value: &model.Value{
+					ValueID: completeDistro.Domain,
+				},
+			})
+		}
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		for _, resource := range hijackChain {
+			log.Debugf("resource: %#v", *resource)
+		}
+	}
+
+	for _, resource := range hijackChain {
+		searchEndpoints = append(searchEndpoints, resource.Value.ValueID)
+	}
+	// 2. route53
+	for _, endpoint := range searchEndpoints {
+		records, err := r.Query().PointedAtByRecords(ctx, endpoint)
+		if err != nil {
+			log.Errorf("unable to get records taht point to endpoint %v", endpoint)
+			continue
+		}
+
+		for _, record := range records {
+			completeRecord, err := r.Query().Record(ctx, record.RecordID)
+			if err != nil {
+				log.Errorf("unable to get complete record for record id %v", record.RecordID)
+				continue
+			}
+
+			var account model.Account
+			err = r.DB.First(&account, completeRecord.AccountID).Error
+			if err != nil {
+				log.Errorf("unable to get account for distribution %#v", *completeRecord)
+				continue
+			}
+
+			hijackChain = append(hijackChain, &model.HijackableResource{
+				ID:      completeRecord.RecordID,
+				Type:    model.TypeRecord,
+				Account: account.AccountID,
+				Value: &model.Value{
+					ValueID: completeRecord.RecordID,
+				},
+			})
+
+		}
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		log.Debugf("found hijack chain for domains: %#v", endpoints)
+		for idx, chainElement := range hijackChain {
+			log.Debugf("%v: %#v", idx, *chainElement)
+		}
+	}
+
+	return hijackChain, nil
+}
+
+func (r *queryResolver) HijackChainByDomain(ctx context.Context, id string, domains []string, typeArg model.Type) (*model.HijackableResourceChain, error) {
+	switch typeArg {
+	case model.TypeElasticbeanstalk:
+		/*
+			ID      string `json:"id"`
+			Account string `json:"account"`
+			Type    Type   `json:"type"`
+			Value   *Value `json:"value"`
+		*/
+		beanstalk, err := r.Query().ElasticbeanstalkByEndpoint(ctx, domains[0])
+		if err != nil {
+			log.Errorf("error getting beanstalk: %v", err.Error())
+			return nil, err
+		}
+
+		var account *model.Account = nil
+		err = r.DB.Find(account, beanstalk.AccountID).Error
+		if err != nil {
+			log.Errorf("unable to find account for beanstalk: %#v", *beanstalk)
+			return nil, err
+		}
+
+		chain, err := r.Query().GetElasticbeanstalkUpstreamHijack(ctx, domains)
+		if err != nil {
+			log.Errorf("recieved error when querying for elastic beanstalk hijacks: %v", err.Error())
+			return nil, err
+		}
+
+		return &model.HijackableResourceChain{
+			ID: id,
+			Resource: &model.HijackableResource{
+				ID:      id,
+				Account: account.AccountID,
+				Type:    model.TypeElasticbeanstalk,
+				Value: &model.Value{
+					ValueID: beanstalk.CName,
+				},
+			},
+			Upstream:   chain,
+			Downstream: []*model.HijackableResource{},
+		}, err
+	}
+
+	return &model.HijackableResourceChain{}, nil
+}
+
 func (r *recordResolver) Values(ctx context.Context, obj *model.Record) ([]*model.Value, error) {
 	log.Infof("record <%v> getting values\n", obj.RecordID)
 	log.Debugf("%#v\n", *obj)
-	db, err := NewDBConnection()
-	if err != nil {
-		return []*model.Value{}, err
-	}
 
 	record := model.Record{RecordID: obj.RecordID}
-	err = db.Where(&record).First(&record).Error
+	err := r.DB.Where(&record).First(&record).Error
 	if err != nil {
 		return []*model.Value{}, err
 	}
 	var values []*model.Value
-	err = db.Model(&record).Association("ValueRelation").Find(&values).Error
+	err = r.DB.Model(&record).Association("ValueRelation").Find(&values).Error
 	if err != nil {
 		return []*model.Value{}, err
 	}
@@ -375,20 +660,20 @@ func (r *zoneResolver) Record(ctx context.Context, obj *model.Zone, id string) (
 	return &record, nil
 }
 
-// Account returns generated1.AccountResolver implementation.
-func (r *Resolver) Account() generated1.AccountResolver { return &accountResolver{r} }
+// Account returns generated.AccountResolver implementation.
+func (r *Resolver) Account() generated.AccountResolver { return &accountResolver{r} }
 
-// Distribution returns generated1.DistributionResolver implementation.
-func (r *Resolver) Distribution() generated1.DistributionResolver { return &distributionResolver{r} }
+// Distribution returns generated.DistributionResolver implementation.
+func (r *Resolver) Distribution() generated.DistributionResolver { return &distributionResolver{r} }
 
-// Query returns generated1.QueryResolver implementation.
-func (r *Resolver) Query() generated1.QueryResolver { return &queryResolver{r} }
+// Query returns generated.QueryResolver implementation.
+func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// Record returns generated1.RecordResolver implementation.
-func (r *Resolver) Record() generated1.RecordResolver { return &recordResolver{r} }
+// Record returns generated.RecordResolver implementation.
+func (r *Resolver) Record() generated.RecordResolver { return &recordResolver{r} }
 
-// Zone returns generated1.ZoneResolver implementation.
-func (r *Resolver) Zone() generated1.ZoneResolver { return &zoneResolver{r} }
+// Zone returns generated.ZoneResolver implementation.
+func (r *Resolver) Zone() generated.ZoneResolver { return &zoneResolver{r} }
 
 type accountResolver struct{ *Resolver }
 type distributionResolver struct{ *Resolver }

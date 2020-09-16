@@ -220,6 +220,19 @@ func (r *AWSRoute53Zone) RefreshState() error {
 }
 
 func (r *AWSRoute53Zone) PublishState() error {
+	switch r.EventName {
+	case "CreateHostedZone":
+		return r.createZoneEntries()
+	case "DeleteHostedZone":
+		// implement removal
+		return nil
+	default:
+		return nil
+	}
+	return nil
+}
+
+func (r *AWSRoute53Zone) createZoneEntries() error {
 	db, err := graph.NewDBConnection()
 	defer db.Close()
 	if err != nil {
@@ -322,4 +335,8 @@ func (r *AWSRoute53Zone) isPending() (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (r *AWSRoute53Zone) AnalyzeForHijack() (*model.HijackableResourceChain, error) {
+	return &model.HijackableResourceChain{}, nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -30,7 +31,14 @@ var dnsHijackHTTP = &cobra.Command{
 			panic(err)
 		}
 		defer db.Close()
+		// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
+		db.DB().SetMaxIdleConns(10)
 
+		// SetMaxOpenConns sets the maximum number of open connections to the database.
+		db.DB().SetMaxOpenConns(100)
+
+		// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
+		db.DB().SetConnMaxLifetime(time.Hour)
 		srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
 			DB: db,
 		}}))
