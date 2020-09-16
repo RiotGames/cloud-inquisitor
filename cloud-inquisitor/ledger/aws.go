@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
+	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/jinzhu/gorm"
@@ -29,7 +29,7 @@ type AWSActionLedgerEntry struct {
 	ResourceSubType         string    `json:"ResourceSubType" mapstructure:"ResourceSubType"`
 }
 
-func (al AWSActionLedgerEntry) Commit(ctx context.Context, action string, resource cloudinquisitor.PassableResource, actionError error) error {
+func (al AWSActionLedgerEntry) Commit(ctx interface{}, resource cloudinquisitor.PassableResource, action string, actionError error) error {
 	db, err := database.NewDBConnection()
 	if err != nil {
 		if db != nil {
@@ -37,29 +37,41 @@ func (al AWSActionLedgerEntry) Commit(ctx context.Context, action string, resour
 		}
 		return err
 	}
-	defer db.Close()
 
-	var ledgerItem AWSActionLedgerEntry
-	err = mapstructure.Decode(resource.Metadata, &ledgerItem)
+	al.enrich(ctx, resource, action, actionError)
+	db.Create(&al)
+
+	err = db.Close()
+	return err
+}
+
+func (al AWSActionLedgerEntry) enrich(ctx interface{}, resource cloudinquisitor.PassableResource, action string, actionError error) error {
+
+	lambdaContext := ctx.(context.Context)
+
+	// Fill in context metadata
+	err := mapstructure.Decode(ctx, &al)
 	if err != nil {
 		return err
 	}
 
-	tz, _ := time.LoadLocation("UTC")
-	lc, _ := lambdacontext.FromContext(ctx)
-	transaction := AWSActionLedgerEntry{
-		RequestID:         lc.AwsRequestID,
-		LambdaFunctionArn: lc.InvokedFunctionArn,
+	// Fill in resoure metadata
+	err = mapstructure.Decode(resource.Metadata, &al)
+	if err != nil {
+		return err
 	}
 
-	transaction.RequestID = lc.AwsRequestID
-	transaction.LambdaFunctionArn = lc.InvokedFunctionArn
-	transaction.ActionTime = time.Now().In(tz)
-	transaction.ActionError = actionError.Error()
-	transaction.StepFunctionExecutionID = resource.StepFunctionExecutionID
+	// Fill in misc information
+	tz, _ := time.LoadLocation("UTC")
+	lc, _ := lambdacontext.FromContext(lambdaContext)
 
-	db.Create(&transaction)
-	return err
+	al.RequestID = lc.AwsRequestID
+	al.LambdaFunctionArn = lc.InvokedFunctionArn
+	al.ActionTime = time.Now().In(tz)
+	al.ActionError = actionError.Error()
+	al.StepFunctionExecutionID = resource.StepFunctionExecutionID
+
+	return nil
 }
 
 func GetAWSActionLedger() AWSActionLedgerEntry {

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/ledger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/ledger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
 
@@ -35,21 +35,13 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 
 	actionError := parsedResource.TakeAction(action)
 	actionLeger := ledger.GetActionLedger()
-	actionLeger.Commit(
-		ctx, 
-		action, 
+	actionLeger.Enrich(
+		ctx,
+		action,
 		resource,
 		actionError,
 	)
-
-	if actionError != nil {
-		return cloudinquisitor.PassableResource{
-			Resource: parsedResource,
-			Type:     parsedResource.GetType(),
-			Metadata: parsedResource.GetLogger().GetMetadata(),
-			Finished: true,
-		}, nil
-	}
+	actionLedger.Commit()
 
 	return cloudinquisitor.PassableResource{
 		Resource: parsedResource,

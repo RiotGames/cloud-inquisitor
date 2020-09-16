@@ -1,14 +1,17 @@
 package ledger
 
 import (
-	"context"
 	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 )
 
-type ActionLedger interface {
-	Commit(ctx context.Context, action string, resource cloudinquisitor.PassableResource, actionError error) error
+type ActionLedgerEntry interface {
+	Commit(interface{}, cloudinquisitor.PassableResource, string, error) error
 }
 
-func GetActionLedger() AWSActionLedgerEntry {
-	return GetAWSActionLedger()
+func GetActionLedger(platform string) ActionLedgerEntry {
+	if platform == "aws" {
+		return GetAWSActionLedger()
+	} else {
+		return GetGenericActionLedger()
+	}
 }
