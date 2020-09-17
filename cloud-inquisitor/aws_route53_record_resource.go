@@ -285,6 +285,10 @@ func (r *AWSRoute53RecordSet) isPending() (bool, error) {
 	return true, nil
 }
 
+func (r *AWSRoute53RecordSet) AnalyzeForHijack() (*model.HijackableResourceChain, error) {
+	return &model.HijackableResourceChain{}, nil
+}
+
 func (r *AWSRoute53Record) NewFromEventBus(_ events.CloudWatchEvent, _ context.Context, _ map[string]interface{}) error {
 	// this is a stub since the event for record creation is wrapped in Route53 Record Set event
 	return nil
@@ -531,4 +535,8 @@ func (r *AWSRoute53Record) createRecordEntries() error {
 
 	r.logger.WithFields(r.GetMetadata()).Debug("adding account/zone to graph")
 	return nil
+}
+
+func (r *AWSRoute53Record) AnalyzeForHijack() (*model.HijackableResourceChain, error) {
+	return &model.HijackableResourceChain{}, nil
 }

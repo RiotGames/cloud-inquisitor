@@ -4,16 +4,15 @@ go 1.15
 
 require (
 	github.com/99designs/gqlgen v0.12.2
+	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/aws/aws-lambda-go v1.19.1
-	github.com/aws/aws-sdk-go v1.34.24
+	github.com/aws/aws-sdk-go v1.34.26
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gobuffalo/envy v1.9.0 // indirect
 	github.com/gobuffalo/packd v1.0.0 // indirect
 	github.com/gobuffalo/packr v1.30.1
-	github.com/gobuffalo/packr/v2 v2.8.0 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/jinzhu/gorm v1.9.16
-	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/magiconair/properties v1.8.3 // indirect
 	github.com/mitchellh/mapstructure v1.3.3
 	github.com/newrelic/go-agent/v3 v3.9.0
@@ -32,8 +31,8 @@ require (
 	github.com/vektah/gqlparser/v2 v2.0.1
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73 // indirect
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
-	golang.org/x/sys v0.0.0-20200915084602-288bc346aa39 // indirect
-	google.golang.org/genproto v0.0.0-20200915202801-9f80d0600517 // indirect
+	golang.org/x/sys v0.0.0-20200917073148-efd3b9a0ff20 // indirect
+	google.golang.org/genproto v0.0.0-20200917134801-bb4cff56e0d0 // indirect
 	google.golang.org/grpc v1.32.0 // indirect
 	gopkg.in/ini.v1 v1.61.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect

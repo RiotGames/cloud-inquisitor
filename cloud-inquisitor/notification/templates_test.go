@@ -4,6 +4,7 @@ import (
 	//"io/ioutil"
 	"testing"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	"github.com/gobuffalo/packr"
 )
 
@@ -163,4 +164,39 @@ func TestHijackTextWithChain(t *testing.T) {
 	if testText != text {
 		t.Fatal("generated and test text do not match")
 	}
+}
+
+/*
+AccountId:              rawChain.Resource.Account,
+		Resource:               rawChain.Resource.ID,
+		ResourceType:           rawChain.Resource.Type.String(),
+		ResourceReferenced:     "",
+		ResourceReferencedType: "",
+*/
+func TestGenerateContent(t *testing.T) {
+	chain := &model.HijackableResourceChain{
+		ID: "testID",
+		Resource: &model.HijackableResource{
+			ID:      "test root resource",
+			Account: "test root account",
+			Type:    model.TypeElasticbeanstalk,
+		},
+		Upstream: []*model.HijackableResource{
+			&model.HijackableResource{
+				ID:      "test upstream ",
+				Account: "test upstream account",
+				Type:    model.TypeElasticbeanstalk,
+			},
+		},
+		Downstream: []*model.HijackableResource{
+			&model.HijackableResource{
+				ID:      "test downstream",
+				Account: "test downstream account",
+				Type:    model.TypeElasticbeanstalk,
+			},
+		},
+	}
+
+	content := GenerateContent(chain)
+	t.Logf("content struct %#v", content)
 }

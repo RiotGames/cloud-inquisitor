@@ -31,7 +31,8 @@ data "template_file" "dns_hijack" {
   template = "${file("${path.module}/step_function_definitions/domain_hijack.tpl")}"
   vars = merge({
     "init": "",
-    "graph_updater": ""
+    "graph_updater": "",
+    "graph_analyzer": "",
   },
   local.lambda_arns)
 }

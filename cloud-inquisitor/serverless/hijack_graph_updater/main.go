@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
+	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
 )
@@ -13,11 +13,6 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 	parsedResource, err := resource.GetHijackableResource(ctx, map[string]interface{}{
 		"cloud-inquisitor-component": "hijack-graph-updater",
 	})
-	if err != nil {
-		return resource, err
-	}
-
-	err = parsedResource.RefreshState()
 	if err != nil {
 		return resource, err
 	}
