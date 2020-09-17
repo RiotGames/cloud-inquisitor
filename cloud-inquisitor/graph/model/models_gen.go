@@ -31,6 +31,7 @@ const (
 	TypeDistribution     Type = "DISTRIBUTION"
 	TypeOrigin           Type = "ORIGIN"
 	TypeElasticbeanstalk Type = "ELASTICBEANSTALK"
+	TypeS3               Type = "S3"
 )
 
 var AllType = []Type{
@@ -40,11 +41,12 @@ var AllType = []Type{
 	TypeDistribution,
 	TypeOrigin,
 	TypeElasticbeanstalk,
+	TypeS3,
 }
 
 func (e Type) IsValid() bool {
 	switch e {
-	case TypeAccount, TypeZone, TypeRecord, TypeDistribution, TypeOrigin, TypeElasticbeanstalk:
+	case TypeAccount, TypeZone, TypeRecord, TypeDistribution, TypeOrigin, TypeElasticbeanstalk, TypeS3:
 		return true
 	}
 	return false

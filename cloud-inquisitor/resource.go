@@ -50,6 +50,7 @@ type Resource interface {
 	GetType() Service
 	// GetMetadata returns a map of Resoruce metadata
 	GetMetadata() map[string]interface{}
+
 	GetLogger() *log.Logger
 }
 
@@ -88,7 +89,7 @@ func (p PassableResource) GetTaggableResource(ctx context.Context, metadata map[
 		err := rds.NewFromPassableResource(p, ctx, metadata)
 		return rds, err
 	case SERVICE_AWS_S3:
-		s3 := &AWSS3Storage{}
+		s3 := &AWSS3StorageTaggableResource{}
 		err := s3.NewFromPassableResource(p, ctx, metadata)
 		return s3, err
 	default:
@@ -110,7 +111,7 @@ func NewTaggableResource(event events.CloudWatchEvent, ctx context.Context, meta
 		return resource, err
 
 	case "aws.s3":
-		resource = &AWSS3Storage{}
+		resource = &AWSS3StorageTaggableResource{}
 		err := resource.NewFromEventBus(event, ctx, metadata)
 		return resource, err
 

@@ -4,6 +4,7 @@ locals {
       "route53_dns_hijacks" = file("${path.module}/patterns/route53_dns_hijacks.json")
       "cloudfront_dns_hijacks" = file("${path.module}/patterns/cloudfront_dns_hijacks.json")
       "elasticbeanstalk_dns_hijacks" = file("${path.module}/patterns/elasticbeanstalk_dns_hijacks.json")
+      "s3_dns_hijacks" = file("${path.module}/patterns/s3_dns_hijacks.json")
     }
   )
 }
