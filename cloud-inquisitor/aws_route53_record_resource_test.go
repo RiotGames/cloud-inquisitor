@@ -2,13 +2,12 @@ package cloudinquisitor
 
 import (
 	"context"
-	"encoding/json"
 	"reflect"
 	"testing"
 )
 
 func TestAWSRoute53RecordFromPassableResoruceCreateEvent(t *testing.T) {
-	passableResource := GetPassableResourceAWSRoute53()
+	passableResource := GetMockedPassableResourceAWSRoute53()
 	record := &AWSRoute53Record{}
 	record.NewFromPassableResource(passableResource, context.Background(),
 		map[string]interface{}{

@@ -2,17 +2,15 @@ package ledger
 
 import (
 	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
-	"github.com/jinzhu/gorm"
 )
 
-type GenericActionLedgerEntry struct {
-	gorm.Model
+type GenericActionLedger struct {
 }
 
-func (al GenericActionLedgerEntry) Commit(ctx interface{}, resource cloudinquisitor.PassableResource, action string, actionError error) error {
+func (al GenericActionLedger) Commit(ctx interface{}, resource cloudinquisitor.PassableResource, action string, actionError error) error {
 	return nil
 }
 
-func GetGenericActionLedger() GenericActionLedgerEntry {
-	return GenericActionLedgerEntry{}
+func GetGenericActionLedger() GenericActionLedger {
+	return GenericActionLedger{}
 }

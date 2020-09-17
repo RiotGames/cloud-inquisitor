@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
+	cloudinquisitor "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation/newrelic"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/ledger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
+	"github.com/aws/aws-lambda-go/lambdacontext"
 )
 
 func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResource) (cloudinquisitor.PassableResource, error) {
@@ -34,14 +35,14 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 	}
 
 	actionError := parsedResource.TakeAction(action)
-	actionLeger := ledger.GetActionLedger()
-	actionLeger.Enrich(
-		ctx,
-		action,
+	actionLeger := ledger.GetActionLedger("aws")
+	lambdaContext, _ := lambdacontext.FromContext(ctx)
+	actionLeger.Commit(
+		lambdaContext,
 		resource,
+		action,
 		actionError,
 	)
-	actionLedger.Commit()
 
 	return cloudinquisitor.PassableResource{
 		Resource: parsedResource,

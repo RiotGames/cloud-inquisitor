@@ -1,14 +1,17 @@
 package cloudinquisitor
 
 import (
-	"context"
 	"encoding/json"
 	"log"
+
+	"github.com/aws/aws-lambda-go/lambdacontext"
 )
 
-func GetMockedLambdaContext() context.Context {
-	ctx := context.Background()
-	return ctx
+func GetMockedLambdaContext() lambdacontext.LambdaContext {
+	return lambdacontext.LambdaContext{
+		AwsRequestID:       "SAMPLE_REQUEST_ID",
+		InvokedFunctionArn: "SAMPLE_ARN",
+	}
 }
 
 func GetMockedPassableResourceAWSRoute53() PassableResource {
@@ -34,9 +37,18 @@ func GetMockedPassableResourceAWSRoute53() PassableResource {
   "Type": "AWS_ROUTE53_RECORD",
   "Finished": true,
   "Metadata": {
-    "unit-test": true
+	"unit-test": true,
+	
+	"AccountID": "123456789",
+	"Region": "us-west-2",
+	"ActionName": "SAMPLE_ACTION",
+	"ResourceID": "",
+	"ResourceAltID": "",
+	"ResourceName": "",
+	"ResourceType": "",
+	"ResourceSubType": ""
   },
-  "StepFunctionExecutionID": "arn:aws:states:us-east-1:111111111111:execution:sample_sfn:12345678-abcd-abcd-abcd-0123456789ab"
+  "StepFunctionExecutionID": "SAMPLE_SFN_EXE_ID"
 }
 `
 	var passableResource PassableResource
