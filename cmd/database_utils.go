@@ -48,7 +48,7 @@ func CreateTables() error {
 }
 
 func DropTables() error {
-	db, err := NewDBConnection()
+	db, err := database.NewDBConnection()
 	if err != nil {
 		if db != nil {
 			db.Close()
@@ -76,7 +76,7 @@ func DropTables() error {
 }
 
 func MigrateTables() error {
-	db, err := NewDBConnection()
+	db, err := database.NewDBConnection()
 	if err != nil {
 		if db != nil {
 			db.Close()
