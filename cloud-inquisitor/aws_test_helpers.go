@@ -42,8 +42,8 @@ func GetMockedPassableResourceAWSRoute53() PassableResource {
 	"AccountID": "123456789",
 	"Region": "us-west-2",
 	"ActionName": "SAMPLE_ACTION",
+	"ResourceARN": "",
 	"ResourceID": "",
-	"ResourceAltID": "",
 	"ResourceName": "",
 	"ResourceType": "",
 	"ResourceSubType": ""

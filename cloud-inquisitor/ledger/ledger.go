@@ -9,9 +9,10 @@ type ActionLedgerEntry interface {
 }
 
 func GetActionLedger(platform string) ActionLedgerEntry {
-	if platform == "aws" {
+	switch platform {
+	case "aws":
 		return GetAWSActionLedger()
-	} else {
-		return GetGenericActionLedger()
+	default:
+		return GetStubActionLedger()
 	}
 }

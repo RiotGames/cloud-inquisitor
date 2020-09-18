@@ -21,8 +21,8 @@ type AWSActionLedgerEntry struct {
 	Region                  string    `json:"Region" mapstructure:"Region"`
 	ActionName              string    `json:"ActionName" mapstructure:"ActionName"`
 	ActionTime              time.Time `json:"ActionTime"`
+	ResourceARN             string    `json:"ResourceARN" mapstructure:"ResourceARN"`
 	ResourceID              string    `json:"ResourceID" mapstructure:"ResourceID"`
-	ResourceAltID           string    `json:"ResourceAltID" mapstructure:"ResourceAltID"`
 	ResourceName            string    `json:"ResourceName" mapstructure:"ResourceName"`
 	ResourceType            string    `json:"ResourceType" mapstructure:"ResourceType"`
 	ResourceSubType         string    `json:"ResourceSubType" mapstructure:"ResourceSubType"`
