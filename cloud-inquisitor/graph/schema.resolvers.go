@@ -15,18 +15,13 @@ func (r *accountResolver) Zones(ctx context.Context, obj *model.Account) ([]*mod
 	log.Infof("account <%v> getting zones\n", obj.AccountID)
 	log.Debugf("%#v\n", *obj)
 
-	db, err := NewDBConnection()
-	if err != nil {
-		return []*model.Zone{}, err
-	}
-
 	account := model.Account{AccountID: obj.AccountID}
-	err = db.Where(&account).First(&account).Error
+	err := r.DB.Where(&account).First(&account).Error
 	if err != nil {
 		return []*model.Zone{}, err
 	}
 	var zones []*model.Zone
-	err = db.Model(&account).Association("ZoneRelation").Find(&zones).Error
+	err = r.DB.Model(&account).Association("ZoneRelation").Find(&zones).Error
 	if err != nil {
 		return []*model.Zone{}, err
 	}

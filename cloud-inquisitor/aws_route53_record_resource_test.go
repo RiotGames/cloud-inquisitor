@@ -2,43 +2,12 @@ package cloudinquisitor
 
 import (
 	"context"
-	"encoding/json"
 	"reflect"
 	"testing"
 )
 
 func TestAWSRoute53RecordFromPassableResoruceCreateEvent(t *testing.T) {
-	passableResourceJSON := `
-{
-  "Resource": {
-    "AccountID": "123456789",
-    "ZoneID": "zoneid",
-    "EventName": "ChangeResourceRecordSets",
-    "Action": "CREATE",
-    "RecordType": "A",
-    "RecordName": "localhost.",
-    "RecordValues": [
-      "127.0.0.1",
-      "localhost"
-    ],
-    "Aliased": false,
-    "Alias": {
-      "ZoneId": "",
-      "RecordName": ""
-    }
-  },
-  "Type": "AWS_ROUTE53_RECORD",
-  "Finished": true,
-  "Metadata": {
-    "unit-test": true
-  }
-}
-`
-	var passableResource PassableResource
-	err := json.Unmarshal([]byte(passableResourceJSON), &passableResource)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	passableResource := GetMockedPassableResourceAWSRoute53()
 	record := &AWSRoute53Record{}
 	record.NewFromPassableResource(passableResource, context.Background(),
 		map[string]interface{}{

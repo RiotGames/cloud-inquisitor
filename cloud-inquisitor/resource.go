@@ -71,10 +71,11 @@ type TaggableResource interface {
 }
 
 type PassableResource struct {
-	Resource interface{}
-	Type     Service
-	Finished bool
-	Metadata map[string]interface{}
+	Resource                interface{}
+	Type                    Service
+	Finished                bool
+	Metadata                map[string]interface{}
+	StepFunctionExecutionID string
 }
 
 func (p PassableResource) GetTaggableResource(ctx context.Context, metadata map[string]interface{}) (TaggableResource, error) {

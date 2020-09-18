@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
-	"go.riotgames.com/OpSec/rVault"
+	rVault "github.com/riotgames/vault-go-client"
 )
 
 func newVaultClient() (*rVault.Client, error) {
@@ -28,8 +28,8 @@ func newVaultClient() (*rVault.Client, error) {
 				}
 
 				_, err = client.Auth.IAM.Login(rVault.IAMLoginOptions{
-					Role:       vaultRole,
-					MountPoint: vaultAWSMount})
+					Role:      vaultRole,
+					MountPath: vaultAWSMount})
 				if err != nil {
 					return nil, err
 				}
@@ -92,8 +92,8 @@ func GetString(path, key string) (string, error) {
 
 	vaultSecretMount := settings.GetString("vault.secret_mount")
 	secrets, err := client.KV2.Get(rVault.KV2GetOptions{
-		MountPoint: vaultSecretMount,
-		Path:       path,
+		MountPath:  vaultSecretMount,
+		SecretPath: path,
 	})
 
 	if err != nil {

@@ -9,7 +9,14 @@
         %{ if tag_auditor_init != "" ~}
         "Init": {
             "Type": "Task",
-            "Resource": "${tag_auditor_init}",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+                "FunctionName": "${tag_auditor_init}",
+                "Payload": {
+                    "PassableResource.$": "$",
+                    "StepFunctionExeID.$": "$$.Execution.Id"
+                }
+            },
             "Next": "Check if Fixed After Init"
         },
         "Check if Fixed After Init": {

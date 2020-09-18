@@ -5,10 +5,10 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(database)
+	rootCmd.AddCommand(cmdDatabase)
 }
 
-var database = &cobra.Command{
+var cmdDatabase = &cobra.Command{
 	Use:     "database",
 	Aliases: []string{"db"},
 	Short:   "interact with the Cloud Inquisitor database",

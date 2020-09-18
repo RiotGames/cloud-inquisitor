@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
 	log "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/logger"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/settings"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -453,7 +453,7 @@ func (r *AWSRoute53Record) GetLogger() *log.Logger {
 }
 
 func (r *AWSRoute53Record) createRecordEntries() error {
-	db, err := graph.NewDBConnection()
+	db, err := database.NewDBConnection()
 	defer db.Close()
 	if err != nil {
 		r.logger.WithFields(r.GetMetadata()).Error(err.Error())
