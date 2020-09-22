@@ -106,6 +106,10 @@ func CreateTables() error {
 		db.CreateTable(&model.ElasticbeanstalkEnvironment{})
 	}
 
+	if !db.HasTable(&model.S3{}) {
+		db.CreateTable(&model.S3{})
+	}
+
 	return nil
 }
 
@@ -128,6 +132,7 @@ func DropTables() error {
 		&model.Origin{},
 		&model.OriginGroup{},
 		&model.ElasticbeanstalkEnvironment{},
+		&model.S3{},
 	).Error
 
 	if err != nil {
@@ -156,6 +161,7 @@ func MigrateTables() error {
 		&model.Origin{},
 		&model.OriginGroup{},
 		&model.ElasticbeanstalkEnvironment{},
+		&model.S3{},
 	).Error
 
 	if err != nil {

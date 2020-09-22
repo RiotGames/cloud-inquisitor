@@ -252,6 +252,21 @@ func (r *queryResolver) PointedAtByRecords(ctx context.Context, domain string) (
 		return []*model.Record{}, err
 	}
 
+	for idx, record := range records {
+		recordValues, recordErr := r.Resolver.Record().Values(ctx, record)
+		if recordErr != nil {
+			log.Errorf("unable to resolve values for record: %v", record.RecordID)
+			continue
+		}
+
+		value := make([]model.Value, len(recordValues))
+		for valIdx, val := range recordValues {
+			value[valIdx] = *val
+		}
+
+		records[idx].ValueRelation = value
+	}
+
 	if log.GetLevel() == log.DebugLevel {
 		for _, record := range records {
 			log.Debugf("record %#v points to domain %v", record, domain)
@@ -706,7 +721,28 @@ func (r *queryResolver) HijackChainByDomain(ctx context.Context, id string, doma
 				log.Errorf("unable to find account for record %v: %v", record.RecordID, err.Error())
 			}
 
-			upstreamChain = append(upstreamChain, &model.HijackableResource{})
+			recordValues, err := r.Resolver.Record().Values(ctx, record)
+			if err != nil {
+				log.Errorf("error resolving values for record for record: %v", record.RecordID)
+			}
+			var value *model.Value = nil
+			if len(recordValues) > 0 {
+				value = recordValues[0]
+
+			}
+
+			if len(recordValues) > 1 {
+				log.Warnf("record has more than one value pointing to resource: %v", record.RecordID)
+			}
+
+			upstreamChain = append(upstreamChain, &model.HijackableResource{
+				ID:      record.RecordID,
+				Account: recordAccount.AccountID,
+				Type:    model.TypeRecord,
+				Value: &model.Value{
+					ValueID: value.ValueID,
+				},
+			})
 		}
 
 		return &model.HijackableResourceChain{
