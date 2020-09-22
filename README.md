@@ -106,57 +106,55 @@ AWS Step Functions allow for a state machine to be used to monitor and remediate
 
 Current Step Functions include:
 
-  - _Hello World ("hello_world")_
+##### _Hello World ("hello_world")_
+The Hello World Step Function is a two stage state machine that prints out "hello" and "world". This is an easy to use function for ensuring event triggers are working properly.
 
-    The Hello World Step Function is a two stage state machine that prints out "hello" and "world". This is an easy to use function for ensuring event triggers are working properly.
+##### _AWS Resource Tag Auditor ("tag_auditor")_
+The AWS Resource Tag Auditor is a multi-stage state machine that notifies, prevents, and removes resources that do not have the mandated key-pair values.
 
-  - _AWS Resource Tag Auditor ("tag_auditor")_
+This auditor takes a number of variables which include time between state transitions and lambdas to run for the major events of the workflow: initiation, notification, prevention, removal.
 
-    The AWS Resource Tag Auditor is a multi-stage state machine that notifies, prevents, and removes resources that do not have the mandated key-pair values.
+_Step Function Lambdas_
+| lambda variable name | 
+|---|
+|tag_auditor_init|
+|tag_auditor_notify|
+|tag_auditor_prevent|
+|tag_auditor_remove|
 
-    This auditor takes a number of variables which include time between state transitions and lambdas to run for the major events of the workflow: initiation, notification, prevention, removal.
+_Step Function Variables_
+|variable|unit|default|
+|---|---|---|
+|step_function_tag_auditor_init_seconds|seconds|14400 (4 hrs)|
+|step_function_tag_auditor_first_notify_seconds|seconds|604800 (7 days)|
+|step_function_tag_auditor_second_notify_seconds|seconds|518400 (6 days)|
+|step_function_tag_auditor_prevent_seconds|seconds|86400 (1 day)|
+|step_function_tag_auditor_remove_seconds|seconds|604800 (7 days)|
 
-    _Step Function Lambdas_
-    | lambda variable name | 
-    |---|
-    |tag_auditor_init|
-    |tag_auditor_notify|
-    |tag_auditor_prevent|
-    |tag_auditor_remove|
+A diagram including variable names can be found [here](./docs/tag_auditor.png)
 
-    _Step Function Variables_
-    |variable|unit|default|
-    |---|---|---|
-    |step_function_tag_auditor_init_seconds|seconds|14400 (4 hrs)
-    |step_function_tag_auditor_first_notify_seconds|seconds|604800 (7 days)
-    step_function_tag_auditor_second_notify_seconds|seconds|518400 (6 days)
-    step_function_tag_auditor_prevent_seconds|seconds|86400 (1 day)
-    step_function_tag_auditor_remove_seconds|seconds|604800 (7 days)
+##### _AWS DNS Hijack Auditor ("dns_hijack")_
 
-    A diagram including variable names can be found [here](./docs/tag_auditor.png)
+The DNS Hijack auditor is a mutlti-stage workflow that creates a graph of all risky resources as they are created and updated. As resources, both DNS and resources that can be a record alias, are deleted; they are used to query the graph and determine if they would result in a possible hijack/takeover.
 
-  - _AWS DNS Hijack Auditor ("dns_hijack")_
+Currently supported resources and actions are:
+   - Route53 Zones (Create/Update)
+   - Route53 RecordSets (Create/Update)
 
-    The DNS Hijack auditor is a mutlti-stage workflow that creates a graph of all risky resources as they are created and updated. As resources, both DNS and resources that can be a record alias, are deleted; they are used to query the graph and determine if they would result in a possible hijack/takeover.
+_Step Function Lambdas_
+| lambda variable name | 
+|---|
+|init|
+|graph_updater|
 
-    Currently supported resources and actions are:
-       - Route53 Zones (Create/Update)
-       - Route53 RecordSets (Create/Update)
-
-    _Step Function Lambdas_
-    | lambda variable name | 
-    |---|
-    |init|
-    |graph_updater|
-
-    _Module Variables_
-    |variable|type|description|
-    |--------|----|-----------|
-    |providers|map(provider)|Allows this workflow to be deployed in the Route53 region (US East 1) independed of the overall Terraform provider configuration|
-    | project_role | arn string| ARN of the role to use in the Step Functions/Lambdas|
-    |workflow_vpc| string | AWS VPC id to run the Lambdas in|
-    |workflow_subnets| list(string) | List of subnets to run Lambdas from|
-    |workflow_egress_cidrs| list(string) | List of CIDRs to allow the Lambdas to communicate with. This is used for communicating with the data store|
+_Module Variables_
+|variable|type|description|
+|--------|----|-----------|
+|providers|map(provider)|Allows this workflow to be deployed in the Route53 region (US East 1) independed of the overall Terraform provider configuration|
+| project_role | arn string| ARN of the role to use in the Step Functions/Lambdas|
+|workflow_vpc| string | AWS VPC id to run the Lambdas in|
+|workflow_subnets| list(string) | List of subnets to run Lambdas from|
+|workflow_egress_cidrs| list(string) | List of CIDRs to allow the Lambdas to communicate with. This is used for communicating with the data store|
 
 
 # Deployment

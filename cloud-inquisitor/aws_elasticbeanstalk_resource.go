@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
@@ -359,7 +360,7 @@ func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) PublishState() error
 }
 
 func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) publishCreatedEnvironment() error {
-	db, err := graph.NewDBConnection()
+	db, err := database.NewDBConnection()
 	defer db.Close()
 	if err != nil {
 		eb.logger.WithFields(eb.GetMetadata()).Error(err.Error())
@@ -392,7 +393,8 @@ func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) publishCreatedEnviro
 }
 
 func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) publishDeletedEnvironment() error {
-	db, err := graph.NewDBConnection()
+
+	db, err := database.NewDBConnection()
 	defer db.Close()
 	if err != nil {
 		eb.logger.WithFields(eb.GetMetadata()).Error(err.Error())

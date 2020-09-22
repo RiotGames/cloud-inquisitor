@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/model"
 	instrument "github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/instrumentation"
@@ -456,7 +457,7 @@ func (s *AWSS3StorageHijackableResource) NewFromPassableResource(resource Passab
 }
 
 func (s *AWSS3StorageHijackableResource) PublishState() error {
-	db, err := graph.NewDBConnection()
+	db, err := database.NewDBConnection()
 	if err != nil {
 		s.GetLogger().Errorf("error getting db connection: %v", err.Error())
 		return err

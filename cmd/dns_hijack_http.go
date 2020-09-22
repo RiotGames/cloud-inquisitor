@@ -6,6 +6,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/database"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph"
 	"github.com/RiotGames/cloud-inquisitor/cloud-inquisitor/graph/generated"
 	"github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ var dnsHijackHTTP = &cobra.Command{
 	Use:   "http",
 	Short: "interact with the DNS Hijack graph",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := graph.NewDBConnection()
+		db, err := database.NewDBConnection()
 		if err != nil {
 			panic(err)
 		}
