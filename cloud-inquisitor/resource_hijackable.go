@@ -42,6 +42,10 @@ func (p PassableResource) GetHijackableResource(ctx context.Context, metadata ma
 		eb := &AWSElasticBeanstalkEnvironmentHijackableResource{}
 		err := eb.NewFromPassableResource(p, ctx, metadata)
 		return eb, err
+	case SERVICE_AWS_S3:
+		s3 := &AWSS3StorageHijackableResource{}
+		err := s3.NewFromPassableResource(p, ctx, metadata)
+		return s3, err
 	default:
 		return nil, errors.New("no matching resource for type " + p.Type)
 	}
@@ -93,6 +97,26 @@ func NewHijackableResource(event events.CloudWatchEvent, ctx context.Context, me
 			default:
 				resource = &StubResource{}
 				return resource, errors.New("unknown elasticbeanstalk eventName")
+			}
+		} else {
+			resource = &StubResource{}
+			return resource, errors.New("unable to parse evetName from map")
+		}
+	case "aws.s3":
+		detailMap := map[string]interface{}{}
+		err := json.Unmarshal(event.Detail, &detailMap)
+		if err != nil {
+			return resource, err
+		}
+		if eventName, ok := detailMap["eventName"]; ok {
+			switch eventName {
+			case "CreateBucket", "DeleteBucket":
+				resource = &AWSS3StorageHijackableResource{}
+				resourceErr := resource.NewFromEventBus(event, ctx, metadata)
+				return resource, resourceErr
+			default:
+				resource = &StubResource{}
+				return resource, errors.New("unknown s3 eventName")
 			}
 		} else {
 			resource = &StubResource{}

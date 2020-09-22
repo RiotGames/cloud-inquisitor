@@ -393,6 +393,7 @@ func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) publishCreatedEnviro
 }
 
 func (eb *AWSElasticBeanstalkEnvironmentHijackableResource) publishDeletedEnvironment() error {
+
 	db, err := database.NewDBConnection()
 	defer db.Close()
 	if err != nil {

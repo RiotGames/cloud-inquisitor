@@ -31,58 +31,52 @@ func handlerRequest(ctx context.Context, resource cloudinquisitor.PassableResour
 		}, err
 	}
 
-	logger := parsedResource.GetLogger()
-	if logger.L.GetLevel() == logrus.DebugLevel {
-		logger.Debugf("hijack chain for resource with metadata: %#v", parsedResource.GetMetadata())
-		logger.Debugf("root hijack element: %#v", *hijackChain.Resource)
-		for idx, hijackElement := range hijackChain.Upstream {
-			logger.Debugf("upstream hijack element %v: %#v", idx, *hijackElement)
-		}
-		for idx, hijackElement := range hijackChain.Downstream {
-			logger.Debugf("downstream hijack element %v: %#v", idx, *hijackElement)
-		}
-	}
+	if hijackChain != nil {
+		if hijackChain.Resource != nil {
+			if len(hijackChain.Upstream) > 0 || len(hijackChain.Downstream) > 0 {
+				logger := parsedResource.GetLogger()
+				if logger.L.GetLevel() == logrus.DebugLevel {
+					logger.Debugf("hijack chain for resource with metadata: %#v", parsedResource.GetMetadata())
+					logger.Debugf("root hijack element: %#v", *hijackChain.Resource)
+					for idx, hijackElement := range hijackChain.Upstream {
+						logger.Debugf("upstream hijack element %v: %#v", idx, *hijackElement)
+					}
+					for idx, hijackElement := range hijackChain.Downstream {
+						logger.Debugf("downstream hijack element %v: %#v", idx, *hijackElement)
+					}
+				}
+				// send notification
+				content := notification.GenerateContent(hijackChain)
+				sendTo := settings.GetString("simple_email_service.verified_email")
+				msg, err := notification.NewHijackNotficationMessage("Potential DNS Hijack", []string{sendTo}, []string{sendTo}, content)
+				if err != nil {
+					return cloudinquisitor.PassableResource{
+						Resource: parsedResource,
+						Type:     parsedResource.GetType(),
+						Metadata: parsedResource.GetLogger().GetMetadata(),
+						Finished: true,
+					}, fmt.Errorf("error generating hijack message: %s", err.Error())
+				}
 
-	if len(hijackChain.Upstream) > 0 || len(hijackChain.Downstream) > 0 {
-		// send notification
-		content := notification.GenerateContent(hijackChain)
-		sendTo := settings.GetString("simple_email_service.verified_email")
-		msg, err := notification.NewHijackNotficationMessage("Potential DNS Hijack", []string{sendTo}, []string{sendTo}, content)
-		if err != nil {
-			return cloudinquisitor.PassableResource{
-				Resource: parsedResource,
-				Type:     parsedResource.GetType(),
-				Metadata: parsedResource.GetLogger().GetMetadata(),
-				Finished: true,
-			}, fmt.Errorf("error generating hijack message: %s", err.Error())
+				notifier, err := notification.NewNotifier()
+				if err != nil {
+					return cloudinquisitor.PassableResource{
+						Resource: parsedResource,
+						Type:     parsedResource.GetType(),
+						Metadata: parsedResource.GetLogger().GetMetadata(),
+						Finished: true,
+					}, errors.New("unable to get notifier to notify of potential hijack")
+				}
+
+				_, err = notifier.SendNotification(msg)
+				return cloudinquisitor.PassableResource{
+					Resource: parsedResource,
+					Type:     parsedResource.GetType(),
+					Metadata: parsedResource.GetLogger().GetMetadata(),
+					Finished: true,
+				}, err
+			}
 		}
-
-		notifier, err := notification.NewNotifier()
-		if err != nil {
-			return cloudinquisitor.PassableResource{
-				Resource: parsedResource,
-				Type:     parsedResource.GetType(),
-				Metadata: parsedResource.GetLogger().GetMetadata(),
-				Finished: true,
-			}, errors.New("unable to get notifier to notify of potential hijack")
-		}
-
-		_, err = notifier.SendNotification(msg)
-		return cloudinquisitor.PassableResource{
-			Resource: parsedResource,
-			Type:     parsedResource.GetType(),
-			Metadata: parsedResource.GetLogger().GetMetadata(),
-			Finished: true,
-		}, err
-	}
-
-	if err != nil {
-		return cloudinquisitor.PassableResource{
-			Resource: parsedResource,
-			Type:     parsedResource.GetType(),
-			Metadata: parsedResource.GetLogger().GetMetadata(),
-			Finished: true,
-		}, err
 	}
 
 	return cloudinquisitor.PassableResource{

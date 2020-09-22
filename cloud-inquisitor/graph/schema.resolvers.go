@@ -247,6 +247,21 @@ func (r *queryResolver) PointedAtByRecords(ctx context.Context, domain string) (
 		return []*model.Record{}, err
 	}
 
+	for idx, record := range records {
+		recordValues, recordErr := r.Resolver.Record().Values(ctx, record)
+		if recordErr != nil {
+			log.Errorf("unable to resolve values for record: %v", record.RecordID)
+			continue
+		}
+
+		value := make([]model.Value, len(recordValues))
+		for valIdx, val := range recordValues {
+			value[valIdx] = *val
+		}
+
+		records[idx].ValueRelation = value
+	}
+
 	if log.GetLevel() == log.DebugLevel {
 		for _, record := range records {
 			log.Debugf("record %#v points to domain %v", record, domain)
@@ -552,6 +567,56 @@ func (r *queryResolver) GetElasticbeanstalkUpstreamHijack(ctx context.Context, e
 	return hijackChain, nil
 }
 
+func (r *queryResolver) S3Buckets(ctx context.Context) ([]*model.S3, error) {
+	log.Debug("getting all s3 buckets")
+
+	var buckets []*model.S3
+	err := r.DB.Find(&buckets).Error
+	if err != nil {
+		log.Errorf("error getting all s3 buckets: %v", err.Error())
+		return []*model.S3{}, err
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		log.Debugf("found s3 buckets: ")
+		for idx, bucket := range buckets {
+			log.Debugf("%v: %#v", idx, *bucket)
+		}
+	}
+
+	return buckets, nil
+}
+
+func (r *queryResolver) S3BucketByName(ctx context.Context, id string) (*model.S3, error) {
+	log.Debugf("looking for bucket with name: %s", id)
+
+	bucket := model.S3{
+		S3ID: id,
+	}
+
+	err := r.DB.Where(bucket).First(&bucket).Error
+	if err != nil {
+		log.Errorf("error looking for bucket with name %s: %v", id, err.Error())
+	}
+
+	return &bucket, err
+}
+
+func (r *queryResolver) S3BucketByCName(ctx context.Context, cname string) (*model.S3, error) {
+	log.Debugf("looking for bucket with cname: %s", cname)
+
+	bucket := model.S3{
+		CName: cname,
+	}
+
+	err := r.DB.Where(bucket).First(&bucket).Error
+	if err != nil {
+		log.Errorf("error looking for bucket with name %s: %v", cname, err.Error())
+	}
+
+	return &bucket, err
+}
+
 func (r *queryResolver) HijackChainByDomain(ctx context.Context, id string, domains []string, typeArg model.Type) (*model.HijackableResourceChain, error) {
 	switch typeArg {
 	case model.TypeElasticbeanstalk:
@@ -591,6 +656,101 @@ func (r *queryResolver) HijackChainByDomain(ctx context.Context, id string, doma
 				},
 			},
 			Upstream:   chain,
+			Downstream: []*model.HijackableResource{},
+		}, err
+
+	case model.TypeS3:
+		/*
+			ID      string `json:"id"`
+			Account string `json:"account"`
+			Type    Type   `json:"type"`
+			Value   *Value `json:"value"`
+		*/
+		bucket, err := r.Query().S3BucketByCName(ctx, domains[0])
+		if err != nil {
+			log.Errorf("unable to find S3 bucket for domain %#v: %v", domains, err.Error())
+			return nil, err
+		}
+
+		var account model.Account
+		err = r.DB.First(&account, bucket.AccountID).Error
+		if err != nil {
+			log.Errorf("unable to find account for S3 bucket %s: %v", bucket.S3ID, err.Error())
+			return nil, err
+		}
+
+		// check for resources that could front S3
+		// couldfront
+		distros, err := r.Query().PointedAtByDistribution(ctx, domains[0])
+		if err != nil {
+			log.Errorf("error finding all cloudfront distributions fronting s3 bucket %v: %v", domains[0], err.Error())
+		}
+
+		// route53
+		records, err := r.Query().PointedAtByRecords(ctx, domains[0])
+		if err != nil {
+			log.Errorf("error finding all route53 records that point to s3 bucket %v: %v", domains[0], err.Error())
+		}
+
+		upstreamChain := make([]*model.HijackableResource, 0)
+		for _, cfDistro := range distros {
+			var distroAccount model.Account
+			err := r.DB.First(&distroAccount, cfDistro.AccountID).Error
+			if err != nil {
+				log.Errorf("unable to find account for cloudfront distribtion %v: %v", cfDistro.DistributionID, err.Error())
+			}
+			upstreamChain = append(upstreamChain, &model.HijackableResource{
+				ID:      cfDistro.DistributionID,
+				Account: distroAccount.AccountID,
+				Type:    model.TypeDistribution,
+				Value: &model.Value{
+					ValueID: cfDistro.Domain,
+				},
+			})
+		}
+
+		for _, record := range records {
+			var recordAccount model.Account
+			err := r.DB.First(&recordAccount, record.AccountID).Error
+			if err != nil {
+				log.Errorf("unable to find account for record %v: %v", record.RecordID, err.Error())
+			}
+
+			recordValues, err := r.Resolver.Record().Values(ctx, record)
+			if err != nil {
+				log.Errorf("error resolving values for record for record: %v", record.RecordID)
+			}
+			var value *model.Value = nil
+			if len(recordValues) > 0 {
+				value = recordValues[0]
+
+			}
+
+			if len(recordValues) > 1 {
+				log.Warnf("record has more than one value pointing to resource: %v", record.RecordID)
+			}
+
+			upstreamChain = append(upstreamChain, &model.HijackableResource{
+				ID:      record.RecordID,
+				Account: recordAccount.AccountID,
+				Type:    model.TypeRecord,
+				Value: &model.Value{
+					ValueID: value.ValueID,
+				},
+			})
+		}
+
+		return &model.HijackableResourceChain{
+			ID: id,
+			Resource: &model.HijackableResource{
+				ID:      id,
+				Account: account.AccountID,
+				Type:    model.TypeS3,
+				Value: &model.Value{
+					ValueID: bucket.CName,
+				},
+			},
+			Upstream:   upstreamChain,
 			Downstream: []*model.HijackableResource{},
 		}, err
 	}

@@ -56,7 +56,7 @@ func handlerRequest(ctx context.Context, payload cloudinquisitor.StepFunctionIni
 				StepFunctionExecutionID: sfnExeID,
 			})
 		}
-	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE, cloudinquisitor.SERVICE_AWS_CLOUDFRONT, cloudinquisitor.SERVICE_AWS_ELASTICBEANSTALK:
+	case cloudinquisitor.SERVICE_AWS_ROUTE53_ZONE, cloudinquisitor.SERVICE_AWS_CLOUDFRONT, cloudinquisitor.SERVICE_AWS_ELASTICBEANSTALK, cloudinquisitor.SERVICE_AWS_S3:
 		passableResources = append(passableResources, cloudinquisitor.PassableResource{
 			Resource:                resource,
 			Type:                    resource.GetType(),

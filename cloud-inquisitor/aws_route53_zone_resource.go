@@ -233,6 +233,7 @@ func (r *AWSRoute53Zone) PublishState() error {
 }
 
 func (r *AWSRoute53Zone) createZoneEntries() error {
+
 	db, err := database.NewDBConnection()
 	defer db.Close()
 	if err != nil {

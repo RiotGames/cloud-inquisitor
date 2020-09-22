@@ -5,6 +5,7 @@ enum Type {
 	DISTRIBUTION
 	ORIGIN
 	ELASTICBEANSTALK
+	S3
 }
 
 type Account {
@@ -60,6 +61,12 @@ type ElasticbeanstalkEnvironment {
 	 region: String!
 }
 
+type S3 {
+	s3ID: ID!
+	region: String!
+	cname: String!
+}
+
 type HijackableResource {
 	id: ID!
 	account: String!
@@ -104,6 +111,9 @@ type Query {
 	elasticbeanstalkByEndpoint(endpoint: String!): ElasticbeanstalkEnvironment!
 	getElasticbeanstalkUpstreamHijack(endpoints: [String!]!): [HijackableResource!]!
 
+	s3Buckets: [S3!]!
+	s3BucketByName(id: ID!): S3!
+	s3BucketByCName(cname: String!): S3!
+
 	hijackChainByDomain(id: ID!, domains: [String!]!, type: Type!): HijackableResourceChain!
-	
 }
