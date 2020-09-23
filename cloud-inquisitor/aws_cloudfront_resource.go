@@ -181,6 +181,58 @@ func (cf *AWSCloudFrontDistributionResource) createDistributionEntries() error {
 	return nil
 }
 
+func (cf *AWSCloudFrontDistributionResource) deleteDistributionEntries() error {
+	db, err := database.NewDBConnection()
+	defer db.Close()
+	if err != nil {
+		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	// get account
+	account := model.Account{AccountID: cf.AccountID}
+	err = db.FirstOrCreate(&account, account).Error
+	if err != nil {
+		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+		return err
+	}
+	cf.logger.WithFields(cf.GetMetadata()).Debugf("account: %#v", account)
+
+	distro := model.Distribution{DistributionID: cf.DistributionID, Domain: cf.DomainName, AccountID: account.ID}
+	err = db.Delete(&distro).Error
+	if err != nil {
+		cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+		return err
+	}
+
+	// delete origins
+	for _, cfOrigin := range cf.Origins {
+		origin := model.Origin{
+			OriginID:       cfOrigin.ID,
+			Domain:         cfOrigin.Domain,
+			DistributionID: distro.ID,
+		}
+		err = db.Delete(&origin).Error
+		if err != nil {
+			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+			return err
+		}
+
+	// delete origin groups
+	for _, cfGroup := range cf.OriginGroups {
+		group := model.OriginGroup{
+			GroupID:        cfGroup.ID,
+			DistributionID: distro.ID,
+		}
+		err = db.Delete(&group).Error
+		if err != nil {
+			cf.logger.WithFields(cf.GetMetadata()).Error(err.Error())
+			return err
+		}
+
+	return nil
+}
+
 func (cf *AWSCloudFrontDistributionResource) updateDistributionEntries() error {
 	db, err := database.NewDBConnection()
 	defer db.Close()
@@ -496,6 +548,8 @@ func (cf *AWSCloudFrontDistributionHijackableResource) PublishState() error {
 	switch cf.EventName {
 	case "CreateDistribution":
 		return cf.createDistributionEntries()
+	case "DeleteDistribution":
+		return cf.deleteDistributionEntries()
 	case "UpdateDistribution":
 		return cf.updateDistributionEntries()
 	default:
@@ -506,5 +560,41 @@ func (cf *AWSCloudFrontDistributionHijackableResource) PublishState() error {
 }
 
 func (cf *AWSCloudFrontDistributionHijackableResource) AnalyzeForHijack() (*model.HijackableResourceChain, error) {
-	return &model.HijackableResourceChain{}, nil
+	switch cf.EventName {
+	case "DeleteDistribution":
+		return cf.analyzedeleteDistributionEntries()
+	default:
+		return &model.HijackableResourceChain{}, nil
+	}
+}
+
+func (cf *AWSCloudFrontDistributionHijackableResourc) analyzedeleteDistributionEntries(*model.HijackableResourceChain, error) {
+	resolver, err := graph.NewResolver()
+	if err != nil {
+		cf.GetLogger().Errorf("error creating a new resolver to evaluate cloudfront hijacks: %v", err.Error())
+		return &model.HijackableResourceChain{}, err
+	}
+	
+	domains := make([]string, len(cf.Origins))
+	for i, ori := range cf.Origins {
+		domain[i] = ori.Domain
+	}
+
+	ctx := context.Background()
+	chain, err := resolver.Query().HijackChainByDomain(
+		ctx, 
+		fmt.Sprintf(
+			"cloudfront-%s-%s-%s", 
+			cf.AccountID,
+			cf.DistributionID, 
+			cf.DomainName, 
+		), 
+		domains, 
+		model.TypeDistribution,
+	)
+	if err != nil {
+		eb.GetLogger().Errorf("error querying graph for cloudfront hijack analysis: %v", err.Error())
+	}
+
+	return chain, err
 }
