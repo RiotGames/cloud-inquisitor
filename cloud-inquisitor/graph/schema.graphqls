@@ -7,6 +7,11 @@ enum Type {
 	ELASTICBEANSTALK
 }
 
+enum Direction {
+	UPSTREAM
+	DOWNSTREAM
+}
+
 type Account {
 	accountID: ID!
 	zones: [Zone!]!
@@ -21,6 +26,9 @@ type Zone {
 	serviceType: String!
 	records: [Record!]!
 	record(id: ID!): Record!
+	getRecordsWithDomain(domain: String!): [Record!]!
+	convertToHijackableResourceMap: HijackableResourceMap!
+
 }
 
 type Record {
@@ -28,6 +36,8 @@ type Record {
 	recordType: String!
 	values: [Value!]!
 	alias: Boolean!
+	getValuesWithDomain(domain: String!): [Value!]!
+	convertToHijackableResourceMap: HijackableResourceMap!
 }
 
 type Value {
@@ -39,6 +49,9 @@ type Distribution {
 	domain: String!
 	origins: [Origin!]!
 	originGroups: [OriginGroup!]!
+	getOriginsWithDomain(domain: String!): [Origin!]!
+	getOriginGroupsWithDomain(domain: String!): [OriginGroup!]!
+	convertToHijackableResourceMap: HijackableResourceMap!
 }
 
 type Origin {
@@ -49,6 +62,7 @@ type Origin {
 type OriginGroup {
 	groupID: ID!
 	origins: [Value!]!
+	getValueWithDomain(domain: String!): [Value!]!
 }
 
 type ElasticbeanstalkEnvironment {
@@ -58,6 +72,7 @@ type ElasticbeanstalkEnvironment {
 	 environmentURL: String!
 	 cname: String!
 	 region: String!
+	 convertToHijackableResourceMap: HijackableResourceMap!
 }
 
 type HijackableResource {
@@ -67,43 +82,52 @@ type HijackableResource {
 	value: Value!
 }
 
-type HijackableResourceChain {
+type HijackableResourceRoot {
 	id: ID!
+	rootResourceID: ID!
+	direction: Direction!
+	maps: [HijackableResourceMap!]!
+}
+
+type HijackableResourceMap {
 	resource: HijackableResource!
-	upstream: [HijackableResource!]!
-	downstream: [HijackableResource!]!
+	direction: Direction!
+	contains: [HijackableResourceMap!]!
 }
 
 type Query {
 	accounts: [Account!]!
-	account(id: ID!): Account!
+	getAccountWithAccountID(accountID: ID!): Account!
+	getAccountWithDomain(domain: String!): Account!
 	
 	zones: [Zone!]!
-	zone(id: ID!): Zone!
+	getZoneWithResourceID(resourceID: ID!): Zone!
+	getAllZonesWithDomain(domain: String!): [Zone!]!
 	
 	records: [Record!]!
-	record(id: ID!): Record!
-	pointedAtByRecords(domain: String!): [Record!]!
+	getRecordWithResourceID(resourceID: ID!): Record!
+	getAllRecordsWithDomain(domain: String!): [Record!]!
 
 	
 	values: [Value!]!
-	value(id: ID!): Value!
+	getAllValueWithValueID(valueID: ID!): Value!
 
 	distributions: [Distribution!]!
-	distribution(id: ID!): Distribution!
-	pointedAtByDistribution(domain: String!): [Distribution!]!
+	getDistributionWithResourceID(resourceID: ID!): Distribution!
+	getAllDistributionsWithDomain(domain: String!): [Distribution!]!
 
 	origins: [Origin!]!
-	origin(id: ID!): Origin
-	pointedAtByOrigin(domain: String!): [Origin!]!
+	getOriginWithResourceID(resourceID: ID!): Origin!
+	getAllOriginsWithDomain(domain: String!): [Origin!]!
 
-	originGroups: [OriginGroup!]!
-	pointedAtByOriginGroup(domain: String!): [OriginGroup!]!
+	originGroups: [OriginGroup!]! 
+	getOriginGroupWithResourceID(resourceID: ID!): OriginGroup!
+	getAllOriginGroupsWithDomain(domain: String!): [OriginGroup!]!
 
 	elasticbeanstalkEnvironments: [ElasticbeanstalkEnvironment!]!
-	elasticbeanstalkByEndpoint(endpoint: String!): ElasticbeanstalkEnvironment!
-	getElasticbeanstalkUpstreamHijack(endpoints: [String!]!): [HijackableResource!]!
+	getElasticbeanstalkWithResourceID(resourceID: ID!): ElasticbeanstalkEnvironment!
+	getAllElasticbeanstalksWithDomain(domain: String!): [ElasticbeanstalkEnvironment!]!
 
-	hijackChainByDomain(id: ID!, domains: [String!]!, type: Type!): HijackableResourceChain!
-	
+	getHijackMapWithResourceIDAndDomainsAndTypeAndDirection(queryLabel: String!, resourceID: ID!, domains: [String!]!, type: Type!, direction: Direction!): HijackableResourceRoot!
+	getHijackMapWithResourceIDAndDomainsAndTypeAndDirectionThenFlattened(queryLabel: String!, resourceID: ID!, domains: [String!]!, type: Type!, direction: Direction!): HijackableResourceRoot!
 }
