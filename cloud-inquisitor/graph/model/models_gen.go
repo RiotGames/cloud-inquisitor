@@ -15,11 +15,58 @@ type HijackableResource struct {
 	Value   *Value `json:"value"`
 }
 
-type HijackableResourceChain struct {
-	ID         string                `json:"id"`
-	Resource   *HijackableResource   `json:"resource"`
-	Upstream   []*HijackableResource `json:"upstream"`
-	Downstream []*HijackableResource `json:"downstream"`
+type HijackableResourceMap struct {
+	Resource  *HijackableResource      `json:"resource"`
+	Direction Direction                `json:"direction"`
+	Contains  []*HijackableResourceMap `json:"contains"`
+}
+
+type HijackableResourceRoot struct {
+	ID             string                   `json:"id"`
+	RootResourceID string                   `json:"rootResourceID"`
+	Direction      Direction                `json:"direction"`
+	Maps           []*HijackableResourceMap `json:"maps"`
+}
+
+type Direction string
+
+const (
+	DirectionUpstream   Direction = "UPSTREAM"
+	DirectionDownstream Direction = "DOWNSTREAM"
+)
+
+var AllDirection = []Direction{
+	DirectionUpstream,
+	DirectionDownstream,
+}
+
+func (e Direction) IsValid() bool {
+	switch e {
+	case DirectionUpstream, DirectionDownstream:
+		return true
+	}
+	return false
+}
+
+func (e Direction) String() string {
+	return string(e)
+}
+
+func (e *Direction) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Direction(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Direction", str)
+	}
+	return nil
+}
+
+func (e Direction) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type Type string
