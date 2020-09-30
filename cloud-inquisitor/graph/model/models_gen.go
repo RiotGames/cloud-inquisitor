@@ -22,10 +22,10 @@ type HijackableResourceMap struct {
 }
 
 type HijackableResourceRoot struct {
-	ID             string                   `json:"id"`
-	RootResourceID string                   `json:"rootResourceID"`
-	Direction      Direction                `json:"direction"`
-	Maps           []*HijackableResourceMap `json:"maps"`
+	ID           string                   `json:"id"`
+	RootResource *HijackableResource      `json:"rootResourceID"`
+	Direction    Direction                `json:"direction"`
+	Maps         []*HijackableResourceMap `json:"maps"`
 }
 
 type Direction string

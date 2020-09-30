@@ -559,20 +559,26 @@ func (cf *AWSCloudFrontDistributionHijackableResource) PublishState() error {
 	return nil
 }
 
-func (cf *AWSCloudFrontDistributionHijackableResource) AnalyzeForHijack() (*model.HijackableResourceChain, error) {
+func (cf *AWSCloudFrontDistributionHijackableResource) AnalyzeForHijack() (*model.HijackableResourceRoot, error) {
 	switch cf.EventName {
+	case "CreateDistribution":
+		return cf.analyzeCreateDistributionEntries()
 	case "DeleteDistribution":
-		return cf.analyzedeleteDistributionEntries()
+		return cf.analyzeDeleteDistributionEntries()
 	default:
-		return &model.HijackableResourceChain{}, nil
+		return &model.HijackableResourceRoot{}, nil
 	}
 }
 
-func (cf *AWSCloudFrontDistributionHijackableResourc) analyzedeleteDistributionEntries(*model.HijackableResourceChain, error) {
+func (cf *AWSCloudFrontDistributionHijackableResource) analyzeDeleteDistributionEntries(*model.HijackableResourceRoot, error) {
+	return cf.analyzeDeleteDistributionEntries()
+}
+
+func (cf *AWSCloudFrontDistributionHijackableResource) analyzeDeleteDistributionEntries(*model.HijackableResourceRoot, error) {
 	resolver, err := graph.NewResolver()
 	if err != nil {
 		cf.GetLogger().Errorf("error creating a new resolver to evaluate cloudfront hijacks: %v", err.Error())
-		return &model.HijackableResourceChain{}, err
+		return &model.HijackableResourceRoot{}, err
 	}
 	
 	domains := make([]string, len(cf.Origins))
@@ -581,20 +587,22 @@ func (cf *AWSCloudFrontDistributionHijackableResourc) analyzedeleteDistributionE
 	}
 
 	ctx := context.Background()
-	chain, err := resolver.Query().HijackChainByDomain(
+	root, err := resolver.Query().GetHijackMapWithResourceIDAndDomainsAndTypeAndDirectionThenFlattened(
 		ctx, 
 		fmt.Sprintf(
 			"cloudfront-%s-%s-%s", 
 			cf.AccountID,
 			cf.DistributionID, 
 			cf.DomainName, 
-		), 
+		),
+		cf.DistributionID,
 		domains, 
 		model.TypeDistribution,
+		model.DirectionDownstream,
 	)
 	if err != nil {
 		eb.GetLogger().Errorf("error querying graph for cloudfront hijack analysis: %v", err.Error())
 	}
 
-	return chain, err
+	return root, err
 }

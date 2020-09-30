@@ -29,70 +29,22 @@ type HijackNotificationContent struct {
 	HijackChain         []HijackChainElement
 }
 
-func GenerateContent(rawChain *model.HijackableResourceChain) HijackNotificationContent {
+func GenerateContent(root *model.HijackableResourceRoot) HijackNotificationContent {
 	content := HijackNotificationContent{
-		PrimaryResource:     rawChain.Resource.ID,
-		PrimaryAccountId:    rawChain.Resource.Account,
-		PrimaryResourceType: rawChain.Resource.Type.String(),
+		PrimaryResource:     root.RootResource.Account,
+		PrimaryAccountId:    root.RootResource.Account,
+		PrimaryResourceType: root.RootResource.Type.String(),
 	}
 
 	chain := []HijackChainElement{}
-	for idx, resource := range rawChain.Upstream {
-		if idx == len(rawChain.Upstream)-1 {
-			chain = append(chain, HijackChainElement{
-				AccountId:              resource.Account,
-				Resource:               resource.ID,
-				ResourceType:           resource.Type.String(),
-				ResourceReferenced:     rawChain.Resource.ID,
-				ResourceReferencedType: rawChain.Resource.Type.String(),
-			})
-		} else {
-			chain = append(chain, HijackChainElement{
-				AccountId:              resource.Account,
-				Resource:               resource.ID,
-				ResourceType:           resource.Type.String(),
-				ResourceReferenced:     rawChain.Upstream[idx+1].ID,
-				ResourceReferencedType: rawChain.Upstream[idx+1].Type.String(),
-			})
-		}
-	}
-
-	if len(rawChain.Downstream) == 0 {
+	for _, element := range root.Maps {
 		chain = append(chain, HijackChainElement{
-			AccountId:              rawChain.Resource.Account,
-			Resource:               rawChain.Resource.ID,
-			ResourceType:           rawChain.Resource.Type.String(),
-			ResourceReferenced:     "not applicable",
-			ResourceReferencedType: "not applicable",
+			AccountId:              element.Resource.Account,
+			Resource:               element.Resource.ID,
+			ResourceType:           element.Resource.Type.String(),
+			ResourceReferenced:     root.RootResource.ID,
+			ResourceReferencedType: root.RootResource.Type.String(),
 		})
-	} else {
-		chain = append(chain, HijackChainElement{
-			AccountId:              rawChain.Resource.Account,
-			Resource:               rawChain.Resource.ID,
-			ResourceType:           rawChain.Resource.Type.String(),
-			ResourceReferenced:     rawChain.Downstream[0].ID,
-			ResourceReferencedType: rawChain.Downstream[0].Type.String(),
-		})
-	}
-
-	for idx, resource := range rawChain.Downstream {
-		if idx == len(rawChain.Downstream)-1 {
-			chain = append(chain, HijackChainElement{
-				AccountId:              resource.Account,
-				Resource:               resource.ID,
-				ResourceType:           resource.Type.String(),
-				ResourceReferenced:     "not applicable",
-				ResourceReferencedType: "not applicable",
-			})
-		} else {
-			chain = append(chain, HijackChainElement{
-				AccountId:              resource.Account,
-				Resource:               resource.ID,
-				ResourceType:           resource.Type.String(),
-				ResourceReferenced:     rawChain.Downstream[idx+1].ID,
-				ResourceReferencedType: rawChain.Downstream[idx+1].Type.String(),
-			})
-		}
 	}
 
 	content.HijackChain = chain
