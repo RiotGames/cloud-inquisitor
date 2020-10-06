@@ -26,8 +26,6 @@ func TestAWSSES(t *testing.T) {
 				AccountId:              "123456789012",
 				Resource:               "public.test.bucket.com",
 				ResourceType:           "route53",
-				ResourceReferenced:     "test.bucket.com",
-				ResourceReferencedType: "S3 Bucket",
 			},
 		},
 	}

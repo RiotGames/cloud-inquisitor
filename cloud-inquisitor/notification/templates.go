@@ -15,39 +15,39 @@ func init() {
 }
 
 type HijackChainElement struct {
-	AccountId              string
-	Resource               string
-	ResourceType           string
-	ResourceReferenced     string
-	ResourceReferencedType string
+	AccountId    string
+	Resource     string
+	ResourceType string
 }
 
 type HijackNotificationContent struct {
 	PrimaryResource     string
 	PrimaryResourceType string
 	PrimaryAccountId    string
-	HijackChain         []HijackChainElement
+	HijackChains        [][]HijackChainElement
 }
 
 func GenerateContent(root *model.HijackableResourceRoot) HijackNotificationContent {
 	content := HijackNotificationContent{
-		PrimaryResource:     root.RootResource.Account,
+		PrimaryResource:     root.RootResource.ID,
 		PrimaryAccountId:    root.RootResource.Account,
 		PrimaryResourceType: root.RootResource.Type.String(),
 	}
 
-	chain := []HijackChainElement{}
-	for _, element := range root.Maps {
-		chain = append(chain, HijackChainElement{
-			AccountId:              element.Resource.Account,
-			Resource:               element.Resource.ID,
-			ResourceType:           element.Resource.Type.String(),
-			ResourceReferenced:     root.RootResource.ID,
-			ResourceReferencedType: root.RootResource.Type.String(),
-		})
+	var hijackChains [][]HijackChainElement
+	for _, chain := range root.Maps {
+		hijackChain := []HijackChainElement{}
+		for _, element := range chain.Contains {
+			hijackChain = append(hijackChain, HijackChainElement{
+				AccountId:    element.Resource.Account,
+				Resource:     element.Resource.ID,
+				ResourceType: element.Resource.Type.String(),
+			})
+		}
+		hijackChains = append(hijackChains, hijackChain)
 	}
 
-	content.HijackChain = chain
+	content.HijackChains = hijackChains
 
 	return content
 }

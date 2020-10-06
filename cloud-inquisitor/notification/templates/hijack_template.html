@@ -41,53 +41,46 @@ tr.odd {
 
 <h1>Potential Domain Hijack Found</h1>
 <h2>Deleting resource {{ .PrimaryResourceType }}:{{ .PrimaryResource }} in AWS account {{ .PrimaryAccountId }} has resulted in a potential domain hijack; there is a DNS record pointing to a resource not owned or no longer owned by us.</h2>
-<p>The following table includes all resources in the chain that would lead to a potential domain hijack.</p>
+<p>The following tables includes all resources in the chain that would lead to a potential domain hijack.</p>
 
 <div>
-    <table style="border:0px;">
-        <thead>
-            <tr class="title">
-                <th>
-                    Account ID
-                </th>
-                <th>
-                    Resource
-                </th>
-                <th>
-                    Resource Type
-                </th>
-                <th>
-                    Resource Referenced
-                </th>
-                <th>
-                    Resource Referenced Type
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-            {{- with .HijackChain }}
-                {{- range $i, $elem := . }}
-                    {{ if isEven $i }}<tr class="even">{{- else }}<tr class="odd">{{- end }}
-                        <td>
-                            {{ $elem.AccountId }}
-                        </td>                    
-                        <td>
-                            {{ $elem.Resource }}
-                        </td>
-                        <td>
-                            {{ $elem.ResourceType }}
-                        </td>
-                        <td>
-                            {{ $elem.ResourceReferenced }}
-                        </td>
-                        <td>
-                            {{ $elem.ResourceReferencedType }}
-                        </td>
+    {{- with .HijackChains }}
+        {{- range $j, $singlechain := . }}
+            <h3>Chain {{ $j }}</h3>
+            <table style="border:0px;">
+                <thead>
+                    <tr class="title">
+                        <th>
+                            Account ID
+                        </th>
+                        <th>
+                            Resource
+                        </th>
+                        <th>
+                            Resource Type
+                        </th>
                     </tr>
-                {{- end }}
-            {{- end }}
-        </tbody>
-    </table>
+                </thead>
+                <tbody>
+                    {{- with $singlechain }}
+                        {{- range $i, $elem := . }}
+                            {{ if isEven $i }}<tr class="even">{{- else }}<tr class="odd">{{- end }}
+                                <td>
+                                    {{ $elem.AccountId }}
+                                </td>                    
+                                <td>
+                                    {{ $elem.Resource }}
+                                </td>
+                                <td>
+                                    {{ $elem.ResourceType }}
+                                </td>
+                            </tr>
+                        {{- end }}
+                    {{- end }}
+                </tbody>
+            </table>
+        {{- end }}
+    {{- end }}
 </div>
 </body>
 </html>

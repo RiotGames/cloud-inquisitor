@@ -25,7 +25,7 @@ func TestHijackHTMLNoChain(t *testing.T) {
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
 		PrimaryAccountId:    "123456789012",
-		HijackChain:         []HijackChainElement{},
+		HijackChains:        [][]HijackChainElement{},
 	}
 
 	html, err := NewHijackHTML(content)
@@ -54,20 +54,18 @@ func TestHijackHTMLWithChain(t *testing.T) {
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
 		PrimaryAccountId:    "123456789012",
-		HijackChain: []HijackChainElement{
-			HijackChainElement{
-				AccountId:              "123456789012",
-				Resource:               "public.test.bucket.com",
-				ResourceType:           "route53",
-				ResourceReferenced:     "test.bucket.com",
-				ResourceReferencedType: "S3 Bucket",
-			},
-			HijackChainElement{
-				AccountId:              "123456789012",
-				Resource:               "public.test.bucket.com",
-				ResourceType:           "route53",
-				ResourceReferenced:     "test.bucket.com",
-				ResourceReferencedType: "S3 Bucket",
+		HijackChains: [][]HijackChainElement{
+			[]HijackChainElement{
+				HijackChainElement{
+					AccountId:    "123456789012",
+					Resource:     "public.test.bucket.com",
+					ResourceType: "route53",
+				},
+				HijackChainElement{
+					AccountId:    "123456789012",
+					Resource:     "public.test.bucket.com",
+					ResourceType: "route53",
+				},
 			},
 		},
 	}
@@ -98,7 +96,7 @@ func TestHijackTextNoChain(t *testing.T) {
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
 		PrimaryAccountId:    "123456789012",
-		HijackChain:         []HijackChainElement{},
+		HijackChains:        [][]HijackChainElement{},
 	}
 
 	text, err := NewHijackText(content)
@@ -127,20 +125,18 @@ func TestHijackTextWithChain(t *testing.T) {
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
 		PrimaryAccountId:    "123456789012",
-		HijackChain: []HijackChainElement{
-			HijackChainElement{
-				AccountId:              "123456789012",
-				Resource:               "public.test.bucket.com",
-				ResourceType:           "route53",
-				ResourceReferenced:     "test.bucket.com",
-				ResourceReferencedType: "S3 Bucket",
-			},
-			HijackChainElement{
-				AccountId:              "123456789012",
-				Resource:               "public.test.bucket.com",
-				ResourceType:           "route53",
-				ResourceReferenced:     "test.bucket.com",
-				ResourceReferencedType: "S3 Bucket",
+		HijackChains: [][]HijackChainElement{
+			[]HijackChainElement{
+				HijackChainElement{
+					AccountId:    "123456789012",
+					Resource:     "public.test.bucket.com",
+					ResourceType: "route53",
+				},
+				HijackChainElement{
+					AccountId:    "123456789012",
+					Resource:     "public.test.bucket.com",
+					ResourceType: "route53",
+				},
 			},
 		},
 	}
@@ -174,21 +170,15 @@ AccountId:              rawChain.Resource.Account,
 		ResourceReferencedType: "",
 */
 func TestGenerateContent(t *testing.T) {
-	chain := &model.HijackableResourceChain{
+	chain := &model.HijackableResourceRoot{
 		ID: "testID",
-		Resource: &model.HijackableResource{
+		RootResource: &model.HijackableResource{
 			ID:      "test root resource",
 			Account: "test root account",
 			Type:    model.TypeElasticbeanstalk,
 		},
-		Upstream: []*model.HijackableResource{
-			&model.HijackableResource{
-				ID:      "test upstream ",
-				Account: "test upstream account",
-				Type:    model.TypeElasticbeanstalk,
-			},
-		},
-		Downstream: []*model.HijackableResource{
+		Direction: model.DirectionDownstream,
+		Maps: []*model.HijackableResource{
 			&model.HijackableResource{
 				ID:      "test downstream",
 				Account: "test downstream account",

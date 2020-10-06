@@ -84,7 +84,7 @@ type HijackableResource {
 
 type HijackableResourceRoot {
 	id: ID!
-	rootResourceID: ID!
+	rootResource: HijackableResource!
 	direction: Direction!
 	maps: [HijackableResourceMap!]!
 }

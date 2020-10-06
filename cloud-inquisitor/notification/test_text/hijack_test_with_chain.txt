@@ -1,24 +1,24 @@
 Potential Domain Hijack Found
 
-Deleting resource S3 Bucket:test.bucket.com in AWS account 123456789012 has resulted in a potential domain hijack;
- there is a DNS record pointing to a resource not owned or no longer owned by us.
+Deleting resource S3 Bucket:test.bucket.com in AWS account 123456789012 has resulted in a potential security risk.
+By claiming the corresponding resource an attacker will be able to make Players and Rioters believe they represent part of Riot and do harm to them.
 
-The following table includes all resources in the chain that would lead to a potential domain hijack.
+The following table includes all resources in the chain that would lead to a potential hijack.
 
 
+
+==============
+Hijack Chain 0
+==============
 
 Resource 0:
     Account ID:                 123456789012
     Resource:                   public.test.bucket.com
     Resource Type:              route53
-    Resource Referenced:        test.bucket.com
-    Resource Referenced Type:   S3 Bucket
 
 Resource 1:
     Account ID:                 123456789012
     Resource:                   public.test.bucket.com
     Resource Type:              route53
-    Resource Referenced:        test.bucket.com
-    Resource Referenced Type:   S3 Bucket
 
  
