@@ -178,11 +178,15 @@ func TestGenerateContent(t *testing.T) {
 			Type:    model.TypeElasticbeanstalk,
 		},
 		Direction: model.DirectionDownstream,
-		Maps: []*model.HijackableResource{
-			&model.HijackableResource{
-				ID:      "test downstream",
-				Account: "test downstream account",
-				Type:    model.TypeElasticbeanstalk,
+		Maps: []*model.HijackableResourceMap{
+			&model.HijackableResourceMap{
+				Resource: &model.HijackableResource{
+					ID:      "test downstream",
+					Account: "test downstream account",
+					Type:    model.TypeElasticbeanstalk,
+				},
+				Direction: model.DirectionDownstream,
+				Contains:  []*model.HijackableResourceMap{},
 			},
 		},
 	}
