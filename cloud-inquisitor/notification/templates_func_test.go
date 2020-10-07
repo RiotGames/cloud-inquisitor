@@ -21,13 +21,13 @@ func TestAWSSES(t *testing.T) {
 		PrimaryResource:     "test.bucket.com",
 		PrimaryResourceType: "S3 Bucket",
 		PrimaryAccountId:    "123456789012",
-		HijackChain: []HijackChainElement{
-			HijackChainElement{
-				AccountId:              "123456789012",
-				Resource:               "public.test.bucket.com",
-				ResourceType:           "route53",
-				ResourceReferenced:     "test.bucket.com",
-				ResourceReferencedType: "S3 Bucket",
+		HijackChains: [][]HijackChainElement{
+			[]HijackChainElement{
+				HijackChainElement{
+					AccountId:              "123456789012",
+					Resource:               "public.test.bucket.com",
+					ResourceType:           "route53",
+				},
 			},
 		},
 	}

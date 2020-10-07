@@ -1,17 +1,22 @@
 Potential Domain Hijack Found
 
-Deleting resource {{ .PrimaryResourceType }}:{{ .PrimaryResource }} in AWS account {{ .PrimaryAccountId }} has resulted in a potential domain hijack;
- there is a DNS record pointing to a resource not owned or no longer owned by us.
+Deleting resource {{ .PrimaryResourceType }}:{{ .PrimaryResource }} in AWS account {{ .PrimaryAccountId }} has resulted in a potential security risk.
+By claiming the corresponding resource an attacker will be able to make Players and Rioters believe they represent part of Riot and do harm to them.
 
-The following table includes all resources in the chain that would lead to a potential domain hijack.
+The following table includes all resources in the chain that would lead to a potential hijack.
 
-{{ with .HijackChain }}
-{{ range $i, $elem := . }}
+{{ with .HijackChains }}
+{{ range $j, $singlechain := . }}
+==============
+Hijack Chain {{ $j }}
+==============
+    {{ with $singlechain }}
+    {{ range $i, $elem := . }}
 Resource {{ $i }}:
     Account ID:                 {{ $elem.AccountId }}
     Resource:                   {{ $elem.Resource }}
     Resource Type:              {{ $elem.ResourceType }}
-    Resource Referenced:        {{ $elem.ResourceReferenced }}
-    Resource Referenced Type:   {{ $elem.ResourceReferencedType }}
+    {{ end }}
+    {{ end }} 
 {{ end }}
-{{ end }} 
+{{ end }}

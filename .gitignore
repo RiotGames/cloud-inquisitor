@@ -689,3 +689,4 @@ settings.json
 main.tf
 builds/**
 cinqctl
+.scratch

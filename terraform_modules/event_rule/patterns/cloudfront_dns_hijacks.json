@@ -11,6 +11,7 @@
         ],
         "eventName": [
             "CreateDistribution",
+            "DeleteDistribution",
             "UpdateDistribution"
         ]
     }
